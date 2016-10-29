@@ -1,9 +1,11 @@
 #ifndef TEST_H
 #define TEST_H
 
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <utility>
+#include <vector>
 
 namespace {
 
@@ -19,7 +21,7 @@ std::ostream& operator<<(std::ostream& ostr, const std::pair<T1, T2>& pair) {
 class Test {
  public:
   struct TestFailedException {};
-  class EndTestException {};
+  struct EndTestException {};
 
   enum TestResult {
     TEST_OK,
@@ -70,7 +72,7 @@ std::string Test::error_message_;
 int Test::number_of_failed_tests_ = 0;
 
 template <typename T>
-void VerifyIsEqual(const T& expr1, const T& expr2, int line) {
+void VerifyIsEqual(T expr1, T expr2, int line) {
   if (expr1 != expr2) {
     Test::error_line_ = line;
     std::stringstream ss;
@@ -91,6 +93,14 @@ void VerifyIsNull(const T* ptr1, int line) {
   }
 }
 
+template <typename T>
+void VerifyContains(const std::vector<T>& vec, const T& value, int line) {
+  auto iter = std::find(vec.begin(), vec.end(), value);
+  if (iter == std::end(vec)) {
+    Test::error_line_ = line;
+    throw Test::TestFailedException();
+  }
+}
 
 #define TEST_PROCEDURE(T) Test::TestResult T()
 
@@ -102,6 +112,8 @@ void VerifyIsNull(const T* ptr1, int line) {
 
 #define VERIFY(expr) test.Verify(expr, __LINE__)
 #define VERIFY_IS_EQUAL(expr1, expr2) VerifyIsEqual(expr1, expr2, __LINE__)
+#define VERIFY_EQUALS(expr1, expr2) VerifyIsEqual(expr1, expr2, __LINE__)
+#define VERIFY_CONTAINS(container, value) VerifyContains(container, value, __LINE__)
 #define VERIFY_IS_NULL(ptr) VerifyIsNull(ptr, __LINE__)
 #define VERIFY_IS_ZERO(expr) VERIFY_IS_EQUAL(expr, 0)
 

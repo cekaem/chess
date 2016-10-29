@@ -8,8 +8,8 @@ Board::Board() noexcept {
 }
 
 void Board::validateField(Field field) const throw (WrongFieldException) {
-  if (field.first <= 0 || field.first > BoardSize ||
-      field.second <= 0 || field.second > BoardSize) {
+  if (field.first < 0 || field.first >= BoardSize ||
+      field.second < 0 || field.second >= BoardSize) {
     throw WrongFieldException(field);
   }
 }
@@ -20,25 +20,25 @@ void Board::addFigure(const Figure* figure, Field field)
   if (figure == nullptr) {
     throw NoFigureException(field);
   }
-  const Figure* old_figure = fields_[field.first - 1][field.second - 1];
+  const Figure* old_figure = fields_[field.first][field.second];
   if (old_figure != nullptr) {
     throw FieldNotEmptyException(field, old_figure);
   }
-  fields_[field.first - 1][field.second - 1] = figure;
+  fields_[field.first][field.second] = figure;
 }
 
 const Figure* Board::removeFigure(Field field)
     throw(WrongFieldException, NoFigureException) {
   validateField(field);
-  const Figure* figure = fields_[field.first - 1][field.second - 1];
+  const Figure* figure = fields_[field.first][field.second];
   if (figure == nullptr) {
     throw NoFigureException(field);
   }
-  fields_[field.first - 1][field.second - 1] = nullptr;
+  fields_[field.first][field.second] = nullptr;
   return figure;
 }
 
 const Figure* Board::getFigure(Field field) const throw(WrongFieldException) {
   validateField(field);
-  return fields_[field.first - 1][field.second - 1];
+  return fields_[field.first][field.second];
 }

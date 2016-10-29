@@ -17,7 +17,7 @@ namespace {
 // Checks if Board::WrongFieldException is properly thrown from Board::addFigure
 TEST_PROCEDURE(test1) {
   TEST_START
-  const Board::Field field = std::make_pair(Board::A, 9);
+  const Board::Field field = std::make_pair(Board::A, static_cast<Board::Number>(8));
   try {
     Board board;
     auto figure = std::make_unique<Figure>(5);
@@ -33,7 +33,7 @@ TEST_PROCEDURE(test1) {
 // Checks if Board::NoFigureException is properly thrown from Board::addFigure
 TEST_PROCEDURE(test2) {
   TEST_START
-  const Board::Field field = std::make_pair(Board::B, 3);
+  const Board::Field field = std::make_pair(Board::B, Board::THREE);
   try {
     Board board;
     board.addFigure(nullptr, field);
@@ -48,7 +48,7 @@ TEST_PROCEDURE(test2) {
 // Checks if Board::FieldNotEmptyException is properly thrown from Board::addFigure
 TEST_PROCEDURE(test3) {
   TEST_START
-  const Board::Field field = std::make_pair(Board::B, 3);
+  const Board::Field field = std::make_pair(Board::B, Board::FIVE);
   auto figure = std::make_unique<Figure>(12);
   try {
     Board board;
@@ -67,7 +67,7 @@ TEST_PROCEDURE(test3) {
 // Checks if Board::WrongFieldException is properly thrown from Board::removeFigure
 TEST_PROCEDURE(test4) {
   TEST_START
-  const Board::Field field = std::make_pair(static_cast<Board::Letter>(9), 3);
+  const Board::Field field = std::make_pair(static_cast<Board::Letter>(8), Board::THREE);
   try {
     Board board;
     board.removeFigure(field);
@@ -82,7 +82,7 @@ TEST_PROCEDURE(test4) {
 // Checks if Board::NoFigureException is properly thrown from Board::removeFigure
 TEST_PROCEDURE(test5) {
   TEST_START
-  const Board::Field field = std::make_pair(Board::H, 8);
+  const Board::Field field = std::make_pair(Board::H, Board::EIGHT);
   try {
     Board board;
     board.removeFigure(field);
@@ -97,7 +97,7 @@ TEST_PROCEDURE(test5) {
 // Checks if Board::WrongFieldException is properly thrown from Board::getFigure
 TEST_PROCEDURE(test6) {
   TEST_START
-  const Board::Field field = std::make_pair(Board::E, 0);
+  const Board::Field field = std::make_pair(Board::E, static_cast<Board::Number>(-1));
   try {
     Board board;
     board.getFigure(field);
@@ -113,7 +113,7 @@ TEST_PROCEDURE(test6) {
 TEST_PROCEDURE(test7) {
   TEST_START
   Board board;
-  Board::Field field = std::make_pair(Board::C, 1);
+  Board::Field field = std::make_pair(Board::C, Board::ONE);
   VERIFY_IS_NULL(board.getFigure(field));
   auto figure_ptr = std::make_unique<Figure>(7);
   const Figure* figure = figure_ptr.get();
@@ -136,7 +136,7 @@ int main() {
     TEST("Board::removeFigure throws Board::WrongFieldException", test4);
     TEST("Board::removeFigure throws Board::NoFigureException", test5);
     TEST("Board::getFigure throws Board::WrongFieldException", test6);
-    TEST("Board::add/remove/getFigure works correctly", test7);
+    TEST("Board::add/remove/move/getFigure works correctly", test7);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;
