@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <utility>
 #include <vector>
@@ -89,6 +90,18 @@ void VerifyIsNull(const T* ptr1, int line) {
     std::stringstream ss;
     ss << "Pointer is not null: " << ptr1;
     Test::SetErrorMessage(ss.str());
+    throw Test::TestFailedException();
+  }
+}
+
+template <typename T>
+void VerifyContains(const std::vector<std::unique_ptr<T>>& vec, const T* value, int line) {
+  auto iter = std::find_if(vec.begin(), vec.end(),
+      [value](const auto& iter) -> bool {
+        return iter.get() == value;
+      });
+  if (iter == std::end(vec)) {
+    Test::error_line_ = line;
     throw Test::TestFailedException();
   }
 }

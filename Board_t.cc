@@ -3,43 +3,29 @@
 #include "Test.h"
 #include "Board.h"
 
+#include "Field.h"
+#include "Figure.h"
+
 #include <memory>
 #include <utility>
 
-class Figure {
- public:
-  Figure(int id) : id_(id) {}
-  const int id_;
-};
-
 namespace {
 
-// Checks if Board::WrongFieldException is properly thrown from Board::addFigure
+// Checks if Field::WrongFieldException is properly thrown from Field::Field
 TEST_PROCEDURE(test1) {
   TEST_START
-  const Board::Field field = std::make_pair(Board::A, static_cast<Board::Number>(8));
   try {
-    Board board;
-    auto figure = std::make_unique<Figure>(5);
-    board.addFigure(figure.get(), field);
-  } catch (Board::WrongFieldException& exception) {
-    VERIFY_IS_EQUAL(exception.field_, field);
-    RETURN
-  }
-  NOT_REACHED
-  TEST_END
-}
-
-// Checks if Board::NoFigureException is properly thrown from Board::addFigure
-TEST_PROCEDURE(test2) {
-  TEST_START
-  const Board::Field field = std::make_pair(Board::B, Board::THREE);
-  try {
-    Board board;
-    board.addFigure(nullptr, field);
-  } catch (Board::NoFigureException& exception) {
-    VERIFY_IS_EQUAL(exception.field_, field);
-    RETURN
+    const Field field(Field::A, static_cast<Field::Number>(8));
+  } catch (Field::WrongFieldException& exception) {
+    VERIFY_IS_EQUAL(exception.letter, Field::A);
+    VERIFY_IS_EQUAL(exception.number, static_cast<Field::Number>(8));
+    try {
+      const Field field(static_cast<Field::Letter>(-1), Field::TWO);
+    } catch (Field::WrongFieldException& exception) {
+      VERIFY_IS_EQUAL(exception.letter, static_cast<Field::Letter>(-1));
+      VERIFY_IS_EQUAL(exception.number, Field::TWO);
+      RETURN
+    }
   }
   NOT_REACHED
   TEST_END
@@ -48,31 +34,14 @@ TEST_PROCEDURE(test2) {
 // Checks if Board::FieldNotEmptyException is properly thrown from Board::addFigure
 TEST_PROCEDURE(test3) {
   TEST_START
-  const Board::Field field = std::make_pair(Board::B, Board::FIVE);
-  auto figure = std::make_unique<Figure>(12);
+  const Field field(Field::B, Field::FIVE);
+  Board board;
   try {
-    Board board;
-    board.addFigure(figure.get(), field);
-    auto new_figure = std::make_unique<Figure>(15);
-    board.addFigure(new_figure.get(), field);
+    board.addFigure(Figure::BISHOP, field, Figure::BLACK);
+    board.addFigure(Figure::KING, field, Figure::WHITE);
   } catch (Board::FieldNotEmptyException& exception) {
     VERIFY_IS_EQUAL(exception.field_, field);
-    VERIFY_IS_EQUAL(exception.figure_, const_cast<const Figure*>(figure.get()));
-    RETURN
-  }
-  NOT_REACHED
-  TEST_END
-}
-
-// Checks if Board::WrongFieldException is properly thrown from Board::removeFigure
-TEST_PROCEDURE(test4) {
-  TEST_START
-  const Board::Field field = std::make_pair(static_cast<Board::Letter>(8), Board::THREE);
-  try {
-    Board board;
-    board.removeFigure(field);
-  } catch (Board::WrongFieldException& exception) {
-    VERIFY_IS_EQUAL(exception.field_, field);
+    VERIFY_IS_EQUAL(exception.figure_, board.getFigure(field));
     RETURN
   }
   NOT_REACHED
@@ -82,26 +51,11 @@ TEST_PROCEDURE(test4) {
 // Checks if Board::NoFigureException is properly thrown from Board::removeFigure
 TEST_PROCEDURE(test5) {
   TEST_START
-  const Board::Field field = std::make_pair(Board::H, Board::EIGHT);
+  const Field field(Field::H, Field::EIGHT);
   try {
     Board board;
     board.removeFigure(field);
   } catch (Board::NoFigureException& exception) {
-    VERIFY_IS_EQUAL(exception.field_, field);
-    RETURN
-  }
-  NOT_REACHED
-  TEST_END
-}
-
-// Checks if Board::WrongFieldException is properly thrown from Board::getFigure
-TEST_PROCEDURE(test6) {
-  TEST_START
-  const Board::Field field = std::make_pair(Board::E, static_cast<Board::Number>(-1));
-  try {
-    Board board;
-    board.getFigure(field);
-  } catch (Board::WrongFieldException& exception) {
     VERIFY_IS_EQUAL(exception.field_, field);
     RETURN
   }
@@ -113,15 +67,55 @@ TEST_PROCEDURE(test6) {
 TEST_PROCEDURE(test7) {
   TEST_START
   Board board;
-  Board::Field field = std::make_pair(Board::C, Board::ONE);
+  const auto& figures = board.getFigures();
+  VERIFY_IS_EQUAL(figures.size(), 0ul);
+  Field field(Field::C, Field::ONE);
   VERIFY_IS_NULL(board.getFigure(field));
-  auto figure_ptr = std::make_unique<Figure>(7);
-  const Figure* figure = figure_ptr.get();
-  board.addFigure(figure, field);
-  VERIFY_IS_EQUAL(board.getFigure(field), figure);
-  const Figure* old_figure = board.removeFigure(field);
-  VERIFY_IS_EQUAL(old_figure, figure);
+  board.addFigure(Figure::QUEEN, field, Figure::BLACK);
+  VERIFY_EQUALS(figures.size(), 1ul);
+  VERIFY_CONTAINS(figures, board.getFigure(field));
+  board.removeFigure(field);
   VERIFY_IS_NULL(board.getFigure(field));
+  VERIFY_IS_EQUAL(figures.size(), 0ul);
+  TEST_END
+}
+
+// Checks if Board::operator==/!= works correctly
+TEST_PROCEDURE(test8) {
+  TEST_START
+  Board board1;
+  Board board2;
+  VERIFY(board1 == board2);
+  Field field1(Field::A, Field::TWO);
+  Field field2(Field::E, Field::SEVEN);
+  Field field3(Field::E, Field::SIX);
+  board1.addFigure(Figure::PAWN, field1, Figure::BLACK);
+  VERIFY(board1 != board2);
+  board1.addFigure(Figure::ROOK, field2, Figure::WHITE);
+  board2.addFigure(Figure::PAWN, field1, Figure::BLACK);
+  board2.addFigure(Figure::ROOK, field3, Figure::WHITE);
+  VERIFY(board1 != board2);
+  board2.removeFigure(field3);
+  board2.addFigure(Figure::KING, field2, Figure::BLACK);
+  VERIFY(board1 != board2);
+  board2.removeFigure(field2);
+  board2.addFigure(Figure::ROOK, field2, Figure::WHITE);
+  VERIFY_EQUALS(board1, board2);
+  TEST_END
+}
+
+// Checks if Board's copy constructor and Board::restoreFiguresPositions work correctly
+TEST_PROCEDURE(test9) {
+  TEST_START
+  Board board1;
+  Field field1(Field::D, Field::FOUR);
+  Field field2(Field::B, Field::ONE);
+  Field field3(Field::H, Field::SIX);
+  board1.addFigure(Figure::KNIGHT, field1, Figure::WHITE);
+  board1.addFigure(Figure::KNIGHT, field2, Figure::BLACK);
+  board1.addFigure(Figure::QUEEN, field3, Figure::WHITE);
+  Board board2 = board1;
+  VERIFY_EQUALS(board1, board2);
   TEST_END
 }
 
@@ -130,13 +124,12 @@ TEST_PROCEDURE(test7) {
 
 int main() {
   try {
-    TEST("Board::addFigure throws Board::WrongFieldException", test1);
-    TEST("Board::addFigure throws Board::NoFigureException", test2);
+    TEST("Field::Field throws Field::WrongFieldException", test1);
     TEST("Board::addFigure throws FieldNotEmptyException", test3);
-    TEST("Board::removeFigure throws Board::WrongFieldException", test4);
     TEST("Board::removeFigure throws Board::NoFigureException", test5);
-    TEST("Board::getFigure throws Board::WrongFieldException", test6);
     TEST("Board::add/remove/move/getFigure works correctly", test7);
+    TEST("Board::operator== works correctly", test8);
+    TEST("Board::Board(const Board&) works correctly", test9);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;

@@ -2,23 +2,20 @@
 #define BOARD_H
 
 #include <array>
+#include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
-class Figure;
+#include "Field.h"
+#include "Figure.h"
+
 class Pawn;
 
 class Board {
  public:
   constexpr static size_t BoardSize = 8;
-  enum Letter {A, B, C, D, E, F, G, H};
-  enum Number { ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT};
-  using Field = std::pair<Letter, Number>;
-
-  struct WrongFieldException : std::exception {
-     WrongFieldException(const Field& field) : field_(field) {}
-     const Field field_;
-  };
 
   struct NoFigureException : std::exception {
     NoFigureException(const Field& field) : field_(field) {}
@@ -33,20 +30,31 @@ class Board {
   };
 
   Board() noexcept;
+  Board(const Board& other) noexcept;
 
-  void addFigure(const Figure* figure, Field field)
-      throw(WrongFieldException, NoFigureException, FieldNotEmptyException);
-  const Figure* removeFigure(Field field) throw(WrongFieldException, NoFigureException);
-  const Figure* getFigure(Field field) const throw(WrongFieldException);
+  void addFigure(Figure::Type type, Field field, Figure::Color color)
+      throw(FieldNotEmptyException);
+  void removeFigure(Field field) throw(NoFigureException);
+  const Figure* moveFigure(Field old_field, Field new_field)
+      throw(NoFigureException, Figure::IllegalMoveException);
+  const Figure* getFigure(Field field) const noexcept;
+  const std::vector<std::unique_ptr<Figure>>& getFigures() const { return figures_; }
   const auto& getFields() const { return fields_; }
   void setEnPassantPawn(Pawn* pawn) { enPassantPawn_ = pawn; }
   const Pawn* getEnPassantPawn() const { return enPassantPawn_; }
 
+  bool operator==(const Board& other) const noexcept;
+  bool operator!=(const Board& other) const noexcept;
+
+  friend std::ostream& operator<<(std::ostream& ostr, const Board& board);
+
  private:
-  void validateField(Field field) const throw (WrongFieldException);
+  Board& operator=(const Board& other) = delete;
+  Board(Board&& other) = delete;
 
   Pawn* enPassantPawn_{nullptr};
-  std::array<std::array<const Figure*, BoardSize>, BoardSize> fields_;
+  std::vector<std::unique_ptr<Figure>> figures_;
+  std::array<std::array<Figure*, BoardSize>, BoardSize> fields_;
 };
 
 #endif  // BOARD_H

@@ -246,7 +246,33 @@ TEST_PROCEDURE(test5) {
 // Checks if King::calculatePossibleMoves returns proper moves
 TEST_PROCEDURE(test6) {
   TEST_START
-  VERIFY(false);
+  {
+    Board board;
+    King king(board, std::make_pair(Board::D, Board::FIVE), Figure::BLACK);
+    auto moves = king.calculatePossibleMoves();
+    VERIFY_CONTAINS(moves, createMove(Board::C, Board::FIVE, nullptr));
+    VERIFY_CONTAINS(moves, createMove(Board::C, Board::SIX, nullptr));
+    VERIFY_CONTAINS(moves, createMove(Board::D, Board::SIX, nullptr));
+    VERIFY_CONTAINS(moves, createMove(Board::E, Board::SIX, nullptr));
+    VERIFY_CONTAINS(moves, createMove(Board::E, Board::FIVE, nullptr));
+    VERIFY_CONTAINS(moves, createMove(Board::E, Board::FOUR, nullptr));
+    VERIFY_CONTAINS(moves, createMove(Board::D, Board::FOUR, nullptr));
+    VERIFY_CONTAINS(moves, createMove(Board::C, Board::FOUR, nullptr));
+    VERIFY_EQUALS(moves.size(), 8lu);
+  }
+  {
+    Board board;
+    King king(board, std::make_pair(Board::E, Board::THREE), Figure::WHITE);
+    Bishop bishop(board, std::make_pair(Board::E, Board::FOUR), Figure::WHITE);
+    Knight enemy_knight(board, std::make_pair(Board::F, Board::FOUR), Figure::BLACK);
+    King enemy_king(board, std::make_pair(Board::G, Board::FIVE), Figure::BLACK);
+    Rook enemy_rook(board, std::make_pair(Board::D, Board::FOUR), Figure::BLACK);
+    Queen enemy_queen(board, std::make_pair(Board::H, Board::ONE), Figure::BLACK);
+    auto moves = king.calculatePossibleMoves();
+    VERIFY_CONTAINS(moves, createMove(Board::F, Board::TWO, nullptr));
+    VERIFY_CONTAINS(moves, createMove(Board::D, Board::FOUR, &enemy_rook));
+    VERIFY_EQUALS(moves.size(), 2lu);
+  }
   TEST_END
 }
 
