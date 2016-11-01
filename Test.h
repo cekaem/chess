@@ -73,7 +73,7 @@ std::string Test::error_message_;
 int Test::number_of_failed_tests_ = 0;
 
 template <typename T>
-void VerifyIsEqual(T expr1, T expr2, int line) {
+void VerifyIsEqual(const T& expr1, const T& expr2, int line) {
   if (expr1 != expr2) {
     Test::error_line_ = line;
     std::stringstream ss;
@@ -115,6 +115,15 @@ void VerifyContains(const std::vector<T>& vec, const T& value, int line) {
   }
 }
 
+template <typename T>
+void VerifyDoesNotContain(const std::vector<T>& vec, const T& value, int line) {
+  auto iter = std::find(vec.begin(), vec.end(), value);
+  if (iter != std::end(vec)) {
+    Test::error_line_ = line;
+    throw Test::TestFailedException();
+  }
+}
+
 #define TEST_PROCEDURE(T) Test::TestResult T()
 
 #define TEST(str, fun) Test::Check(str, fun())
@@ -127,6 +136,7 @@ void VerifyContains(const std::vector<T>& vec, const T& value, int line) {
 #define VERIFY_IS_EQUAL(expr1, expr2) VerifyIsEqual(expr1, expr2, __LINE__)
 #define VERIFY_EQUALS(expr1, expr2) VerifyIsEqual(expr1, expr2, __LINE__)
 #define VERIFY_CONTAINS(container, value) VerifyContains(container, value, __LINE__)
+#define VERIFY_DOES_NOT_CONTAIN(container, value) VerifyDoesNotContain(container, value, __LINE__)
 #define VERIFY_IS_NULL(ptr) VerifyIsNull(ptr, __LINE__)
 #define VERIFY_IS_ZERO(expr) VERIFY_IS_EQUAL(expr, 0)
 

@@ -38,6 +38,7 @@ class Figure {
 
   virtual std::vector<Move> calculatePossibleMoves() const = 0;
   virtual Type getType() const = 0;
+  void validateMoves(bool validate) const { validate_moves_ = validate; }
   virtual void move(Field field) throw(IllegalMoveException);
 
   bool operator==(const Figure& other) const;
@@ -52,6 +53,7 @@ class Figure {
  private:
   const Color color_;
   const int value_;
+  mutable bool validate_moves_{true};
   bool moved_at_least_once_{false};
 };
 
@@ -102,11 +104,13 @@ class King : public Figure {
   King(Board& board, Field field, Color color) noexcept
     : Figure(board, field, color, KING_VALUE) {}
   std::vector<Move> calculatePossibleMoves() const override;
+  void move(Field field) throw(IllegalMoveException) override;
   Type getType() const override { return KING; }
+  bool isChecked() const;
 
  private:
-  void lookForMovesOfEnemyFigures(bool look) const { look_for_enemy_moves_ = look; }
-  mutable bool look_for_enemy_moves_{true};
+  void addPossibleCastlings(std::vector<Move>& moves) const;
+  mutable bool look_for_enemies_moves_{true};
 };
 
 class FiguresFactory {

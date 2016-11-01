@@ -16,13 +16,16 @@ std::ostream& operator<<(std::ostream& ostr, const Board& board) {
 }
 
 Board::Board() noexcept {
-  // TODO: is it necessary?
   std::array<Figure*, BoardSize> row;
   row.fill(nullptr);
   fields_.fill(row);
 }
 
 Board::Board(const Board& other) noexcept {
+  std::array<Figure*, BoardSize> row;
+  row.fill(nullptr);
+  fields_.fill(row);
+
   const auto& figures = other.getFigures();
   for (const auto& figure : figures) {
     addFigure(figure->getType(), figure->getPosition(), figure->getColor());
@@ -45,7 +48,7 @@ bool Board::operator==(const Board& other) const noexcept {
           return false;
         }
       }
-      if (*fields_[i][j] != *fields_[i][j]) {
+      if (*fields_[i][j] != *other.fields_[i][j]) {
         return false;
       }
     }
@@ -57,15 +60,17 @@ bool Board::operator!=(const Board& other) const noexcept {
   return !(*this == other);
 }
 
-void Board::addFigure(Figure::Type type, Field field, Figure::Color color)
+const Figure* Board::addFigure(Figure::Type type, Field field, Figure::Color color)
     throw(FieldNotEmptyException) {
   const Figure* old_figure = fields_[field.letter][field.number];
   if (old_figure != nullptr) {
     throw FieldNotEmptyException(field, old_figure);
   }
   auto figure = FiguresFactory::GetFiguresFactory().createFigure(type, *this, field, color);
-  fields_[field.letter][field.number] = figure.get();
+  Figure* new_figure = figure.get();
+  fields_[field.letter][field.number] = new_figure;
   figures_.push_back(std::move(figure));
+  return new_figure;  
 }
 
 void Board::removeFigure(Field field) throw(NoFigureException) {
@@ -87,11 +92,25 @@ const Figure* Board::moveFigure(Field old_field, Field new_field)
     throw NoFigureException(old_field);
   }
   const Figure* bitten_figure = fields_[new_field.letter][new_field.number];
-  fields_[new_field.letter][new_field.number] = figure;
   figure->move(new_field);
+  fields_[new_field.letter][new_field.number] = figure;
+  fields_[old_field.letter][old_field.number] = nullptr;
   return bitten_figure;
 }
 
 const Figure* Board::getFigure(Field field) const noexcept {
   return fields_[field.letter][field.number];
+}
+
+std::vector<const Figure*> Board::getFigures() const noexcept {
+  std::vector<const Figure*> result;
+  for (size_t i = 0; i < BoardSize; ++i) {
+    for (size_t j = 0; j < BoardSize; ++j) {
+      const Figure* figure = fields_[i][j];
+      if (figure != nullptr) {
+        result.push_back(figure);
+      }
+    }
+  }
+  return result;
 }

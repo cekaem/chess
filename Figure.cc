@@ -167,15 +167,17 @@ Figure::Figure(Board& board, Field field, Color color, int value) noexcept
 }
 
 void Figure::move(Field field) throw(IllegalMoveException) {
-  auto possible_moves = calculatePossibleMoves();
-  auto iter = std::find_if(possible_moves.begin(), possible_moves.end(),
-      [field](const auto& iter) -> bool {
-        return field == iter.first;
-      });
-  if (iter == possible_moves.end()) {
-    throw IllegalMoveException(this, field);
+  if (validate_moves_) {
+    auto possible_moves = calculatePossibleMoves();
+    auto iter = std::find_if(possible_moves.begin(), possible_moves.end(),
+        [field](const auto& iter) -> bool {
+          return field == iter.first;
+        });
+    if (iter == possible_moves.end()) {
+      throw IllegalMoveException(this, field);
+    }
   }
-  field_ = Field(field);
+  field_ = field;
   moved_at_least_once_ = true;
   board_.setEnPassantPawn(nullptr);
 }
@@ -237,7 +239,7 @@ std::vector<Figure::Move> Pawn::calculatePossibleMoves() const {
   }
 
   // Check for "en passant"
-  const Pawn* en_passant = board_.getEnPassantPawn();
+  const Figure* en_passant = board_.getEnPassantPawn();
   if (en_passant != nullptr) {
     if ((getColor() == WHITE && field_.number == Field::FIVE) ||
         (getColor() == BLACK && field_.number == Field::FOUR)) {
@@ -304,6 +306,29 @@ std::vector<Figure::Move> Queen::calculatePossibleMoves() const {
   return result;
 }
 
+bool King::isChecked() const {
+  auto figures = board_.getFigures();
+  for (const auto& figure : figures) {
+    if (figure->getColor() != getColor()) {
+      if (figure->getType() == Figure::KING) {
+        static_cast<const King*>(figure)->look_for_enemies_moves_ = false;
+      }
+      auto moves = figure->calculatePossibleMoves();
+      if (figure->getType() == Figure::KING) {
+        static_cast<const King*>(figure)->look_for_enemies_moves_ = true;
+      }
+      auto iter = std::find_if(moves.begin(), moves.end(),
+          [this](const auto& move) -> bool {
+            return move.second == this;
+          });
+      if (iter != moves.end()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 std::vector<Figure::Move> King::calculatePossibleMoves() const {
   std::vector<Move> result;
   Field::Letter current_l = field_.letter;
@@ -336,45 +361,107 @@ std::vector<Figure::Move> King::calculatePossibleMoves() const {
 
   // King can't go to field threated by enemy figure
   for (auto possible_move : possible_moves) {
-    Field new_field(static_cast<Field::Letter>(possible_move.first),
-                    static_cast<Field::Number>(possible_move.second));
-    Board copy_board = board_;
-    // Move king on the board's copy
-    copy_board.removeFigure(field_);
-    const Figure* figure = copy_board.getFigure(new_field);
-    if (figure != nullptr) {
-      copy_board.removeFigure(new_field);
+    bool move_is_valid = true;
+    if (look_for_enemies_moves_) {
+      Field new_field(static_cast<Field::Letter>(possible_move.first),
+                      static_cast<Field::Number>(possible_move.second));
+      Board copy_board = board_;
+      const Figure* figure = copy_board.getFigure(getPosition());
+      assert(figure->getType() == Figure::KING);
+      const King* king = static_cast<const King*>(figure);
+      king->validateMoves(false);
+      copy_board.moveFigure(getPosition(), new_field);
+      move_is_valid = !king->isChecked();
     }
-    copy_board.addFigure(getType(), new_field, getColor());
-    bool is_move_valid = true;
-
-    if (look_for_enemy_moves_) {
-      // Go through all enemy moves
-      const auto& figures = board_.getFigures();
-      for (const auto& f : figures) {
-        if (f->getColor() == getColor()) {
-          continue;
-        }
-        if (f->getValue() == KING_VALUE) {
-          static_cast<const King*>(f.get())->lookForMovesOfEnemyFigures(false);
-        }
-        auto enemy_moves = f->calculatePossibleMoves();
-        if (f->getValue() == KING_VALUE) {
-          static_cast<const King*>(f.get())->lookForMovesOfEnemyFigures(false);
-        }
-        auto iter = std::find_if(enemy_moves.begin(), enemy_moves.end(),
-           [this](const auto& move) -> bool {
-             return move.second == this;
-           });
-        if (iter != enemy_moves.end()) {
-          // Some enemy figure threatens the king
-          is_move_valid = false;
-        }
-      }
-    }
-    if (is_move_valid) {
+    if (move_is_valid) {
+      const Figure* figure = board_.getFigure(Field(static_cast<Field::Letter>(possible_move.first),
+                                                    static_cast<Field::Number>(possible_move.second)));
       addMove(result, possible_move.first, possible_move.second, figure);
     }
   }
+  if (look_for_enemies_moves_) {
+    addPossibleCastlings(result);
+  }
   return result;
+}
+
+void King::addPossibleCastlings(std::vector<Move>& moves) const {
+  if (movedAtLeastOnce()) {
+    return;
+  }
+  // Check if king is in the right position
+  if ((getColor() == Figure::WHITE && getPosition() != Field(Field::E, Field::ONE)) ||
+      (getColor() == Figure::BLACK && getPosition() != Field(Field::E, Field::EIGHT))) {
+    return;
+  }
+
+  if (isChecked()) {
+    return;
+  }
+
+  const Field::Number number = getColor() == Figure::WHITE ? Field::ONE : Field::EIGHT;
+
+  // Check for king castling
+  const Figure* figure = board_.getFigure(Field(Field::H, number));
+  if (figure && figure->getType() == Figure::ROOK && figure->getColor() == getColor() &&
+      figure->movedAtLeastOnce() == false && board_.getFigure(Field(Field::F, number)) == nullptr &&
+      board_.getFigure(Field(Field::G, number)) == nullptr) {
+    Board copy = board_;
+    const Figure* f = copy.getFigure(Field(Field::E, number));
+    assert(f->getType() == Figure::KING);
+    const King* king = static_cast<const King*>(f);
+    king->validateMoves(false);
+    copy.moveFigure(Field(Field::E, number), Field(Field::F, number));
+    if (king->isChecked() == false) {
+      copy.moveFigure(Field(Field::F, number), Field(Field::G, number));
+      if (king->isChecked() == false) {
+        addMove(moves, Field::G, number, nullptr);
+      }
+    }
+  }
+
+  // Check for queen castling
+  figure = board_.getFigure(Field(Field::A, number));
+  if (figure && figure->getType() == Figure::ROOK && figure->getColor() == getColor() &&
+      figure->movedAtLeastOnce() == false && board_.getFigure(Field(Field::D, number)) == nullptr &&
+      board_.getFigure(Field(Field::C, number)) == nullptr &&
+      board_.getFigure(Field(Field::B, number)) == nullptr) {
+    Board copy = board_;
+    const Figure* f = copy.getFigure(Field(Field::E, number));
+    assert(f->getType() == Figure::KING);
+    const King* king = static_cast<const King*>(f);
+    king->validateMoves(false);
+    copy.moveFigure(Field(Field::E, number), Field(Field::D, number));
+    if (king->isChecked() == false) {
+      copy.moveFigure(Field(Field::D, number), Field(Field::C, number));
+      if (king->isChecked() == false) {
+        addMove(moves, Field::C, number, nullptr);
+      }
+    }
+  }
+}
+
+void King::move(Field field) throw(Figure::IllegalMoveException) {
+  Field old_field = getPosition();
+  Figure::move(field);
+  const Field::Number number = getColor() == Figure::WHITE ? Field::ONE : Field::EIGHT;
+  if (old_field == Field(Field::E, number)) {
+    if (field == Field(Field::G, number)) {
+      const Figure* rook = board_.getFigure(Field(Field::H, number));
+      if (rook->getType() != Figure::ROOK) {
+        throw IllegalMoveException(this, field);
+      }
+      rook->validateMoves(false);
+      board_.moveFigure(Field(Field::H, number), Field(Field::F, number));
+      rook->validateMoves(true);
+    } else if (field == Field(Field::C, number)) {
+      const Figure* rook = board_.getFigure(Field(Field::A, number));
+      if (rook->getType() != Figure::ROOK) {
+        throw IllegalMoveException(this, field);
+      }
+      rook->validateMoves(false);
+      board_.moveFigure(Field(Field::A, number), Field(Field::D, number));
+      rook->validateMoves(true);
+    }
+  }
 }
