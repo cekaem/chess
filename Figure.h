@@ -22,24 +22,18 @@ class Figure {
   enum Type {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
   enum Color {WHITE, BLACK};
 
-  struct IllegalMoveException : std::exception {
-    IllegalMoveException(const Figure* figure, Field field)
-      : figure_(figure), field_(field) {}
-    const Figure* figure_;
-    Field field_;
-  };
-
   using Move = std::pair<Field, const Figure*>;
 
   Color getColor() const { return color_; }
-  Field& getPosition() const { return field_; }
+  Field getPosition() const { return field_; }
   virtual int getValue() const { return value_; }
   bool movedAtLeastOnce() const { return moved_at_least_once_; }
+  void lookForKingUnveils(bool look) const { look_for_king_unveils_ = look; }
+  bool looksForKingUnveils() const { return look_for_king_unveils_; }
 
   virtual std::vector<Move> calculatePossibleMoves() const = 0;
   virtual Type getType() const = 0;
-  void validateMoves(bool validate) const { validate_moves_ = validate; }
-  virtual void move(Field field) throw(IllegalMoveException);
+  virtual void move(Field field);
 
   bool operator==(const Figure& other) const;
   bool operator!=(const Figure& other) const;
@@ -48,13 +42,13 @@ class Figure {
   Figure(Board& board, Field field, Color color, int value) noexcept;
 
   Board& board_;
-  mutable Field field_;
+  Field field_;
 
  private:
   const Color color_;
   const int value_;
-  mutable bool validate_moves_{true};
   bool moved_at_least_once_{false};
+  mutable bool look_for_king_unveils_{true};
 };
 
 
@@ -62,7 +56,7 @@ class Pawn : public Figure {
  public:
   Pawn(Board& board, Field field, Color color) noexcept
     : Figure(board, field, color, PAWN_VALUE) {}
-  void move(Field field) throw(IllegalMoveException) override;
+  void move(Field field) override;
   std::vector<Move> calculatePossibleMoves() const override;
   Type getType() const override { return PAWN; }
 };
@@ -104,13 +98,14 @@ class King : public Figure {
   King(Board& board, Field field, Color color) noexcept
     : Figure(board, field, color, KING_VALUE) {}
   std::vector<Move> calculatePossibleMoves() const override;
-  void move(Field field) throw(IllegalMoveException) override;
+  void move(Field field) override;
   Type getType() const override { return KING; }
   bool isChecked() const;
+  bool isCheckmated() const;
+  bool isStalemated() const;
 
  private:
   void addPossibleCastlings(std::vector<Move>& moves) const;
-  mutable bool look_for_enemies_moves_{true};
 };
 
 class FiguresFactory {

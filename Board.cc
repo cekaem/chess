@@ -30,6 +30,7 @@ Board::Board(const Board& other) noexcept {
   for (const auto& figure : figures) {
     addFigure(figure->getType(), figure->getPosition(), figure->getColor());
   }
+  validate_moves_ = false;
 }
 
 bool Board::operator==(const Board& other) const noexcept {
@@ -85,11 +86,21 @@ void Board::removeFigure(Field field) throw(NoFigureException) {
         }));
 }
 
-const Figure* Board::moveFigure(Field old_field, Field new_field)
-    throw(Board::NoFigureException, Figure::IllegalMoveException) {
+const Figure* Board::moveFigure(Field old_field, Field new_field, bool validate_move)
+    throw(Board::NoFigureException, Board::IllegalMoveException) {
   Figure* figure = fields_[old_field.letter][old_field.number];
   if (figure == nullptr) {
     throw NoFigureException(old_field);
+  }
+  if (validate_moves_ && validate_move) {
+    auto possible_moves = figure->calculatePossibleMoves();
+    auto iter = std::find_if(possible_moves.begin(), possible_moves.end(),
+        [new_field](const auto& iter) -> bool {
+          return new_field == iter.first;
+        });
+    if (iter == possible_moves.end()) {
+      throw IllegalMoveException(figure, new_field);
+    }
   }
   const Figure* bitten_figure = fields_[new_field.letter][new_field.number];
   figure->move(new_field);
@@ -113,4 +124,16 @@ std::vector<const Figure*> Board::getFigures() const noexcept {
     }
   }
   return result;
+}
+
+const Figure* Board::getKing(Figure::Color color) const noexcept {
+  for (size_t i = 0; i < BoardSize; ++i) {
+    for (size_t j = 0; j < BoardSize; ++j) {
+      const Figure* figure = fields_[i][j];
+      if (figure && figure->getType() == Figure::KING && figure->getColor() == color) {
+        return figure;
+      }
+    }
+  }
+  return nullptr;
 }

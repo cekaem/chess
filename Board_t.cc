@@ -46,7 +46,7 @@ TEST_PROCEDURE(test2) {
   TEST_END
 }
 
-// Checks if Board::moveFigure throws Figure::IllegalMoveException
+// Checks if Board::moveFigure throws Board::IllegalMoveException
 TEST_PROCEDURE(test3) {
   TEST_START
   Field field1(Field::D, Field::TWO);
@@ -55,7 +55,7 @@ TEST_PROCEDURE(test3) {
   const Figure* bishop = board.addFigure(Figure::BISHOP, field1, Figure::WHITE);
   try {
     board.moveFigure(field1, field2);
-  } catch(const Figure::IllegalMoveException& exception) {
+  } catch(const Board::IllegalMoveException& exception) {
     VERIFY_EQUALS(exception.field_, field2);
     VERIFY_EQUALS(exception.figure_, bishop);
     RETURN
@@ -168,7 +168,7 @@ int main() {
   try {
     TEST("Field::Field throws Field::WrongFieldException", test1);
     TEST("Board::moveFigure throws Board::NoFigureException", test2);
-    TEST("Board::moveFigure throws Figure::IllegalMoveException", test3);
+    TEST("Board::moveFigure throws Board::IllegalMoveException", test3);
     TEST("Board::addFigure throws FieldNotEmptyException", test4);
     TEST("Board::removeFigure throws Board::NoFigureException", test5);
     TEST("Board::add/remove/move/getFigure works correctly", test7);

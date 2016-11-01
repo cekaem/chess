@@ -27,19 +27,27 @@ class Board {
     const Figure* figure_;
   };
 
+  struct IllegalMoveException : std::exception {
+    IllegalMoveException(const Figure* figure, Field field)
+      : figure_(figure), field_(field) {}
+    const Figure* figure_;
+    Field field_;
+  };
+
   Board() noexcept;
   Board(const Board& other) noexcept;
 
   const Figure* addFigure(Figure::Type type, Field field, Figure::Color color)
       throw(FieldNotEmptyException);
   void removeFigure(Field field) throw(NoFigureException);
-  const Figure* moveFigure(Field old_field, Field new_field)
-      throw(NoFigureException, Figure::IllegalMoveException);
+  const Figure* moveFigure(Field old_field, Field new_field, bool validate_move = true)
+      throw(NoFigureException, IllegalMoveException);
   const Figure* getFigure(Field field) const noexcept;
   std::vector<const Figure*> getFigures() const noexcept;
-  const auto& getFields() const { return fields_; }
-  void setEnPassantPawn(Figure* pawn) { en_passant_pawn_ = pawn; }
-  const Figure* getEnPassantPawn() const { return en_passant_pawn_; }
+  const auto& getFields() const noexcept { return fields_; }
+  void setEnPassantPawn(Figure* pawn) noexcept { en_passant_pawn_ = pawn; }
+  const Figure* getEnPassantPawn() const noexcept { return en_passant_pawn_; }
+  const Figure* getKing(Figure::Color color) const noexcept;
 
   bool operator==(const Board& other) const noexcept;
   bool operator!=(const Board& other) const noexcept;
@@ -51,6 +59,7 @@ class Board {
   Board(Board&& other) = delete;
 
   Figure* en_passant_pawn_{nullptr};
+  bool validate_moves_{true};
   std::vector<std::unique_ptr<Figure>> figures_;
   std::array<std::array<Figure*, BoardSize>, BoardSize> fields_;
 };

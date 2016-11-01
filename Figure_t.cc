@@ -325,6 +325,61 @@ TEST_PROCEDURE(test6) {
   TEST_END
 }
 
+// Checks if King::isChecked and King::isCheckmated work correctly
+TEST_PROCEDURE(test7) {
+  TEST_START
+  Board board;
+  const King* king = static_cast<const King*>(board.addFigure(Figure::KING, Field(Field::E, Field::THREE), Figure::WHITE));
+  VERIFY_FALSE(king->isChecked());
+  VERIFY_FALSE(king->isCheckmated());
+  board.addFigure(Figure::ROOK, Field(Field::A, Field::FOUR), Figure::BLACK);
+  VERIFY_FALSE(king->isChecked());
+  VERIFY_FALSE(king->isCheckmated());
+  board.addFigure(Figure::QUEEN, Field(Field::D, Field::TWO), Figure::BLACK);
+  VERIFY_TRUE(king->isChecked());
+  VERIFY_FALSE(king->isCheckmated());
+  board.addFigure(Figure::KNIGHT, Field(Field::G, Field::FIVE), Figure::BLACK);
+  VERIFY_TRUE(king->isChecked());
+  VERIFY_FALSE(king->isCheckmated());
+  board.addFigure(Figure::PAWN, Field(Field::C, Field::THREE), Figure::BLACK);
+  VERIFY_TRUE(king->isChecked());
+  VERIFY_TRUE(king->isCheckmated());
+  TEST_END
+}
+
+//Checks if figures does not unveil their king
+TEST_PROCEDURE(test8) {
+  TEST_START
+  Board board;
+  board.addFigure(Figure::KING, Field(Field::D, Field::FOUR), Figure::WHITE);
+  const Figure* pawn = board.addFigure(Figure::PAWN, Field(Field::C, Field::FOUR), Figure::WHITE);
+  const Figure* knight = board.addFigure(Figure::KNIGHT, Field(Field::C, Field::THREE), Figure::WHITE);
+  const Figure* bishop = board.addFigure(Figure::BISHOP, Field(Field::E, Field::FIVE), Figure::WHITE);
+  const Figure* rook = board.addFigure(Figure::ROOK, Field(Field::D, Field::THREE), Figure::WHITE);
+  board.addFigure(Figure::ROOK, Field(Field::A, Field::TWO), Figure::WHITE);
+  const Figure* queen = board.addFigure(Figure::QUEEN, Field(Field::E, Field::FOUR), Figure::WHITE);
+  board.addFigure(Figure::KING, Field(Field::H, Field::TWO), Figure::BLACK);
+  board.addFigure(Figure::BISHOP, Field(Field::A, Field::ONE), Figure::BLACK);
+  const Figure* enemy_bishop = board.addFigure(Figure::BISHOP, Field(Field::F, Field::SIX), Figure::BLACK);
+  board.addFigure(Figure::ROOK, Field(Field::A, Field::FOUR), Figure::BLACK);
+  const Figure* enemy_rook = board.addFigure(Figure::ROOK, Field(Field::D, Field::TWO), Figure::BLACK);
+  const Figure* enemy_queen = board.addFigure(Figure::QUEEN, Field(Field::F, Field::FOUR), Figure::BLACK);
+  auto moves = pawn->calculatePossibleMoves();
+  VERIFY_TRUE(moves.empty());
+  moves = knight->calculatePossibleMoves();
+  VERIFY_TRUE(moves.empty());
+  moves = bishop->calculatePossibleMoves();
+  VERIFY_CONTAINS(moves, createMove(Field::F, Field::SIX, enemy_bishop));
+  VERIFY_EQUALS(moves.size(), 1lu);
+  moves = rook->calculatePossibleMoves();
+  VERIFY_CONTAINS(moves, createMove(Field::D, Field::TWO, enemy_rook));
+  VERIFY_EQUALS(moves.size(), 1lu);
+  moves = queen->calculatePossibleMoves();
+  VERIFY_CONTAINS(moves, createMove(Field::F, Field::FOUR, enemy_queen));
+  VERIFY_EQUALS(moves.size(), 1lu);
+  TEST_END
+}
+
 } // unnamed namespace
 
 
@@ -336,6 +391,8 @@ int main() {
     TEST("Rook::calculatePossibleMoves returns proper moves", test4);
     TEST("Queen::calculatePossibleMoves returns proper moves", test5);
     TEST("King::calculatePossibleMoves returns proper moves", test6);
+    TEST("King::isChecked and King::isCheckmated works properly", test7);
+    TEST("Figures does not unveil their king", test8);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;

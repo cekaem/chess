@@ -133,6 +133,8 @@ void VerifyDoesNotContain(const std::vector<T>& vec, const T& value, int line) {
     Test test;
 
 #define VERIFY(expr) test.Verify(expr, __LINE__)
+#define VERIFY_TRUE(expr) test.Verify(expr, __LINE__)
+#define VERIFY_FALSE(expr) test.Verify(expr == false, __LINE__)
 #define VERIFY_IS_EQUAL(expr1, expr2) VerifyIsEqual(expr1, expr2, __LINE__)
 #define VERIFY_EQUALS(expr1, expr2) VerifyIsEqual(expr1, expr2, __LINE__)
 #define VERIFY_CONTAINS(container, value) VerifyContains(container, value, __LINE__)
