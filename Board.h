@@ -11,6 +11,13 @@
 #include "Field.h"
 #include "Figure.h"
 
+class BoardDrawer {
+ public:
+  virtual void onFigureAdded(Figure::Type type, Figure::Color color, Field field) = 0;
+  virtual void onFigureRemoved(Field field) = 0;
+  virtual void onFigureMoved(Field start_field, Field end_field) = 0;
+};
+
 class Board {
  public:
   constexpr static size_t BoardSize = 8;
@@ -39,15 +46,17 @@ class Board {
 
   const Figure* addFigure(Figure::Type type, Field field, Figure::Color color)
       throw(FieldNotEmptyException);
-  void removeFigure(Field field) throw(NoFigureException);
-  const Figure* moveFigure(Field old_field, Field new_field, bool validate_move = true)
+  std::unique_ptr<Figure> removeFigure(Field field) throw(NoFigureException);
+  std::unique_ptr<Figure> moveFigure(Field old_field, Field new_field, bool validate_move = true)
       throw(NoFigureException, IllegalMoveException);
   const Figure* getFigure(Field field) const noexcept;
-  std::vector<const Figure*> getFigures() const noexcept;
+  const std::vector<std::unique_ptr<Figure>>& getFigures() const noexcept { return figures_; }
   const auto& getFields() const noexcept { return fields_; }
   void setEnPassantPawn(Figure* pawn) noexcept { en_passant_pawn_ = pawn; }
   const Figure* getEnPassantPawn() const noexcept { return en_passant_pawn_; }
   const Figure* getKing(Figure::Color color) const noexcept;
+  void addBoardDrawer(BoardDrawer* drawer) noexcept;
+  void removeBoardDrawer(BoardDrawer* drawer) noexcept;
 
   bool operator==(const Board& other) const noexcept;
   bool operator!=(const Board& other) const noexcept;
@@ -61,6 +70,7 @@ class Board {
   Figure* en_passant_pawn_{nullptr};
   bool validate_moves_{true};
   std::vector<std::unique_ptr<Figure>> figures_;
+  std::vector<BoardDrawer*> drawers_;
   std::array<std::array<Figure*, BoardSize>, BoardSize> fields_;
 };
 

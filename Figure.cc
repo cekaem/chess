@@ -319,8 +319,8 @@ std::vector<Figure::Move> Queen::calculatePossibleMoves() const {
 }
 
 bool King::isChecked() const {
-  auto figures = board_.getFigures();
-  for (const auto& figure : figures) {
+  const auto& figures = board_.getFigures();
+  for (auto& figure : figures) {
     if (figure->getColor() != getColor()) {
       figure->lookForKingUnveils(false);
       auto moves = figure->calculatePossibleMoves();

@@ -84,6 +84,17 @@ void VerifyIsEqual(const T& expr1, const T& expr2, int line) {
 }
 
 template <typename T>
+void VerifyIsEqual(const T* ptr1, const T* ptr2, int line) {
+  if (ptr1 != ptr2) {
+    Test::error_line_ = line;
+    std::stringstream ss;
+    ss << ptr1 << " vs " << ptr2;
+    Test::SetErrorMessage(ss.str());
+    throw Test::TestFailedException();
+  }
+}
+
+template <typename T>
 void VerifyIsNull(const T* ptr1, int line) {
   if (ptr1 != nullptr) {
     Test::error_line_ = line;

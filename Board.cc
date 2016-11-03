@@ -71,22 +71,33 @@ const Figure* Board::addFigure(Figure::Type type, Field field, Figure::Color col
   Figure* new_figure = figure.get();
   fields_[field.letter][field.number] = new_figure;
   figures_.push_back(std::move(figure));
+  for (auto drawer : drawers_) {
+    drawer->onFigureAdded(type, color, field);
+  }
   return new_figure;  
 }
 
-void Board::removeFigure(Field field) throw(NoFigureException) {
+std::unique_ptr<Figure> Board::removeFigure(Field field) throw(NoFigureException) {
   const Figure* figure = fields_[field.letter][field.number];
   if (figure == nullptr) {
     throw NoFigureException(field);
   }
   fields_[field.letter][field.number] = nullptr;
-  figures_.erase(std::find_if(figures_.begin(), figures_.end(),
+  auto iter = std::find_if(figures_.begin(), figures_.end(),
         [figure](const auto& iter) -> bool {
           return iter.get() == figure;
-        }));
+        });
+  std::unique_ptr<Figure> result = std::move(*iter);
+  figures_.erase(iter);
+
+  for (auto drawer : drawers_) {
+    drawer->onFigureRemoved(field);
+  }
+
+  return std::move(result);
 }
 
-const Figure* Board::moveFigure(Field old_field, Field new_field, bool validate_move)
+std::unique_ptr<Figure> Board::moveFigure(Field old_field, Field new_field, bool validate_move)
     throw(Board::NoFigureException, Board::IllegalMoveException) {
   Figure* figure = fields_[old_field.letter][old_field.number];
   if (figure == nullptr) {
@@ -102,28 +113,23 @@ const Figure* Board::moveFigure(Field old_field, Field new_field, bool validate_
       throw IllegalMoveException(figure, new_field);
     }
   }
+
+  std::unique_ptr<Figure> result;
   const Figure* bitten_figure = fields_[new_field.letter][new_field.number];
+  if (bitten_figure) {
+    result = removeFigure(new_field);
+  }
   figure->move(new_field);
   fields_[new_field.letter][new_field.number] = figure;
   fields_[old_field.letter][old_field.number] = nullptr;
-  return bitten_figure;
+  for (auto drawer : drawers_) {
+    drawer->onFigureMoved(old_field, new_field);
+  }
+  return std::move(result);
 }
 
 const Figure* Board::getFigure(Field field) const noexcept {
   return fields_[field.letter][field.number];
-}
-
-std::vector<const Figure*> Board::getFigures() const noexcept {
-  std::vector<const Figure*> result;
-  for (size_t i = 0; i < BoardSize; ++i) {
-    for (size_t j = 0; j < BoardSize; ++j) {
-      const Figure* figure = fields_[i][j];
-      if (figure != nullptr) {
-        result.push_back(figure);
-      }
-    }
-  }
-  return result;
 }
 
 const Figure* Board::getKing(Figure::Color color) const noexcept {
@@ -136,4 +142,12 @@ const Figure* Board::getKing(Figure::Color color) const noexcept {
     }
   }
   return nullptr;
+}
+
+void Board::addBoardDrawer(BoardDrawer* drawer) noexcept {
+  drawers_.push_back(drawer);
+}
+
+void Board::removeBoardDrawer(BoardDrawer* drawer) noexcept {
+  drawers_.erase(std::remove(drawers_.begin(), drawers_.end(), drawer), drawers_.end());
 }

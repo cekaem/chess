@@ -111,8 +111,8 @@ TEST_PROCEDURE(test7) {
   VERIFY_EQUALS(board.getFigure(field1), queen);
   Field field2(Field::F, Field::FOUR);
   const Figure* knight = board.addFigure(Figure::KNIGHT, field2, Figure::WHITE);
-  const Figure* bitten_figure = board.moveFigure(field1, field2);
-  VERIFY_EQUALS(bitten_figure, knight);
+  std::unique_ptr<Figure> bitten_figure = board.moveFigure(field1, field2);
+  VERIFY_EQUALS(bitten_figure.get(), knight);
   VERIFY_EQUALS(board.getFigure(field2), queen);
   VERIFY_EQUALS(queen->getPosition(), field2);
   VERIFY_CONTAINS(board.getFigures(), queen);
