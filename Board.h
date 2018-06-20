@@ -44,11 +44,9 @@ class Board {
   Board() noexcept;
   Board(const Board& other) noexcept;
 
-  const Figure* addFigure(Figure::Type type, Field field, Figure::Color color)
-      throw(FieldNotEmptyException);
-  std::unique_ptr<Figure> removeFigure(Field field) throw(NoFigureException);
-  std::unique_ptr<Figure> moveFigure(Field old_field, Field new_field, bool validate_move = true)
-      throw(NoFigureException, IllegalMoveException);
+  const Figure* addFigure(Figure::Type type, Field field, Figure::Color color);
+  std::unique_ptr<Figure> removeFigure(Field field);
+  std::unique_ptr<Figure> moveFigure(Field old_field, Field new_field, bool validate_move = true);
   const Figure* getFigure(Field field) const noexcept;
   const std::vector<std::unique_ptr<Figure>>& getFigures() const noexcept { return figures_; }
   const auto& getFields() const noexcept { return fields_; }

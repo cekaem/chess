@@ -23,7 +23,7 @@ struct Field {
     return !(*this == other);
   }
 
-  Field(Letter l, Number n) throw (WrongFieldException) : letter(l), number(n) {
+  Field(Letter l, Number n) : letter(l), number(n) {
     if (l < A || l > H || n < ONE || n > EIGHT) {
       throw WrongFieldException(l, n);
     }

@@ -61,8 +61,7 @@ bool Board::operator!=(const Board& other) const noexcept {
   return !(*this == other);
 }
 
-const Figure* Board::addFigure(Figure::Type type, Field field, Figure::Color color)
-    throw(FieldNotEmptyException) {
+const Figure* Board::addFigure(Figure::Type type, Field field, Figure::Color color) {
   const Figure* old_figure = fields_[field.letter][field.number];
   if (old_figure != nullptr) {
     throw FieldNotEmptyException(field, old_figure);
@@ -77,7 +76,7 @@ const Figure* Board::addFigure(Figure::Type type, Field field, Figure::Color col
   return new_figure;  
 }
 
-std::unique_ptr<Figure> Board::removeFigure(Field field) throw(NoFigureException) {
+std::unique_ptr<Figure> Board::removeFigure(Field field) {
   const Figure* figure = fields_[field.letter][field.number];
   if (figure == nullptr) {
     throw NoFigureException(field);
@@ -97,8 +96,7 @@ std::unique_ptr<Figure> Board::removeFigure(Field field) throw(NoFigureException
   return std::move(result);
 }
 
-std::unique_ptr<Figure> Board::moveFigure(Field old_field, Field new_field, bool validate_move)
-    throw(Board::NoFigureException, Board::IllegalMoveException) {
+std::unique_ptr<Figure> Board::moveFigure(Field old_field, Field new_field, bool validate_move) {
   Figure* figure = fields_[old_field.letter][old_field.number];
   if (figure == nullptr) {
     throw NoFigureException(old_field);
