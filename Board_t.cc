@@ -1,5 +1,6 @@
 /* Component tests for class Board */
 
+#include "Mock.h"
 #include "Test.h"
 #include "Board.h"
 
@@ -10,6 +11,13 @@
 #include <utility>
 
 namespace {
+
+class BoardDrawerMock : public BoardDrawer {
+ public:
+  MOCK_METHOD3(onFigureAdded, void(Figure::Type, Figure::Color, Field));
+  MOCK_METHOD1(onFigureRemoved, void(Field));
+  MOCK_METHOD2(onFigureMoved, void(Field, Field));
+};
 
 // Checks if Field::WrongFieldException is properly thrown from Field::Field
 TEST_PROCEDURE(test1) {
@@ -161,6 +169,23 @@ TEST_PROCEDURE(test9) {
   TEST_END
 }
 
+// Checks if BoardDrawer::onFigureAdded/Moved/Removed are called correctly
+TEST_PROCEDURE(test10) {
+  TEST_START
+  BoardDrawerMock drawer;
+  Board board;
+  board.addBoardDrawer(&drawer);
+  Field field1(Field::D, Field::FOUR);
+  Field field2(Field::E, Field::FOUR);
+  EXPECT_CALL(drawer, onFigureAdded(Figure::QUEEN, Figure::BLACK, field1));
+  EXPECT_CALL(drawer, onFigureMoved(field1, field2));
+  EXPECT_CALL(drawer, onFigureRemoved(field2));
+  board.addFigure(Figure::QUEEN, field1, Figure::BLACK);
+  board.moveFigure(field1, field2);
+  board.removeFigure(field2);
+  TEST_END
+}
+
 } // unnamed namespace
 
 
@@ -174,6 +199,7 @@ int main() {
     TEST("Board::add/remove/move/getFigure works correctly", test7);
     TEST("Board::operator== works correctly", test8);
     TEST("Board::Board(const Board&) works correctly", test9);
+    TEST("BoardDrawer::onFigureAdded/Moved/Removed are called correctly", test10);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;

@@ -32,6 +32,7 @@ class Test {
   Test() {
     error_line_ = 0;
     error_message_.clear();
+    current_test_status_ = TEST_OK;
   }
 
   static void Check(const char* name, TestResult is_ok) {
@@ -66,11 +67,13 @@ class Test {
   static int error_line_;
   static std::string error_message_;
   static int number_of_failed_tests_;
+  static TestResult current_test_status_;
 };
 
 int Test::error_line_ = 0;
 std::string Test::error_message_;
 int Test::number_of_failed_tests_ = 0;
+Test::TestResult Test::current_test_status_ = Test::TEST_OK;
 
 template <typename T>
 void VerifyIsEqual(const T& expr1, const T& expr2, int line) {
@@ -152,6 +155,7 @@ void VerifyDoesNotContain(const std::vector<T>& vec, const T& value, int line) {
 #define VERIFY_DOES_NOT_CONTAIN(container, value) VerifyDoesNotContain(container, value, __LINE__)
 #define VERIFY_IS_NULL(ptr) VerifyIsNull(ptr, __LINE__)
 #define VERIFY_IS_ZERO(expr) VERIFY_IS_EQUAL(expr, 0)
+#define SET_TEST_FAILED() Test::current_test_status_ = Test::TEST_FAILED;
 
 #define TEST_END \
   }\
@@ -160,7 +164,7 @@ void VerifyDoesNotContain(const std::vector<T>& vec, const T& value, int line) {
   }\
   catch (Test::EndTestException& e) {\
   }\
-  return Test::TEST_OK;
+  return Test::current_test_status_;
 
 #define RETURN throw Test::EndTestException();
 
