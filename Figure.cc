@@ -7,15 +7,19 @@
 
 namespace {
 
-void addMove(std::vector<Figure::Move>& moves, unsigned l, unsigned n, const Figure* f) {
-  auto move = std::make_pair(Field(static_cast<Field::Letter>(l),
-                                   static_cast<Field::Number>(n)),
-                             f);
+void addMove(std::vector<Figure::Move>& moves,
+             const Figure* figure,
+             unsigned new_l,
+             unsigned new_n) {
+  auto move = std::make_pair(figure->getPosition(),
+                             Field(static_cast<Field::Letter>(new_l),
+                                   static_cast<Field::Number>(new_n)));
   moves.push_back(move);
 }
 
 void calculateMovesForBishop(std::vector<Figure::Move>& moves, const Board& board, Field field) {
-  Figure::Color my_color = board.getFigure(field)->getColor();
+  const Figure* bishop = board.getFigure(field);
+  Figure::Color my_color = bishop->getColor();
 
   int l = field.letter - 1;
   int n = field.number - 1;
@@ -23,7 +27,7 @@ void calculateMovesForBishop(std::vector<Figure::Move>& moves, const Board& boar
     const Figure* figure = board.getFigure(Field(static_cast<Field::Letter>(l),
                                                  static_cast<Field::Number>(n)));
     if (!figure || (figure && figure->getColor() != my_color)) {
-      addMove(moves, l, n, figure);
+      addMove(moves, bishop, l, n);
     }
     if (figure != nullptr) {
       break;
@@ -37,7 +41,7 @@ void calculateMovesForBishop(std::vector<Figure::Move>& moves, const Board& boar
     const Figure* figure = board.getFigure(Field(static_cast<Field::Letter>(l),
                                                  static_cast<Field::Number>(n)));
     if (!figure || (figure && figure->getColor() != my_color)) {
-      addMove(moves, l, n, figure);
+      addMove(moves, bishop, l, n);
     }
     if (figure != nullptr) {
       break;
@@ -51,7 +55,7 @@ void calculateMovesForBishop(std::vector<Figure::Move>& moves, const Board& boar
     const Figure* figure = board.getFigure(Field(static_cast<Field::Letter>(l),
                                                  static_cast<Field::Number>(n)));
     if (!figure || (figure && figure->getColor() != my_color)) {
-      addMove(moves, l, n, figure);
+      addMove(moves, bishop, l, n);
     }
     if (figure != nullptr) {
       break;
@@ -65,7 +69,7 @@ void calculateMovesForBishop(std::vector<Figure::Move>& moves, const Board& boar
     const Figure* figure = board.getFigure(Field(static_cast<Field::Letter>(l),
                                                  static_cast<Field::Number>(n)));
     if (!figure || (figure && figure->getColor() != my_color)) {
-      addMove(moves, l, n, figure);
+      addMove(moves, bishop, l, n);
     }
     if (figure != nullptr) {
       break;
@@ -75,7 +79,8 @@ void calculateMovesForBishop(std::vector<Figure::Move>& moves, const Board& boar
 }
 
 void calculateMovesForRook(std::vector<Figure::Move>& moves, const Board& board, Field field) {
-  Figure::Color my_color = board.getFigure(field)->getColor();
+  const Figure* rook = board.getFigure(field);
+  Figure::Color my_color = rook->getColor();
 
   int l = field.letter - 1;
   int n = field.number;
@@ -83,7 +88,7 @@ void calculateMovesForRook(std::vector<Figure::Move>& moves, const Board& board,
     const Figure* figure = board.getFigure(Field(static_cast<Field::Letter>(l),
                                                  static_cast<Field::Number>(n)));
     if (!figure || (figure && figure->getColor() != my_color)) {
-      addMove(moves, l, n, figure);
+      addMove(moves, rook, l, n);
     }
     if (figure != nullptr) {
       break;
@@ -96,7 +101,7 @@ void calculateMovesForRook(std::vector<Figure::Move>& moves, const Board& board,
     const Figure* figure = board.getFigure(Field(static_cast<Field::Letter>(l),
                                                  static_cast<Field::Number>(n)));
     if (!figure || (figure && figure->getColor() != my_color)) {
-      addMove(moves, l, n, figure);
+      addMove(moves, rook, l, n);
     }
     if (figure != nullptr) {
       break;
@@ -110,7 +115,7 @@ void calculateMovesForRook(std::vector<Figure::Move>& moves, const Board& board,
     const Figure* figure = board.getFigure(Field(static_cast<Field::Letter>(l),
                                                  static_cast<Field::Number>(n)));
     if (!figure || (figure && figure->getColor() != my_color)) {
-      addMove(moves, l, n, figure);
+      addMove(moves, rook, l, n);
     }
     if (figure != nullptr) {
       break;
@@ -123,7 +128,7 @@ void calculateMovesForRook(std::vector<Figure::Move>& moves, const Board& board,
     const Figure* figure = board.getFigure(Field(static_cast<Field::Letter>(l),
                                                  static_cast<Field::Number>(n)));
     if (!figure || (figure && figure->getColor() != my_color)) {
-      addMove(moves, l, n, figure);
+      addMove(moves, rook, l, n);
     }
     if (figure != nullptr) {
       break;
@@ -144,7 +149,7 @@ void removeKingUnveils(std::vector<Figure::Move>& moves, const Board& board, con
         [board, field](const auto& move) -> bool {
           Board copy = board;
           const Figure* f = copy.getFigure(field);
-          copy.moveFigure(field, move.first);
+          copy.moveFigure(field, move.second);
           return copy.getKing(f->getColor())->isChecked();
         }), moves.end());
 }
@@ -220,28 +225,28 @@ std::vector<Figure::Move> Pawn::calculatePossibleMoves() const {
   const int offset = getColor() == WHITE ? 1 : -1;
 
   if (fields[current_l][current_n + offset] == nullptr) {
-    addMove(result, current_l, current_n + offset, nullptr);
+    addMove(result, this, current_l, current_n + offset);
   }
 
   if ((getColor() == WHITE && field_.number == Field::TWO) ||
       (getColor() == BLACK && field_.number == Field::SEVEN)) {
     if (fields[current_l][current_n + offset] == nullptr &&
         fields[current_l][current_n + 2 * offset] == nullptr) {
-      addMove(result, current_l, current_n + 2 * offset, nullptr);
+      addMove(result, this, current_l, current_n + 2 * offset);
     }
   }
 
   if (current_l != Field::A) {
     const Figure* figure = fields[current_l - 1][current_n + offset];
     if (figure != nullptr && figure->getColor() != getColor()) {
-      addMove(result, current_l - 1, current_n + offset, figure);
+      addMove(result, this, current_l - 1, current_n + offset);
     }
   }
 
   if (current_l != Field::H) {
     const Figure* figure = fields[current_l + 1][current_n + offset];
     if (figure != nullptr && figure->getColor() != getColor()) {
-      addMove(result, current_l + 1, current_n + offset, figure);
+      addMove(result, this, current_l + 1, current_n + offset);
     }
   }
 
@@ -251,9 +256,9 @@ std::vector<Figure::Move> Pawn::calculatePossibleMoves() const {
     if ((getColor() == WHITE && field_.number == Field::FIVE) ||
         (getColor() == BLACK && field_.number == Field::FOUR)) {
       if (field_.letter != Field::A && fields[field_.letter - 1][field_.number] == en_passant) {
-        addMove(result, current_l - 1, current_n + offset, en_passant);
+        addMove(result, this, current_l - 1, current_n + offset);
       } else if (field_.letter != Field::H && fields[field_.letter + 1][field_.number] == en_passant) {
-        addMove(result, current_l + 1, current_n + offset, en_passant);
+        addMove(result, this, current_l + 1, current_n + offset);
       }
     }
   }
@@ -288,7 +293,7 @@ std::vector<Figure::Move> Knight::calculatePossibleMoves() const {
                 static_cast<Field::Number>(iter.second));
     const Figure* figure = board_.getFigure(field);
     if (figure == nullptr || (figure != nullptr  && figure->getColor() != getColor())) {
-      addMove(result, field.letter, field.number, figure);
+      addMove(result, this, field.letter, field.number);
     }
   }
 
@@ -327,7 +332,7 @@ bool King::isChecked() const {
       figure->lookForKingUnveils(true);
       auto iter = std::find_if(moves.begin(), moves.end(),
           [this](const auto& move) -> bool {
-            return move.second == this;
+            return move.second == field_;
           });
       if (iter != moves.end()) {
         return true;
@@ -342,7 +347,16 @@ bool King::isCheckmated() const {
 }
 
 bool King::isStalemated() const {
-  return isChecked() == false && calculatePossibleMoves().empty();
+  if (isChecked() == true || !calculatePossibleMoves().empty()) {
+    return false;
+  }
+  std::vector<const Figure*> figures = board_.getFigures(getColor());
+  for (const Figure* figure: figures) {
+    if (figure != this && !figure->calculatePossibleMoves().empty()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 std::vector<Figure::Move> King::calculatePossibleMoves() const {
@@ -389,9 +403,7 @@ std::vector<Figure::Move> King::calculatePossibleMoves() const {
       move_is_valid = !king->isChecked();
     }
     if (move_is_valid) {
-      const Figure* figure = board_.getFigure(Field(static_cast<Field::Letter>(possible_move.first),
-                                                    static_cast<Field::Number>(possible_move.second)));
-      addMove(result, possible_move.first, possible_move.second, figure);
+      addMove(result, this, possible_move.first, possible_move.second);
     }
   }
   if (looksForKingUnveils()) {
@@ -430,7 +442,7 @@ void King::addPossibleCastlings(std::vector<Move>& moves) const {
     if (king->isChecked() == false) {
       copy.moveFigure(Field(Field::F, number), Field(Field::G, number));
       if (king->isChecked() == false) {
-        addMove(moves, Field::G, number, nullptr);
+        addMove(moves, this, Field::G, number);
       }
     }
   }
@@ -449,7 +461,7 @@ void King::addPossibleCastlings(std::vector<Move>& moves) const {
     if (king->isChecked() == false) {
       copy.moveFigure(Field(Field::D, number), Field(Field::C, number));
       if (king->isChecked() == false) {
-        addMove(moves, Field::C, number, nullptr);
+        addMove(moves, this, Field::C, number);
       }
     }
   }

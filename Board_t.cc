@@ -105,7 +105,7 @@ TEST_PROCEDURE(test5) {
   TEST_END
 }
 
-// Checks if Board::add/move/remove/getFigure works correctly
+// Checks if Board::add/move/remove/getFigure(s) works correctly
 TEST_PROCEDURE(test7) {
   TEST_START
   Board board;
@@ -120,6 +120,12 @@ TEST_PROCEDURE(test7) {
   VERIFY_EQUALS(board.getFigure(field1), queen);
   Field field2(Field::F, Field::FOUR);
   const Figure* knight = board.addFigure(Figure::KNIGHT, field2, Figure::WHITE);
+  auto white_figures = board.getFigures(Figure::WHITE);
+  auto black_figures = board.getFigures(Figure::BLACK);
+  VERIFY_CONTAINS(white_figures, knight);
+  VERIFY_EQUALS(white_figures.size(), 1ul);
+  VERIFY_CONTAINS(black_figures, queen);
+  VERIFY_EQUALS(black_figures.size(), 1ul);
   std::unique_ptr<Figure> bitten_figure = board.moveFigure(field1, field2);
   VERIFY_EQUALS(bitten_figure.get(), knight);
   VERIFY_EQUALS(board.getFigure(field2), queen);
@@ -206,7 +212,7 @@ int main() {
     TEST("Board::moveFigure throws Board::IllegalMoveException", test3);
     TEST("Board::addFigure throws FieldNotEmptyException", test4);
     TEST("Board::removeFigure throws Board::NoFigureException", test5);
-    TEST("Board::add/remove/move/getFigure works correctly", test7);
+    TEST("Board::add/remove/move/getFigure(s) works correctly", test7);
     TEST("Board::operator== works correctly", test8);
     TEST("Board::Board(const Board&) works correctly", test9);
     TEST("BoardDrawer::onFigureAdded/Moved/Removed are called correctly", test10);

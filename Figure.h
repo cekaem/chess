@@ -22,7 +22,7 @@ class Figure {
   enum Type {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
   enum Color {WHITE, BLACK};
 
-  using Move = std::pair<Field, const Figure*>;
+  using Move = std::pair<Field, Field>;
 
   Color getColor() const { return color_; }
   Field getPosition() const { return field_; }

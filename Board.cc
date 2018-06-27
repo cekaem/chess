@@ -105,7 +105,7 @@ std::unique_ptr<Figure> Board::moveFigure(Field old_field, Field new_field, bool
     auto possible_moves = figure->calculatePossibleMoves();
     auto iter = std::find_if(possible_moves.begin(), possible_moves.end(),
         [new_field](const auto& iter) -> bool {
-          return new_field == iter.first;
+          return new_field == iter.second;
         });
     if (iter == possible_moves.end()) {
       throw IllegalMoveException(figure, new_field);
@@ -134,6 +134,16 @@ const Figure* Board::getFigure(Field field) const noexcept {
   return fields_[field.letter][field.number];
 }
 
+std::vector<const Figure*> Board::getFigures(Figure::Color color) const noexcept {
+  std::vector<const Figure*> figures;
+  for (const auto& figure: figures_) {
+    if (figure->getColor() == color) {
+      figures.push_back(figure.get());
+    }
+  }
+  return figures;
+}
+
 const King* Board::getKing(Figure::Color color) const noexcept {
   for (size_t i = 0; i < BoardSize; ++i) {
     for (size_t j = 0; j < BoardSize; ++j) {
@@ -144,6 +154,42 @@ const King* Board::getKing(Figure::Color color) const noexcept {
     }
   }
   return nullptr;
+}
+
+void Board::setStandardBoard() {
+  addFigure(Figure::PAWN, Field(Field::A, Field::TWO), Figure::WHITE);
+  addFigure(Figure::PAWN, Field(Field::B, Field::TWO), Figure::WHITE);
+  addFigure(Figure::PAWN, Field(Field::C, Field::TWO), Figure::WHITE);
+  addFigure(Figure::PAWN, Field(Field::D, Field::TWO), Figure::WHITE);
+  addFigure(Figure::PAWN, Field(Field::E, Field::TWO), Figure::WHITE);
+  addFigure(Figure::PAWN, Field(Field::F, Field::TWO), Figure::WHITE);
+  addFigure(Figure::PAWN, Field(Field::G, Field::TWO), Figure::WHITE);
+  addFigure(Figure::PAWN, Field(Field::H, Field::TWO), Figure::WHITE);
+  addFigure(Figure::ROOK, Field(Field::A, Field::ONE), Figure::WHITE);
+  addFigure(Figure::ROOK, Field(Field::H, Field::ONE), Figure::WHITE);
+  addFigure(Figure::KNIGHT, Field(Field::B, Field::ONE), Figure::WHITE);
+  addFigure(Figure::KNIGHT, Field(Field::G, Field::ONE), Figure::WHITE);
+  addFigure(Figure::BISHOP, Field(Field::C, Field::ONE), Figure::WHITE);
+  addFigure(Figure::BISHOP, Field(Field::F, Field::ONE), Figure::WHITE);
+  addFigure(Figure::QUEEN, Field(Field::D, Field::ONE), Figure::WHITE);
+  addFigure(Figure::KING, Field(Field::E, Field::ONE), Figure::WHITE);
+
+  addFigure(Figure::PAWN, Field(Field::A, Field::SEVEN), Figure::BLACK);
+  addFigure(Figure::PAWN, Field(Field::B, Field::SEVEN), Figure::BLACK);
+  addFigure(Figure::PAWN, Field(Field::C, Field::SEVEN), Figure::BLACK);
+  addFigure(Figure::PAWN, Field(Field::D, Field::SEVEN), Figure::BLACK);
+  addFigure(Figure::PAWN, Field(Field::E, Field::SEVEN), Figure::BLACK);
+  addFigure(Figure::PAWN, Field(Field::F, Field::SEVEN), Figure::BLACK);
+  addFigure(Figure::PAWN, Field(Field::G, Field::SEVEN), Figure::BLACK);
+  addFigure(Figure::PAWN, Field(Field::H, Field::SEVEN), Figure::BLACK);
+  addFigure(Figure::ROOK, Field(Field::A, Field::EIGHT), Figure::BLACK);
+  addFigure(Figure::ROOK, Field(Field::H, Field::EIGHT), Figure::BLACK);
+  addFigure(Figure::KNIGHT, Field(Field::B, Field::EIGHT), Figure::BLACK);
+  addFigure(Figure::KNIGHT, Field(Field::G, Field::EIGHT), Figure::BLACK);
+  addFigure(Figure::BISHOP, Field(Field::C, Field::EIGHT), Figure::BLACK);
+  addFigure(Figure::BISHOP, Field(Field::F, Field::EIGHT), Figure::BLACK);
+  addFigure(Figure::QUEEN, Field(Field::D, Field::EIGHT), Figure::BLACK);
+  addFigure(Figure::KING, Field(Field::E, Field::EIGHT), Figure::BLACK);
 }
 
 void Board::addBoardDrawer(BoardDrawer* drawer) noexcept {

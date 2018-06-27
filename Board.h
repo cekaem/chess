@@ -49,10 +49,12 @@ class Board {
   std::unique_ptr<Figure> moveFigure(Field old_field, Field new_field, bool validate_move = true);
   const Figure* getFigure(Field field) const noexcept;
   const std::vector<std::unique_ptr<Figure>>& getFigures() const noexcept { return figures_; }
+  std::vector<const Figure*> getFigures(Figure::Color color) const noexcept;
   const auto& getFields() const noexcept { return fields_; }
   void setEnPassantPawn(Pawn* pawn) noexcept { en_passant_pawn_ = pawn; }
   const Pawn* getEnPassantPawn() const noexcept { return en_passant_pawn_; }
   const King* getKing(Figure::Color color) const noexcept;
+  void setStandardBoard();
   void addBoardDrawer(BoardDrawer* drawer) noexcept;
   void removeBoardDrawer(BoardDrawer* drawer) noexcept;
 

@@ -9,8 +9,8 @@
 
 namespace {
 
-Figure::Move createMove(Field::Letter l, Field::Number n, const Figure* f) {
-  return std::make_pair(Field(l, n), f);
+Figure::Move createMove(const Figure* figure, Field::Letter l, Field::Number n) {
+  return std::make_pair(figure->getPosition(), Field(l, n));
 }
 
 // Checks if Pawn::calculatePossibleMoves returns proper moves
@@ -21,7 +21,7 @@ TEST_PROCEDURE(test1) {
     Field field(Field::C, Field::FIVE);
     const Figure* pawn = board.addFigure(Figure::PAWN, field, Figure::WHITE);
     auto moves = pawn->calculatePossibleMoves();
-		VERIFY_CONTAINS(moves, createMove(Field::C, Field::SIX, nullptr));
+    VERIFY_CONTAINS(moves, createMove(pawn, Field::C, Field::SIX));
     VERIFY_EQUALS(moves.size(), 1lu);
   }
   {
@@ -29,18 +29,18 @@ TEST_PROCEDURE(test1) {
     Field field(Field::H, Field::SEVEN);
     const Figure* pawn = board.addFigure(Figure::PAWN, field, Figure::BLACK);
     auto moves = pawn->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::H, Field::SIX, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::H, Field::FIVE, nullptr));
+    VERIFY_CONTAINS(moves, createMove(pawn, Field::H, Field::SIX));
+    VERIFY_CONTAINS(moves, createMove(pawn, Field::H, Field::FIVE));
     VERIFY_EQUALS(moves.size(), 2lu);
   }
   {
     Board board;
     const Figure* pawn1 = board.addFigure(Figure::PAWN, Field(Field::E, Field::THREE), Figure::WHITE);
-    const Figure* pawn2 = board.addFigure(Figure::PAWN, Field(Field::F, Field::FOUR), Figure::BLACK);
+    board.addFigure(Figure::PAWN, Field(Field::F, Field::FOUR), Figure::BLACK);
     board.addFigure(Figure::PAWN, Field(Field::D, Field::FOUR), Figure::WHITE);
     board.addFigure(Figure::PAWN, Field(Field::E, Field::FOUR), Figure::BLACK);
     auto moves = pawn1->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::F, Field::FOUR, pawn2));
+    VERIFY_CONTAINS(moves, createMove(pawn1, Field::F, Field::FOUR));
     VERIFY_EQUALS(moves.size(), 1lu);
   }
   {
@@ -52,22 +52,22 @@ TEST_PROCEDURE(test1) {
     const Figure* pawn4 = board.addFigure(Figure::PAWN, Field(Field::D, Field::SEVEN), Figure::BLACK);
     VERIFY_IS_NULL(board.getEnPassantPawn());
     auto moves = pawn2->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::THREE, nullptr));
+    VERIFY_CONTAINS(moves, createMove(pawn2, Field::G, Field::THREE));
     VERIFY_EQUALS(moves.size(), 1lu);
     board.moveFigure(Field(Field::H, Field::TWO), Field(Field::H, Field::FOUR));
     VERIFY_EQUALS(board.getEnPassantPawn(), static_cast<const Pawn*>(pawn1));
     moves = pawn2->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::THREE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::H, Field::THREE, pawn1));
+    VERIFY_CONTAINS(moves, createMove(pawn2, Field::G, Field::THREE));
+    VERIFY_CONTAINS(moves, createMove(pawn2, Field::H, Field::THREE));
     VERIFY_EQUALS(moves.size(), 2lu);
     board.moveFigure(Field(Field::D, Field::SEVEN), Field(Field::D, Field::FIVE));
     VERIFY_EQUALS(board.getEnPassantPawn(), static_cast<const Pawn*>(pawn4));
     moves = pawn2->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::THREE, nullptr));
+    VERIFY_CONTAINS(moves, createMove(pawn2, Field::G, Field::THREE));
     VERIFY_EQUALS(moves.size(), 1lu);
     moves = pawn3->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::C, Field::SIX, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::D, Field::SIX, pawn4));
+    VERIFY_CONTAINS(moves, createMove(pawn3, Field::C, Field::SIX));
+    VERIFY_CONTAINS(moves, createMove(pawn3, Field::D, Field::SIX));
     VERIFY_EQUALS(moves.size(), 2lu);
   }
   TEST_END
@@ -80,32 +80,32 @@ TEST_PROCEDURE(test2) {
     Board board;
     const Figure* knight = board.addFigure(Figure::KNIGHT, Field(Field::E, Field::FOUR), Figure::WHITE);
     auto moves = knight->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::D, Field::SIX, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::F, Field::SIX, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::THREE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::F, Field::TWO, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::D, Field::TWO, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::C, Field::THREE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::C, Field::FIVE, nullptr));
+    VERIFY_CONTAINS(moves, createMove(knight, Field::D, Field::SIX));
+    VERIFY_CONTAINS(moves, createMove(knight, Field::F, Field::SIX));
+    VERIFY_CONTAINS(moves, createMove(knight, Field::G, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(knight, Field::G, Field::THREE));
+    VERIFY_CONTAINS(moves, createMove(knight, Field::F, Field::TWO));
+    VERIFY_CONTAINS(moves, createMove(knight, Field::D, Field::TWO));
+    VERIFY_CONTAINS(moves, createMove(knight, Field::C, Field::THREE));
+    VERIFY_CONTAINS(moves, createMove(knight, Field::C, Field::FIVE));
     VERIFY_EQUALS(moves.size(), 8lu);
   }
   {
     Board board;
     const Figure* knight = board.addFigure(Figure::KNIGHT, Field(Field::H, Field::EIGHT), Figure::BLACK);
     auto moves = knight->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::F, Field::SEVEN, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::SIX, nullptr));
+    VERIFY_CONTAINS(moves, createMove(knight, Field::F, Field::SEVEN));
+    VERIFY_CONTAINS(moves, createMove(knight, Field::G, Field::SIX));
     VERIFY_EQUALS(moves.size(), 2lu);
   }
   {
     Board board;
     const Figure* knight = board.addFigure(Figure::KNIGHT, Field(Field::B, Field::ONE), Figure::BLACK);
-    const Figure* enemy_knight = board.addFigure(Figure::KNIGHT, Field(Field::D, Field::TWO), Figure::WHITE);
+    board.addFigure(Figure::KNIGHT, Field(Field::D, Field::TWO), Figure::WHITE);
     board.addFigure(Figure::PAWN, Field(Field::C, Field::THREE), Figure::BLACK);
     auto moves = knight->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::A, Field::THREE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::D, Field::TWO, enemy_knight));
+    VERIFY_CONTAINS(moves, createMove(knight, Field::A, Field::THREE));
+    VERIFY_CONTAINS(moves, createMove(knight, Field::D, Field::TWO));
     VERIFY_EQUALS(moves.size(), 2lu);
   }
   TEST_END
@@ -118,31 +118,31 @@ TEST_PROCEDURE(test3) {
     Board board;
     const Figure* bishop = board.addFigure(Figure::BISHOP, Field(Field::D, Field::FOUR), Figure::BLACK);
     auto moves = bishop->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::C, Field::THREE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::B, Field::TWO, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::A, Field::ONE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::THREE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::F, Field::TWO, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::ONE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::C, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::B, Field::SIX, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::A, Field::SEVEN, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::F, Field::SIX, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::SEVEN, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::H, Field::EIGHT, nullptr));
+    VERIFY_CONTAINS(moves, createMove(bishop, Field::C, Field::THREE));
+    VERIFY_CONTAINS(moves, createMove(bishop, Field::B, Field::TWO));
+    VERIFY_CONTAINS(moves, createMove(bishop, Field::A, Field::ONE));
+    VERIFY_CONTAINS(moves, createMove(bishop, Field::E, Field::THREE));
+    VERIFY_CONTAINS(moves, createMove(bishop, Field::F, Field::TWO));
+    VERIFY_CONTAINS(moves, createMove(bishop, Field::G, Field::ONE));
+    VERIFY_CONTAINS(moves, createMove(bishop, Field::C, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(bishop, Field::B, Field::SIX));
+    VERIFY_CONTAINS(moves, createMove(bishop, Field::A, Field::SEVEN));
+    VERIFY_CONTAINS(moves, createMove(bishop, Field::E, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(bishop, Field::F, Field::SIX));
+    VERIFY_CONTAINS(moves, createMove(bishop, Field::G, Field::SEVEN));
+    VERIFY_CONTAINS(moves, createMove(bishop, Field::H, Field::EIGHT));
     VERIFY_EQUALS(moves.size(), 13lu);
   }
   {
     Board board;
     const Figure* bishop = board.addFigure(Figure::BISHOP, Field(Field::F, Field::TWO), Figure::WHITE);
     board.addFigure(Figure::KNIGHT, Field(Field::D, Field::FOUR), Figure::WHITE);
-    const Figure* enemy_pawn = board.addFigure(Figure::PAWN, Field(Field::G, Field::THREE), Figure::BLACK);
+    board.addFigure(Figure::PAWN, Field(Field::G, Field::THREE), Figure::BLACK);
     auto moves = bishop->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::ONE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::THREE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::ONE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::THREE, enemy_pawn));
+    VERIFY_CONTAINS(moves, createMove(bishop, Field::E, Field::ONE));
+    VERIFY_CONTAINS(moves, createMove(bishop, Field::E, Field::THREE));
+    VERIFY_CONTAINS(moves, createMove(bishop, Field::G, Field::ONE));
+    VERIFY_CONTAINS(moves, createMove(bishop, Field::G, Field::THREE));
     VERIFY_EQUALS(moves.size(), 4lu);
   }
   TEST_END
@@ -155,34 +155,34 @@ TEST_PROCEDURE(test4) {
     Board board;
     const Figure* rook = board.addFigure(Figure::ROOK, Field(Field::E, Field::FIVE), Figure::WHITE);
     auto moves = rook->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::D, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::C, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::B, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::A, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::SIX, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::SEVEN, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::EIGHT, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::F, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::H, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::FOUR, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::THREE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::TWO, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::ONE, nullptr));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::D, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::C, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::B, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::A, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::E, Field::SIX));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::E, Field::SEVEN));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::E, Field::EIGHT));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::F, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::G, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::H, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::E, Field::FOUR));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::E, Field::THREE));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::E, Field::TWO));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::E, Field::ONE));
     VERIFY_EQUALS(moves.size(), 14lu);
   }
   {
     Board board;
     const Figure* rook = board.addFigure(Figure::ROOK, Field(Field::D, Field::ONE), Figure::BLACK);
     board.addFigure(Figure::BISHOP, Field(Field::D, Field::THREE), Figure::BLACK);
-    const Figure* enemy_bishop = board.addFigure(Figure::BISHOP, Field(Field::E, Field::ONE), Figure::WHITE);
-    const Figure* enemy_knight = board.addFigure(Figure::KNIGHT, Field(Field::A, Field::ONE), Figure::WHITE);
+    board.addFigure(Figure::BISHOP, Field(Field::E, Field::ONE), Figure::WHITE);
+    board.addFigure(Figure::KNIGHT, Field(Field::A, Field::ONE), Figure::WHITE);
     auto moves = rook->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::C, Field::ONE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::B, Field::ONE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::D, Field::TWO, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::A, Field::ONE, enemy_knight));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::ONE, enemy_bishop));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::C, Field::ONE));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::B, Field::ONE));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::D, Field::TWO));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::A, Field::ONE));
+    VERIFY_CONTAINS(moves, createMove(rook, Field::E, Field::ONE));
     VERIFY_EQUALS(moves.size(), 5lu);
   }
   TEST_END
@@ -195,32 +195,32 @@ TEST_PROCEDURE(test5) {
     Board board;
     const Figure* queen = board.addFigure(Figure::QUEEN, Field(Field::E, Field::FIVE), Figure::BLACK);
     auto moves = queen->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::D, Field::SIX, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::C, Field::SEVEN, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::B, Field::EIGHT, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::SIX, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::SEVEN, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::EIGHT, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::F, Field::SIX, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::SEVEN, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::F, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::H, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::F, Field::FOUR, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::THREE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::H, Field::TWO, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::FOUR, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::THREE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::TWO, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::ONE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::D, Field::FOUR, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::C, Field::THREE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::B, Field::TWO, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::A, Field::ONE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::D, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::C, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::B, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::A, Field::FIVE, nullptr));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::D, Field::SIX));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::C, Field::SEVEN));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::B, Field::EIGHT));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::E, Field::SIX));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::E, Field::SEVEN));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::E, Field::EIGHT));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::F, Field::SIX));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::G, Field::SEVEN));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::F, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::G, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::H, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::F, Field::FOUR));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::G, Field::THREE));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::H, Field::TWO));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::E, Field::FOUR));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::E, Field::THREE));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::E, Field::TWO));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::E, Field::ONE));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::D, Field::FOUR));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::C, Field::THREE));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::B, Field::TWO));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::A, Field::ONE));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::D, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::C, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::B, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::A, Field::FIVE));
     VERIFY_EQUALS(moves.size(), 27lu);
   }
   {
@@ -228,16 +228,16 @@ TEST_PROCEDURE(test5) {
     const Figure* queen = board.addFigure(Figure::QUEEN, Field(Field::H, Field::THREE), Figure::WHITE);
     board.addFigure(Figure::ROOK, Field(Field::G, Field::THREE), Figure::WHITE);
     board.addFigure(Figure::KNIGHT, Field(Field::H, Field::SIX), Figure::WHITE);
-    const Figure* enemy_bishop = board.addFigure(Figure::BISHOP, Field(Field::F, Field::FIVE), Figure::BLACK);
-    const Figure* enemy_pawn = board.addFigure(Figure::PAWN, Field(Field::H, Field::TWO), Figure::BLACK);
+    board.addFigure(Figure::BISHOP, Field(Field::F, Field::FIVE), Figure::BLACK);
+    board.addFigure(Figure::PAWN, Field(Field::H, Field::TWO), Figure::BLACK);
     auto moves = queen->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::FOUR, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::F, Field::FIVE, enemy_bishop));
-    VERIFY_CONTAINS(moves, createMove(Field::H, Field::FOUR, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::H, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::H, Field::TWO, enemy_pawn));
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::TWO, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::F, Field::ONE, nullptr));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::G, Field::FOUR));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::F, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::H, Field::FOUR));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::H, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::H, Field::TWO));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::G, Field::TWO));
+    VERIFY_CONTAINS(moves, createMove(queen, Field::F, Field::ONE));
     VERIFY_EQUALS(moves.size(), 7lu);
   }
   TEST_END
@@ -250,14 +250,14 @@ TEST_PROCEDURE(test6) {
     Board board;
     const Figure* king = board.addFigure(Figure::KING, Field(Field::D, Field::FIVE), Figure::BLACK);
     auto moves = king->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::C, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::C, Field::SIX, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::D, Field::SIX, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::SIX, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::FIVE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::E, Field::FOUR, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::D, Field::FOUR, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::C, Field::FOUR, nullptr));
+    VERIFY_CONTAINS(moves, createMove(king, Field::C, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(king, Field::C, Field::SIX));
+    VERIFY_CONTAINS(moves, createMove(king, Field::D, Field::SIX));
+    VERIFY_CONTAINS(moves, createMove(king, Field::E, Field::SIX));
+    VERIFY_CONTAINS(moves, createMove(king, Field::E, Field::FIVE));
+    VERIFY_CONTAINS(moves, createMove(king, Field::E, Field::FOUR));
+    VERIFY_CONTAINS(moves, createMove(king, Field::D, Field::FOUR));
+    VERIFY_CONTAINS(moves, createMove(king, Field::C, Field::FOUR));
     VERIFY_EQUALS(moves.size(), 8lu);
   }
   {
@@ -266,11 +266,11 @@ TEST_PROCEDURE(test6) {
     board.addFigure(Figure::BISHOP, Field(Field::E, Field::FOUR), Figure::WHITE);
     board.addFigure(Figure::KNIGHT, Field(Field::F, Field::FOUR), Figure::BLACK);
     board.addFigure(Figure::KING, Field(Field::G, Field::FIVE), Figure::BLACK);
-    const Figure* enemy_rook = board.addFigure(Figure::ROOK, Field(Field::D, Field::FOUR), Figure::BLACK);
+    board.addFigure(Figure::ROOK, Field(Field::D, Field::FOUR), Figure::BLACK);
     board.addFigure(Figure::QUEEN, Field(Field::H, Field::ONE), Figure::BLACK);
     auto moves = king->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::F, Field::TWO, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::D, Field::FOUR, enemy_rook));
+    VERIFY_CONTAINS(moves, createMove(king, Field::F, Field::TWO));
+    VERIFY_CONTAINS(moves, createMove(king, Field::D, Field::FOUR));
     VERIFY_EQUALS(moves.size(), 2lu);
   }
   {
@@ -279,26 +279,26 @@ TEST_PROCEDURE(test6) {
     const Figure* white_king = board.addFigure(Figure::KING, Field(Field::E, Field::ONE), Figure::WHITE);
     const Figure* black_king = board.addFigure(Figure::KING, Field(Field::E, Field::EIGHT), Figure::BLACK);
     auto moves = white_king->calculatePossibleMoves();
-    VERIFY_DOES_NOT_CONTAIN(moves, createMove(Field::G, Field::ONE, nullptr));
-    VERIFY_DOES_NOT_CONTAIN(moves, createMove(Field::C, Field::ONE, nullptr));
+    VERIFY_DOES_NOT_CONTAIN(moves, createMove(white_king, Field::G, Field::ONE));
+    VERIFY_DOES_NOT_CONTAIN(moves, createMove(white_king, Field::C, Field::ONE));
     board.addFigure(Figure::ROOK, Field(Field::A, Field::ONE), Figure::WHITE);
     board.addFigure(Figure::ROOK, Field(Field::H, Field::ONE), Figure::WHITE);
     board.addFigure(Figure::ROOK, Field(Field::A, Field::EIGHT), Figure::BLACK);
     board.addFigure(Figure::ROOK, Field(Field::H, Field::EIGHT), Figure::BLACK);
     moves = white_king->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::ONE, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::C, Field::ONE, nullptr));
+    VERIFY_CONTAINS(moves, createMove(white_king, Field::G, Field::ONE));
+    VERIFY_CONTAINS(moves, createMove(white_king, Field::C, Field::ONE));
     moves = black_king->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::EIGHT, nullptr));
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::EIGHT, nullptr));
+    VERIFY_CONTAINS(moves, createMove(black_king, Field::G, Field::EIGHT));
+    VERIFY_CONTAINS(moves, createMove(black_king, Field::G, Field::EIGHT));
     board.addFigure(Figure::QUEEN, Field(Field::D, Field::FOUR), Figure::BLACK);
     moves = white_king->calculatePossibleMoves();
-    VERIFY_DOES_NOT_CONTAIN(moves, createMove(Field::G, Field::ONE, nullptr));
-    VERIFY_DOES_NOT_CONTAIN(moves, createMove(Field::C, Field::ONE, nullptr));
+    VERIFY_DOES_NOT_CONTAIN(moves, createMove(black_king, Field::G, Field::ONE));
+    VERIFY_DOES_NOT_CONTAIN(moves, createMove(black_king, Field::C, Field::ONE));
     board.addFigure(Figure::BISHOP, Field(Field::H, Field::FIVE), Figure::WHITE);
     moves = black_king->calculatePossibleMoves();
-    VERIFY_DOES_NOT_CONTAIN(moves, createMove(Field::G, Field::EIGHT, nullptr));
-    VERIFY_DOES_NOT_CONTAIN(moves, createMove(Field::C, Field::EIGHT, nullptr));
+    VERIFY_DOES_NOT_CONTAIN(moves, createMove(black_king, Field::G, Field::EIGHT));
+    VERIFY_DOES_NOT_CONTAIN(moves, createMove(black_king, Field::C, Field::EIGHT));
   }
   {
     Board board;
@@ -311,13 +311,13 @@ TEST_PROCEDURE(test6) {
     board.moveFigure(Field(Field::A, Field::ONE), Field(Field::A, Field::TWO));
     board.moveFigure(Field(Field::A, Field::TWO), Field(Field::A, Field::ONE));
     auto moves = white_king->calculatePossibleMoves();
-    VERIFY_CONTAINS(moves, createMove(Field::G, Field::ONE, nullptr));
-    VERIFY_DOES_NOT_CONTAIN(moves, createMove(Field::C, Field::ONE, nullptr));
+    VERIFY_CONTAINS(moves, createMove(white_king, Field::G, Field::ONE));
+    VERIFY_DOES_NOT_CONTAIN(moves, createMove(white_king, Field::C, Field::ONE));
     board.moveFigure(Field(Field::E, Field::ONE), Field(Field::E, Field::TWO));
     board.moveFigure(Field(Field::E, Field::TWO), Field(Field::E, Field::ONE));
     moves = white_king->calculatePossibleMoves();
-    VERIFY_DOES_NOT_CONTAIN(moves, createMove(Field::C, Field::ONE, nullptr));
-    VERIFY_DOES_NOT_CONTAIN(moves, createMove(Field::G, Field::ONE, nullptr));
+    VERIFY_DOES_NOT_CONTAIN(moves, createMove(white_king, Field::C, Field::ONE));
+    VERIFY_DOES_NOT_CONTAIN(moves, createMove(white_king, Field::G, Field::ONE));
     board.moveFigure(Field(Field::E, Field::EIGHT), Field(Field::G, Field::EIGHT));
     VERIFY_EQUALS(black_rook->getPosition(), Field(Field::F, Field::EIGHT));
     VERIFY_EQUALS(board.getFigure(Field(Field::F, Field::EIGHT)), black_rook);
@@ -360,23 +360,40 @@ TEST_PROCEDURE(test8) {
   const Figure* queen = board.addFigure(Figure::QUEEN, Field(Field::E, Field::FOUR), Figure::WHITE);
   board.addFigure(Figure::KING, Field(Field::H, Field::TWO), Figure::BLACK);
   board.addFigure(Figure::BISHOP, Field(Field::A, Field::ONE), Figure::BLACK);
-  const Figure* enemy_bishop = board.addFigure(Figure::BISHOP, Field(Field::F, Field::SIX), Figure::BLACK);
+  board.addFigure(Figure::BISHOP, Field(Field::F, Field::SIX), Figure::BLACK);
   board.addFigure(Figure::ROOK, Field(Field::A, Field::FOUR), Figure::BLACK);
-  const Figure* enemy_rook = board.addFigure(Figure::ROOK, Field(Field::D, Field::TWO), Figure::BLACK);
-  const Figure* enemy_queen = board.addFigure(Figure::QUEEN, Field(Field::F, Field::FOUR), Figure::BLACK);
+  board.addFigure(Figure::ROOK, Field(Field::D, Field::TWO), Figure::BLACK);
+  board.addFigure(Figure::QUEEN, Field(Field::F, Field::FOUR), Figure::BLACK);
   auto moves = pawn->calculatePossibleMoves();
   VERIFY_TRUE(moves.empty());
   moves = knight->calculatePossibleMoves();
   VERIFY_TRUE(moves.empty());
   moves = bishop->calculatePossibleMoves();
-  VERIFY_CONTAINS(moves, createMove(Field::F, Field::SIX, enemy_bishop));
+  VERIFY_CONTAINS(moves, createMove(bishop, Field::F, Field::SIX));
   VERIFY_EQUALS(moves.size(), 1lu);
   moves = rook->calculatePossibleMoves();
-  VERIFY_CONTAINS(moves, createMove(Field::D, Field::TWO, enemy_rook));
+  VERIFY_CONTAINS(moves, createMove(rook, Field::D, Field::TWO));
   VERIFY_EQUALS(moves.size(), 1lu);
   moves = queen->calculatePossibleMoves();
-  VERIFY_CONTAINS(moves, createMove(Field::F, Field::FOUR, enemy_queen));
+  VERIFY_CONTAINS(moves, createMove(queen, Field::F, Field::FOUR));
   VERIFY_EQUALS(moves.size(), 1lu);
+  TEST_END
+}
+
+// Checks if King::isStalemated works properly
+TEST_PROCEDURE(test9) {
+  TEST_START
+  Board board;
+  const King* king = static_cast<const King*>(board.addFigure(Figure::KING, Field(Field::B, Field::ONE), Figure::WHITE));
+  VERIFY_FALSE(king->isStalemated());
+  board.addFigure(Figure::ROOK, Field(Field::A, Field::EIGHT), Figure::BLACK);
+  VERIFY_FALSE(king->isStalemated());
+  board.addFigure(Figure::ROOK, Field(Field::C, Field::TWO), Figure::BLACK);
+  VERIFY_FALSE(king->isStalemated());
+  board.addFigure(Figure::KNIGHT, Field(Field::E, Field::THREE), Figure::BLACK);
+  VERIFY_TRUE(king->isStalemated());
+  board.addFigure(Figure::PAWN, Field(Field::H, Field::TWO), Figure::WHITE);
+  VERIFY_FALSE(king->isStalemated());
   TEST_END
 }
 
@@ -393,6 +410,7 @@ int main() {
     TEST("King::calculatePossibleMoves returns proper moves", test6);
     TEST("King::isChecked and King::isCheckmated works properly", test7);
     TEST("Figures does not unveil their king", test8);
+    TEST("King::isStalemated works properly", test9);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;
