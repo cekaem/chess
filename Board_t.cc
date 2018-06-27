@@ -14,6 +14,7 @@ namespace {
 
 class BoardDrawerMock : public BoardDrawer {
  public:
+  MOCK_CLASS(BoardDrawerMock)
   MOCK_METHOD3(onFigureAdded, void(Figure::Type, Figure::Color, Field));
   MOCK_METHOD1(onFigureRemoved, void(Field));
   MOCK_METHOD2(onFigureMoved, void(Field, Field));
