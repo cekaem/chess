@@ -113,15 +113,19 @@ std::unique_ptr<Figure> Board::moveFigure(Field old_field, Field new_field, bool
   }
 
   std::unique_ptr<Figure> result;
-  const Figure* bitten_figure = fields_[new_field.letter][new_field.number];
-  if (bitten_figure) {
+  const Figure* beaten_figure = fields_[new_field.letter][new_field.number];
+  if (beaten_figure) {
     result = removeFigure(new_field);
   }
   figure->move(new_field);
   fields_[new_field.letter][new_field.number] = figure;
   fields_[old_field.letter][old_field.number] = nullptr;
+  
+  Figure::Color kings_color = !figure->getColor();
+  const King* king = getKing(kings_color);
+  bool is_check = king != nullptr && king->isChecked();
   for (auto drawer : drawers_) {
-    drawer->onFigureMoved(old_field, new_field);
+    drawer->onFigureMoved(old_field, new_field, beaten_figure != nullptr, is_check);
   }
   return std::move(result);
 }
@@ -130,12 +134,12 @@ const Figure* Board::getFigure(Field field) const noexcept {
   return fields_[field.letter][field.number];
 }
 
-const Figure* Board::getKing(Figure::Color color) const noexcept {
+const King* Board::getKing(Figure::Color color) const noexcept {
   for (size_t i = 0; i < BoardSize; ++i) {
     for (size_t j = 0; j < BoardSize; ++j) {
       const Figure* figure = fields_[i][j];
       if (figure && figure->getType() == Figure::KING && figure->getColor() == color) {
-        return figure;
+        return static_cast<const King*>(figure);
       }
     }
   }

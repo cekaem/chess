@@ -145,7 +145,7 @@ void removeKingUnveils(std::vector<Figure::Move>& moves, const Board& board, con
           Board copy = board;
           const Figure* f = copy.getFigure(field);
           copy.moveFigure(field, move.first);
-          return static_cast<const King*>(copy.getKing(f->getColor()))->isChecked();
+          return copy.getKing(f->getColor())->isChecked();
         }), moves.end());
 }
 
@@ -246,7 +246,7 @@ std::vector<Figure::Move> Pawn::calculatePossibleMoves() const {
   }
 
   // Check for "en passant"
-  const Figure* en_passant = board_.getEnPassantPawn();
+  const Pawn* en_passant = board_.getEnPassantPawn();
   if (en_passant != nullptr) {
     if ((getColor() == WHITE && field_.number == Field::FIVE) ||
         (getColor() == BLACK && field_.number == Field::FOUR)) {

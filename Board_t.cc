@@ -17,7 +17,7 @@ class BoardDrawerMock : public BoardDrawer {
   MOCK_CLASS(BoardDrawerMock)
   MOCK_METHOD3(onFigureAdded, void(Figure::Type, Figure::Color, Field));
   MOCK_METHOD1(onFigureRemoved, void(Field));
-  MOCK_METHOD2(onFigureMoved, void(Field, Field));
+  MOCK_METHOD4(onFigureMoved, void(Field, Field, bool, bool));
 };
 
 // Checks if Field::WrongFieldException is properly thrown from Field::Field
@@ -178,12 +178,21 @@ TEST_PROCEDURE(test10) {
   board.addBoardDrawer(&drawer);
   Field field1(Field::D, Field::FOUR);
   Field field2(Field::E, Field::FOUR);
+  Field field3(Field::E, Field::FIVE);
+  Field field4(Field::C, Field::TWO);
   EXPECT_CALL(drawer, onFigureAdded(Figure::QUEEN, Figure::BLACK, field1));
-  EXPECT_CALL(drawer, onFigureMoved(field1, field2));
-  EXPECT_CALL(drawer, onFigureRemoved(field2));
+  EXPECT_CALL(drawer, onFigureAdded(Figure::BISHOP, Figure::WHITE, field3));
+  EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::WHITE, field4));
+  EXPECT_CALL(drawer, onFigureMoved(field1, field2, false, true));
+  EXPECT_CALL(drawer, onFigureMoved(field2, field3, true, false));
+  EXPECT_CALL(drawer, onFigureRemoved(field3));  // bishop beaten by queen
+  EXPECT_CALL(drawer, onFigureRemoved(field3));
   board.addFigure(Figure::QUEEN, field1, Figure::BLACK);
+  board.addFigure(Figure::BISHOP, field3, Figure::WHITE);
+  board.addFigure(Figure::KING, field4, Figure::WHITE);
   board.moveFigure(field1, field2);
-  board.removeFigure(field2);
+  board.moveFigure(field2, field3);
+  board.removeFigure(field3);
   TEST_END
 }
 

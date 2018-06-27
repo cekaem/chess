@@ -15,7 +15,7 @@ class BoardDrawer {
  public:
   virtual void onFigureAdded(Figure::Type type, Figure::Color color, Field field) = 0;
   virtual void onFigureRemoved(Field field) = 0;
-  virtual void onFigureMoved(Field start_field, Field end_field) = 0;
+  virtual void onFigureMoved(Field start_field, Field end_field, bool figure_beaten, bool is_check) = 0;
 };
 
 class Board {
@@ -50,9 +50,9 @@ class Board {
   const Figure* getFigure(Field field) const noexcept;
   const std::vector<std::unique_ptr<Figure>>& getFigures() const noexcept { return figures_; }
   const auto& getFields() const noexcept { return fields_; }
-  void setEnPassantPawn(Figure* pawn) noexcept { en_passant_pawn_ = pawn; }
-  const Figure* getEnPassantPawn() const noexcept { return en_passant_pawn_; }
-  const Figure* getKing(Figure::Color color) const noexcept;
+  void setEnPassantPawn(Pawn* pawn) noexcept { en_passant_pawn_ = pawn; }
+  const Pawn* getEnPassantPawn() const noexcept { return en_passant_pawn_; }
+  const King* getKing(Figure::Color color) const noexcept;
   void addBoardDrawer(BoardDrawer* drawer) noexcept;
   void removeBoardDrawer(BoardDrawer* drawer) noexcept;
 
@@ -65,7 +65,7 @@ class Board {
   Board& operator=(const Board& other) = delete;
   Board(Board&& other) = delete;
 
-  Figure* en_passant_pawn_{nullptr};
+  Pawn* en_passant_pawn_{nullptr};
   bool validate_moves_{true};
   std::vector<std::unique_ptr<Figure>> figures_;
   std::vector<BoardDrawer*> drawers_;

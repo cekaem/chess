@@ -55,13 +55,13 @@ TEST_PROCEDURE(test1) {
     VERIFY_CONTAINS(moves, createMove(Field::G, Field::THREE, nullptr));
     VERIFY_EQUALS(moves.size(), 1lu);
     board.moveFigure(Field(Field::H, Field::TWO), Field(Field::H, Field::FOUR));
-    VERIFY_EQUALS(board.getEnPassantPawn(), pawn1);
+    VERIFY_EQUALS(board.getEnPassantPawn(), static_cast<const Pawn*>(pawn1));
     moves = pawn2->calculatePossibleMoves();
     VERIFY_CONTAINS(moves, createMove(Field::G, Field::THREE, nullptr));
     VERIFY_CONTAINS(moves, createMove(Field::H, Field::THREE, pawn1));
     VERIFY_EQUALS(moves.size(), 2lu);
     board.moveFigure(Field(Field::D, Field::SEVEN), Field(Field::D, Field::FIVE));
-    VERIFY_EQUALS(board.getEnPassantPawn(), pawn4);
+    VERIFY_EQUALS(board.getEnPassantPawn(), static_cast<const Pawn*>(pawn4));
     moves = pawn2->calculatePossibleMoves();
     VERIFY_CONTAINS(moves, createMove(Field::G, Field::THREE, nullptr));
     VERIFY_EQUALS(moves.size(), 1lu);

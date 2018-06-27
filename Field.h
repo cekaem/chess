@@ -34,7 +34,12 @@ struct Field {
 };
 
 inline std::ostream& operator<<(std::ostream& ostr, const Field& field) {
-  ostr << "(" << field.letter << ", " << field.number << ")";
+  char letter = field.letter + 'a';
+  char number = field.number + '1';
+  if (letter < 'a' || letter > 'h' || number < '1' || number > '8') {
+    throw Field::WrongFieldException(field.letter, field.number);
+  }
+  ostr << letter << number;
   return ostr;
 }
 

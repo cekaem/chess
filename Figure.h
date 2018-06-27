@@ -51,6 +51,9 @@ class Figure {
   mutable bool look_for_king_unveils_{true};
 };
 
+inline Figure::Color operator!(Figure::Color color) {
+  return (color == Figure::WHITE) ? Figure::BLACK : Figure::WHITE;
+}
 
 class Pawn : public Figure {
  public:
