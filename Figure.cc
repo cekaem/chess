@@ -343,7 +343,16 @@ bool King::isChecked() const {
 }
 
 bool King::isCheckmated() const {
-  return isChecked() && calculatePossibleMoves().empty();
+  if (isChecked() == false || !calculatePossibleMoves().empty()) {
+    return false;
+  }
+  std::vector<const Figure*> figures = board_.getFigures(getColor());
+  for (const Figure* figure: figures) {
+    if (figure != this && !figure->calculatePossibleMoves().empty()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool King::isStalemated() const {

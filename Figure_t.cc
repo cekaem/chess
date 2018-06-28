@@ -328,22 +328,42 @@ TEST_PROCEDURE(test6) {
 // Checks if King::isChecked and King::isCheckmated work correctly
 TEST_PROCEDURE(test7) {
   TEST_START
-  Board board;
-  const King* king = static_cast<const King*>(board.addFigure(Figure::KING, Field(Field::E, Field::THREE), Figure::WHITE));
-  VERIFY_FALSE(king->isChecked());
-  VERIFY_FALSE(king->isCheckmated());
-  board.addFigure(Figure::ROOK, Field(Field::A, Field::FOUR), Figure::BLACK);
-  VERIFY_FALSE(king->isChecked());
-  VERIFY_FALSE(king->isCheckmated());
-  board.addFigure(Figure::QUEEN, Field(Field::D, Field::TWO), Figure::BLACK);
-  VERIFY_TRUE(king->isChecked());
-  VERIFY_FALSE(king->isCheckmated());
-  board.addFigure(Figure::KNIGHT, Field(Field::G, Field::FIVE), Figure::BLACK);
-  VERIFY_TRUE(king->isChecked());
-  VERIFY_FALSE(king->isCheckmated());
-  board.addFigure(Figure::PAWN, Field(Field::C, Field::THREE), Figure::BLACK);
-  VERIFY_TRUE(king->isChecked());
-  VERIFY_TRUE(king->isCheckmated());
+  {
+    Board board;
+    const King* king = static_cast<const King*>(board.addFigure(Figure::KING, Field(Field::E, Field::THREE), Figure::WHITE));
+    VERIFY_FALSE(king->isChecked());
+    VERIFY_FALSE(king->isCheckmated());
+    board.addFigure(Figure::ROOK, Field(Field::A, Field::FOUR), Figure::BLACK);
+    VERIFY_FALSE(king->isChecked());
+    VERIFY_FALSE(king->isCheckmated());
+    board.addFigure(Figure::QUEEN, Field(Field::D, Field::TWO), Figure::BLACK);
+    VERIFY_TRUE(king->isChecked());
+    VERIFY_FALSE(king->isCheckmated());
+    board.addFigure(Figure::KNIGHT, Field(Field::G, Field::FIVE), Figure::BLACK);
+    VERIFY_TRUE(king->isChecked());
+    VERIFY_FALSE(king->isCheckmated());
+    board.addFigure(Figure::PAWN, Field(Field::C, Field::THREE), Figure::BLACK);
+    VERIFY_TRUE(king->isChecked());
+    VERIFY_TRUE(king->isCheckmated());
+  }
+  {
+    Board board;
+    const King* king = static_cast<const King*>(board.addFigure(Figure::KING, Field(Field::E, Field::ONE), Figure::WHITE));
+    const Figure* queen = board.addFigure(Figure::QUEEN, Field(Field::D, Field::ONE), Figure::WHITE);
+    const Figure* pawn = board.addFigure(Figure::PAWN, Field(Field::D, Field::TWO), Figure::WHITE);
+    const Figure* knight = board.addFigure(Figure::KNIGHT, Field(Field::E, Field::TWO), Figure::WHITE);
+    const Figure* bishop = board.addFigure(Figure::BISHOP, Field(Field::F, Field::ONE), Figure::WHITE);
+    board.addFigure(Figure::QUEEN, Field(Field::H, Field::FOUR), Figure::BLACK);
+    VERIFY_TRUE(king->isChecked());
+    VERIFY_FALSE(king->isCheckmated());
+    VERIFY_TRUE(king->calculatePossibleMoves().empty());
+    VERIFY_TRUE(queen->calculatePossibleMoves().empty());
+    VERIFY_TRUE(pawn->calculatePossibleMoves().empty());
+    VERIFY_TRUE(bishop->calculatePossibleMoves().empty());
+    auto moves = knight->calculatePossibleMoves();
+    VERIFY_CONTAINS(moves, createMove(knight, Field::G, Field::THREE));
+    VERIFY_EQUALS(moves.size(), 1lu);
+  }
   TEST_END
 }
 
