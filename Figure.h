@@ -3,7 +3,6 @@
 
 #include <memory>
 #include <stdexcept>
-#include <utility>
 #include <vector>
 
 #include "Field.h"
@@ -22,7 +21,17 @@ class Figure {
   enum Type {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
   enum Color {WHITE, BLACK};
 
-  using Move = std::pair<Field, Field>;
+  struct Move {
+    Move(Field ofield, Field nfield, bool check, bool mate, const Figure* beaten, Type promo) :
+      old_field(ofield), new_field(nfield), is_check(check), is_mate(mate), figure_beaten(beaten), pawn_promotion(promo) {}
+
+    const Field old_field;
+    const Field new_field;
+    const bool is_check{false};
+    const bool is_mate{false};
+    const Figure* figure_beaten{nullptr};
+    const Type pawn_promotion{PAWN};
+  };
 
   Color getColor() const { return color_; }
   Field getPosition() const { return field_; }
