@@ -23,14 +23,18 @@ class Figure {
 
   struct Move {
     Move(Field ofield, Field nfield, bool check, bool mate, const Figure* beaten, Type promo) :
-      old_field(ofield), new_field(nfield), is_check(check), is_mate(mate), figure_beaten(beaten), pawn_promotion(promo) {}
+      old_field(ofield), new_field(nfield), is_check(check),
+      is_mate(mate), figure_beaten(beaten), pawn_promotion(promo) {
+    }
 
-    const Field old_field;
-    const Field new_field;
-    const bool is_check{false};
-    const bool is_mate{false};
+    bool operator==(const Move& other) const;
+    
+    Field old_field;
+    Field new_field;
+    bool is_check{false};
+    bool is_mate{false};
     const Figure* figure_beaten{nullptr};
-    const Type pawn_promotion{PAWN};
+    Type pawn_promotion{PAWN};
   };
 
   Color getColor() const { return color_; }
@@ -71,6 +75,9 @@ class Pawn : public Figure {
   void move(Field field) override;
   std::vector<Move> calculatePossibleMoves() const override;
   Type getType() const override { return PAWN; }
+
+ private:
+  bool canPromote() const;
 };
 
 class Knight : public Figure {

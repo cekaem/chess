@@ -104,8 +104,8 @@ std::unique_ptr<Figure> Board::moveFigure(Field old_field, Field new_field, bool
   if (validate_moves_ && validate_move) {
     auto possible_moves = figure->calculatePossibleMoves();
     auto iter = std::find_if(possible_moves.begin(), possible_moves.end(),
-        [new_field](const auto& iter) -> bool {
-          return new_field == iter.second;
+        [new_field](const auto& move) -> bool {
+          return new_field == move.new_field;
         });
     if (iter == possible_moves.end()) {
       throw IllegalMoveException(figure, new_field);
