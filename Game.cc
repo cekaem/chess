@@ -16,15 +16,17 @@ class TextBoardDrawer : public BoardDrawer {
   void onFigureRemoved(Field field) override {
   }
 
-  void onFigureMoved(Field start_field, Field end_field, bool beaten_figure, bool is_check) override {
-    ostr_ << start_field;
-    if (beaten_figure) {
+  void onFigureMoved(Figure::Move move) override {
+    ostr_ << move.old_field;
+    if (move.figure_beaten) {
      ostr_ << "x";
     } else {
      ostr_ << "-";
     }
-    ostr_ << end_field;
-    if (is_check) {
+    ostr_ << move.new_field;
+    if (move.is_mate) {
+      ostr_ << "#";
+    }else if (move.is_check) {
       ostr_ << "+";
     }
     ostr_ << std::endl;

@@ -17,7 +17,7 @@ class BoardDrawerMock : public BoardDrawer {
   MOCK_CLASS(BoardDrawerMock)
   MOCK_METHOD3(onFigureAdded, void(Figure::Type, Figure::Color, Field));
   MOCK_METHOD1(onFigureRemoved, void(Field));
-  MOCK_METHOD4(onFigureMoved, void(Field, Field, bool, bool));
+  MOCK_METHOD1(onFigureMoved, void(Figure::Move));
 };
 
 // Checks if Field::WrongFieldException is properly thrown from Field::Field
@@ -40,13 +40,13 @@ TEST_PROCEDURE(test1) {
   TEST_END
 }
 
-// Checks if Board::moveFigure throws Board::NoFigureException
+// Checks if Board::makeMove throws Board::NoFigureException
 TEST_PROCEDURE(test2) {
   TEST_START
   Field field(Field::C, Field::TWO);
   try {
     Board board;
-    board.moveFigure(field, Field(Field::D, Field::THREE));
+    board.makeMove(field, Field(Field::D, Field::THREE));
   } catch(const Board::NoFigureException& exception) {
     VERIFY_EQUALS(field, exception.field_);
     RETURN
@@ -55,7 +55,7 @@ TEST_PROCEDURE(test2) {
   TEST_END
 }
 
-// Checks if Board::moveFigure throws Board::IllegalMoveException
+// Checks if Board::makeMove throws Board::IllegalMoveException
 TEST_PROCEDURE(test3) {
   TEST_START
   Field field1(Field::D, Field::TWO);
@@ -63,7 +63,7 @@ TEST_PROCEDURE(test3) {
   Board board;
   const Figure* bishop = board.addFigure(Figure::BISHOP, field1, Figure::WHITE);
   try {
-    board.moveFigure(field1, field2);
+    board.makeMove(field1, field2);
   } catch(const Board::IllegalMoveException& exception) {
     VERIFY_EQUALS(exception.field_, field2);
     VERIFY_EQUALS(exception.figure_, bishop);
@@ -126,8 +126,7 @@ TEST_PROCEDURE(test7) {
   VERIFY_EQUALS(white_figures.size(), 1ul);
   VERIFY_CONTAINS(black_figures, queen);
   VERIFY_EQUALS(black_figures.size(), 1ul);
-  std::unique_ptr<Figure> bitten_figure = board.moveFigure(field1, field2);
-  VERIFY_EQUALS(bitten_figure.get(), knight);
+  board.makeMove(field1, field2);
   VERIFY_EQUALS(board.getFigure(field2), queen);
   VERIFY_EQUALS(queen->getPosition(), field2);
   VERIFY_CONTAINS(board.getFigures(), queen);
@@ -189,15 +188,15 @@ TEST_PROCEDURE(test10) {
   EXPECT_CALL(drawer, onFigureAdded(Figure::QUEEN, Figure::BLACK, field1));
   EXPECT_CALL(drawer, onFigureAdded(Figure::BISHOP, Figure::WHITE, field3));
   EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::WHITE, field4));
-  EXPECT_CALL(drawer, onFigureMoved(field1, field2, false, true));
-  EXPECT_CALL(drawer, onFigureMoved(field2, field3, true, false));
+  const Figure* bishop = board.addFigure(Figure::BISHOP, field3, Figure::WHITE);
+  EXPECT_CALL(drawer, onFigureMoved(Figure::Move(field1, field2, true, false, Figure::Move::Castling::NONE, nullptr, Figure::PAWN)));
+  EXPECT_CALL(drawer, onFigureMoved(Figure::Move(field2, field3, false, false, Figure::Move::Castling::NONE, bishop, Figure::PAWN)));
   EXPECT_CALL(drawer, onFigureRemoved(field3));  // bishop beaten by queen
   EXPECT_CALL(drawer, onFigureRemoved(field3));
   board.addFigure(Figure::QUEEN, field1, Figure::BLACK);
-  board.addFigure(Figure::BISHOP, field3, Figure::WHITE);
   board.addFigure(Figure::KING, field4, Figure::WHITE);
-  board.moveFigure(field1, field2);
-  board.moveFigure(field2, field3);
+  board.makeMove(field1, field2);
+  board.makeMove(field2, field3);
   board.removeFigure(field3);
   TEST_END
 }
@@ -208,8 +207,8 @@ TEST_PROCEDURE(test10) {
 int main() {
   try {
     TEST("Field::Field throws Field::WrongFieldException", test1);
-    TEST("Board::moveFigure throws Board::NoFigureException", test2);
-    TEST("Board::moveFigure throws Board::IllegalMoveException", test3);
+    TEST("Board::makeMove throws Board::NoFigureException", test2);
+    TEST("Board::makeMove throws Board::IllegalMoveException", test3);
     TEST("Board::addFigure throws FieldNotEmptyException", test4);
     TEST("Board::removeFigure throws Board::NoFigureException", test5);
     TEST("Board::add/remove/move/getFigure(s) works correctly", test7);

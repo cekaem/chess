@@ -15,7 +15,7 @@ class BoardDrawer {
  public:
   virtual void onFigureAdded(Figure::Type type, Figure::Color color, Field field) = 0;
   virtual void onFigureRemoved(Field field) = 0;
-  virtual void onFigureMoved(Field start_field, Field end_field, bool figure_beaten, bool is_check) = 0;
+  virtual void onFigureMoved(Figure::Move move) = 0;
 };
 
 class Board {
@@ -46,7 +46,9 @@ class Board {
 
   const Figure* addFigure(Figure::Type type, Field field, Figure::Color color);
   std::unique_ptr<Figure> removeFigure(Field field);
-  std::unique_ptr<Figure> moveFigure(Field old_field, Field new_field, bool validate_move = true);
+  void makeMove(Field old_field, Field new_field, Figure::Type promotion = Figure::PAWN);
+  void makeMove(Figure::Move move);
+  void moveFigure(Field old_field, Field new_field);
   const Figure* getFigure(Field field) const noexcept;
   const std::vector<std::unique_ptr<Figure>>& getFigures() const noexcept { return figures_; }
   std::vector<const Figure*> getFigures(Figure::Color color) const noexcept;

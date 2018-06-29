@@ -96,38 +96,59 @@ std::unique_ptr<Figure> Board::removeFigure(Field field) {
   return std::move(result);
 }
 
-std::unique_ptr<Figure> Board::moveFigure(Field old_field, Field new_field, bool validate_move) {
+void Board::moveFigure(Field old_field, Field new_field) {
   Figure* figure = fields_[old_field.letter][old_field.number];
   if (figure == nullptr) {
     throw NoFigureException(old_field);
   }
-  if (validate_moves_ && validate_move) {
+  if (fields_[new_field.letter][new_field.number] != nullptr) {
+    throw FieldNotEmptyException(new_field, figure);
+  }
+  fields_[new_field.letter][new_field.number] = figure;
+  fields_[old_field.letter][old_field.number] = nullptr;
+  figure->move(new_field);
+}
+
+void Board::makeMove(Figure::Move move) {
+  Figure* figure = fields_[move.old_field.letter][move.old_field.number];
+  if (figure == nullptr) {
+    throw NoFigureException(move.old_field);
+  }
+  if (validate_moves_) {
     auto possible_moves = figure->calculatePossibleMoves();
     auto iter = std::find_if(possible_moves.begin(), possible_moves.end(),
-        [new_field](const auto& move) -> bool {
-          return new_field == move.new_field;
+        [move](const auto& m) -> bool {
+          return move.new_field == m.new_field;
         });
     if (iter == possible_moves.end()) {
-      throw IllegalMoveException(figure, new_field);
+      throw IllegalMoveException(figure, move.new_field);
     }
   }
 
-  std::unique_ptr<Figure> result;
-  const Figure* beaten_figure = fields_[new_field.letter][new_field.number];
+  const Figure* beaten_figure = fields_[move.new_field.letter][move.new_field.number];
   if (beaten_figure) {
-    result = removeFigure(new_field);
+    removeFigure(move.new_field);
   }
-  figure->move(new_field);
-  fields_[new_field.letter][new_field.number] = figure;
-  fields_[old_field.letter][old_field.number] = nullptr;
-  
-  Figure::Color kings_color = !figure->getColor();
-  const King* king = getKing(kings_color);
-  bool is_check = king != nullptr && king->isChecked();
+  figure->move(move);
+  fields_[move.new_field.letter][move.new_field.number] = figure;
+  fields_[move.old_field.letter][move.old_field.number] = nullptr;
+
   for (auto drawer : drawers_) {
-    drawer->onFigureMoved(old_field, new_field, beaten_figure != nullptr, is_check);
+    drawer->onFigureMoved(move);
   }
-  return std::move(result);
+}
+
+void Board::makeMove(Field old_field, Field new_field, Figure::Type promotion) {
+  // TODO: add castling handling
+  Figure::Move move(old_field, new_field, false, false, Figure::Move::Castling::NONE, nullptr, promotion);
+  Figure* figure = fields_[old_field.letter][old_field.number];
+  if (figure == nullptr) {
+    throw NoFigureException(old_field);
+  }
+  figure->lookForKingUnveils(false);
+  figure->updateMove(move);  // for updating fields is_check and is_mate
+  figure->lookForKingUnveils(true);
+  makeMove(move);
 }
 
 const Figure* Board::getFigure(Field field) const noexcept {

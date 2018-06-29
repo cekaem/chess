@@ -70,7 +70,7 @@ bool Engine::makeMove(Figure::Color color) {
   }
   auto move = all_moves[generateRandomValue(moves_count-1)];
   debug_stream_ << "My move (" << moves_count_ << "): " << move.old_field << "-" << move.new_field << std::endl;
-  board_.moveFigure(move.old_field, move.new_field);
+  board_.makeMove(move.old_field, move.new_field);
   ++moves_count_;
   return true;
 }

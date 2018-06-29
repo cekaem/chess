@@ -2,6 +2,7 @@
 #define FIGURE_H
 
 #include <memory>
+#include <ostream>
 #include <stdexcept>
 #include <vector>
 
@@ -22,17 +23,25 @@ class Figure {
   enum Color {WHITE, BLACK};
 
   struct Move {
-    Move(Field ofield, Field nfield, bool check, bool mate, const Figure* beaten, Type promo) :
-      old_field(ofield), new_field(nfield), is_check(check),
-      is_mate(mate), figure_beaten(beaten), pawn_promotion(promo) {
-    }
+    enum class Castling {NONE, QUEEN_SIDE, KING_SIDE};
+
+    Move(Field ofield, Field nfield, bool check, bool mate,
+         Castling cast, const Figure* beaten, Type promo) :
+      old_field(ofield), new_field(nfield), is_check(check), is_mate(mate),
+      castling(cast), figure_beaten(beaten), pawn_promotion(promo) {}
+
+    Move(Field field) : new_field(field) {}
+
+    Move(Castling cast) : castling(cast) {}
 
     bool operator==(const Move& other) const;
+    friend std::ostream& operator<<(std::ostream& ostr, const Move& move);
     
     Field old_field;
     Field new_field;
     bool is_check{false};
     bool is_mate{false};
+    Castling castling{Castling::NONE};
     const Figure* figure_beaten{nullptr};
     Type pawn_promotion{PAWN};
   };
@@ -44,9 +53,14 @@ class Figure {
   void lookForKingUnveils(bool look) const { look_for_king_unveils_ = look; }
   bool looksForKingUnveils() const { return look_for_king_unveils_; }
 
+  // Updates fields: is_check, is_mate and figure_beaten in move. Also checks
+  // if move doesn't unveil the king. Returns true if it does and so it's illegal.
+  bool updateMove(Move& move) const;
+  void updateMoves(std::vector<Move>& moves) const;
+
   virtual std::vector<Move> calculatePossibleMoves() const = 0;
   virtual Type getType() const = 0;
-  virtual void move(Field field);
+  virtual void move(Figure::Move move);
 
   bool operator==(const Figure& other) const;
   bool operator!=(const Figure& other) const;
@@ -64,6 +78,8 @@ class Figure {
   mutable bool look_for_king_unveils_{true};
 };
 
+std::ostream& operator<<(std::ostream& ostr, const Figure::Move& move);
+
 inline Figure::Color operator!(Figure::Color color) {
   return (color == Figure::WHITE) ? Figure::BLACK : Figure::WHITE;
 }
@@ -72,7 +88,7 @@ class Pawn : public Figure {
  public:
   Pawn(Board& board, Field field, Color color) noexcept
     : Figure(board, field, color, PAWN_VALUE) {}
-  void move(Field field) override;
+  void move(Figure::Move field) override;
   std::vector<Move> calculatePossibleMoves() const override;
   Type getType() const override { return PAWN; }
 
@@ -117,7 +133,7 @@ class King : public Figure {
   King(Board& board, Field field, Color color) noexcept
     : Figure(board, field, color, KING_VALUE) {}
   std::vector<Move> calculatePossibleMoves() const override;
-  void move(Field field) override;
+  void move(Figure::Move field) override;
   Type getType() const override { return KING; }
   bool isChecked() const;
   bool isCheckmated() const;
