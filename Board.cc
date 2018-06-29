@@ -128,26 +128,30 @@ void Board::makeMove(Figure::Move move) {
   const Figure* beaten_figure = fields_[move.new_field.letter][move.new_field.number];
   if (beaten_figure) {
     removeFigure(move.new_field);
+    move.figure_beaten = true;
   }
   figure->move(move);
   fields_[move.new_field.letter][move.new_field.number] = figure;
   fields_[move.old_field.letter][move.old_field.number] = nullptr;
 
+  const King* king = static_cast<const King*>(getKing(!figure->getColor()));
+  if (king && validate_moves_) {
+    move.is_check = king->isChecked();
+    move.is_mate = king->isCheckmated();
+  }
   for (auto drawer : drawers_) {
     drawer->onFigureMoved(move);
   }
 }
 
 void Board::makeMove(Field old_field, Field new_field, Figure::Type promotion) {
-  // TODO: add castling handling
-  Figure::Move move(old_field, new_field, false, false, Figure::Move::Castling::NONE, nullptr, promotion);
+  // TODO: detect castling
+  // TODO: handle "en passant"
   Figure* figure = fields_[old_field.letter][old_field.number];
   if (figure == nullptr) {
     throw NoFigureException(old_field);
   }
-  figure->lookForKingUnveils(false);
-  figure->updateMove(move);  // for updating fields is_check and is_mate
-  figure->lookForKingUnveils(true);
+  Figure::Move move(old_field, new_field, false, false, Figure::Move::Castling::NONE, false, promotion);
   makeMove(move);
 }
 

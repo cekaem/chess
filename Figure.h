@@ -26,7 +26,7 @@ class Figure {
     enum class Castling {NONE, QUEEN_SIDE, KING_SIDE};
 
     Move(Field ofield, Field nfield, bool check, bool mate,
-         Castling cast, const Figure* beaten, Type promo) :
+         Castling cast, bool beaten, Type promo) :
       old_field(ofield), new_field(nfield), is_check(check), is_mate(mate),
       castling(cast), figure_beaten(beaten), pawn_promotion(promo) {}
 
@@ -42,7 +42,7 @@ class Figure {
     bool is_check{false};
     bool is_mate{false};
     Castling castling{Castling::NONE};
-    const Figure* figure_beaten{nullptr};
+    bool figure_beaten{false};
     Type pawn_promotion{PAWN};
   };
 

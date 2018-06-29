@@ -188,9 +188,9 @@ TEST_PROCEDURE(test10) {
   EXPECT_CALL(drawer, onFigureAdded(Figure::QUEEN, Figure::BLACK, field1));
   EXPECT_CALL(drawer, onFigureAdded(Figure::BISHOP, Figure::WHITE, field3));
   EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::WHITE, field4));
-  const Figure* bishop = board.addFigure(Figure::BISHOP, field3, Figure::WHITE);
-  EXPECT_CALL(drawer, onFigureMoved(Figure::Move(field1, field2, true, false, Figure::Move::Castling::NONE, nullptr, Figure::PAWN)));
-  EXPECT_CALL(drawer, onFigureMoved(Figure::Move(field2, field3, false, false, Figure::Move::Castling::NONE, bishop, Figure::PAWN)));
+  board.addFigure(Figure::BISHOP, field3, Figure::WHITE);
+  EXPECT_CALL(drawer, onFigureMoved(Figure::Move(field1, field2, true, false, Figure::Move::Castling::NONE, false, Figure::PAWN)));
+  EXPECT_CALL(drawer, onFigureMoved(Figure::Move(field2, field3, false, false, Figure::Move::Castling::NONE, true, Figure::PAWN)));
   EXPECT_CALL(drawer, onFigureRemoved(field3));  // bishop beaten by queen
   EXPECT_CALL(drawer, onFigureRemoved(field3));
   board.addFigure(Figure::QUEEN, field1, Figure::BLACK);

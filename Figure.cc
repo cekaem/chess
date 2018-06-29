@@ -19,7 +19,7 @@ void addMove(const Board& board,
       false,  // it will be updated later
       false,  // it will be updated later
       Figure::Move::Castling::NONE,
-      board.getFigure(Field(static_cast<Field::Letter>(new_l), static_cast<Field::Number>(new_n))),
+      board.getFigure(Field(static_cast<Field::Letter>(new_l), static_cast<Field::Number>(new_n))) != nullptr,
       promo);
   moves.push_back(move);
 }
@@ -206,30 +206,28 @@ Figure::Figure(Board& board, Field field, Color color, int value) noexcept
 }
 
 bool Figure::updateMove(Figure::Move& move) const {
-  move.figure_beaten = board_.getFigure(move.new_field);
+  if (looksForKingUnveils() == false) {
+    return false;
+  }
   Field field = getPosition();
   Board copy = board_;
+  copy.makeMove(field, move.new_field, move.pawn_promotion);
   const King* king = static_cast<const King*>(board_.getKing(getColor()));
-  if (king && looksForKingUnveils()) {
-    const Figure* f = copy.getFigure(field);
-    copy.makeMove(field, move.new_field);
-    king = static_cast<const King*>(copy.getKing(f->getColor()));
-    lookForKingUnveils(false);
+  if (king) {
+    king = static_cast<const King*>(copy.getKing(getColor()));
     if (king && king->isChecked()) {
       return true;
     }
-    lookForKingUnveils(true);
   }
 
-  const King* enemy_king = static_cast<const King*>(board_.getKing(!getColor()));
-  lookForKingUnveils(false);
-  if (enemy_king && enemy_king->isChecked()) {
+  king = static_cast<const King*>(copy.getKing(!getColor()));
+  if (king && king->isChecked()) {
     move.is_check = true;
   }
-  if (enemy_king && enemy_king->isCheckmated()) {
+  if (king && king->isCheckmated()) {
     move.is_mate = true;
   }
-  lookForKingUnveils(true);
+
   return false;
 }
 
@@ -255,11 +253,16 @@ bool Figure::operator!=(const Figure& other) const {
 }
 
 void Pawn::move(Figure::Move move) {
-  Field old_field = field_;
-  Figure::move(move);
-  if ((getColor() == WHITE && old_field.number == Field::TWO && move.new_field.number == Field::FOUR) ||
-      (getColor() == BLACK && old_field.number == Field::SEVEN && move.new_field.number == Field::FIVE)) {
-    board_.setEnPassantPawn(this);
+  if (move.pawn_promotion == Figure::PAWN) {
+    Field old_field = field_;
+    Figure::move(move);
+    if ((getColor() == WHITE && old_field.number == Field::TWO && move.new_field.number == Field::FOUR) ||
+        (getColor() == BLACK && old_field.number == Field::SEVEN && move.new_field.number == Field::FIVE)) {
+      board_.setEnPassantPawn(this);
+    }
+  } else {
+    board_.addFigure(move.pawn_promotion, move.new_field, getColor());
+    board_.removeFigure(move.old_field);  // This call will erase this object. Do not call anything below.
   }
 }
 
@@ -282,7 +285,7 @@ std::vector<Figure::Move> Pawn::calculatePossibleMoves() const {
       addMove(board_, result, this, current_l, current_n + offset, Figure::KNIGHT);
       addMove(board_, result, this, current_l, current_n + offset, Figure::ROOK);
       addMove(board_, result, this, current_l, current_n + offset, Figure::QUEEN);
-    } else {    
+    } else {
       addMove(board_, result, this, current_l, current_n + offset);
     }
   }
@@ -330,10 +333,10 @@ std::vector<Figure::Move> Pawn::calculatePossibleMoves() const {
         (getColor() == BLACK && field_.number == Field::FOUR)) {
       if (field_.letter != Field::A && fields[field_.letter - 1][field_.number] == en_passant) {
         addMove(board_, result, this, current_l - 1, current_n + offset);
-        result[result.size() - 1].figure_beaten = en_passant;
+        result[result.size() - 1].figure_beaten = true;
       } else if (field_.letter != Field::H && fields[field_.letter + 1][field_.number] == en_passant) {
         addMove(board_, result, this, current_l + 1, current_n + offset);
-        result[result.size() - 1].figure_beaten = en_passant;
+        result[result.size() - 1].figure_beaten = true;
       }
     }
   }
