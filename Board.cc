@@ -1,6 +1,7 @@
 #include "Board.h"
 
 #include <algorithm>
+#include <cassert>
 
 std::ostream& operator<<(std::ostream& ostr, const Board& board) {
   ostr << "{";
@@ -112,10 +113,12 @@ void Board::makeMove(Figure::Move move) {
   if (figure == nullptr) {
     throw NoFigureException(move.old_field);
   }
+  Figure::Color color = figure->getColor();
   if (validate_moves_) {
     auto possible_moves = figure->calculatePossibleMoves();
     auto iter = std::find_if(possible_moves.begin(), possible_moves.end(),
         [move](const auto& m) -> bool {
+          // TODO: check more than just new_field
           return move.new_field == m.new_field;
         });
     if (iter == possible_moves.end()) {
@@ -128,11 +131,25 @@ void Board::makeMove(Figure::Move move) {
     removeFigure(move.new_field);
     move.figure_beaten = true;
   }
-  figure->move(move);
-  fields_[move.new_field.letter][move.new_field.number] = figure;
+
+  // Handle pawn promotion
+  if (move.pawn_promotion != Figure::PAWN) {
+    const Figure* f = getFigure(move.old_field);
+    assert(f->getType() == Figure::PAWN);
+    const Pawn* pawn = static_cast<const Pawn*>(f);
+    addFigure(move.pawn_promotion, move.new_field, pawn->getColor());
+    removeFigure(move.old_field);
+    figure = nullptr;
+  }
+
+  if (figure != nullptr) {
+    figure->move(move);
+    fields_[move.new_field.letter][move.new_field.number] = figure;
+  }
   fields_[move.old_field.letter][move.old_field.number] = nullptr;
 
-  const King* king = static_cast<const King*>(getKing(!figure->getColor()));
+  // Update fields is_check and is_mate
+  const King* king = static_cast<const King*>(getKing(!color));
   if (king && validate_moves_) {
     move.is_check = king->isChecked();
     move.is_mate = king->isCheckmated();

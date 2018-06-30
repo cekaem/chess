@@ -271,16 +271,10 @@ bool Figure::operator!=(const Figure& other) const {
 }
 
 void Pawn::move(Figure::Move move) {
-  if (move.pawn_promotion == Figure::PAWN) {
-    Field old_field = field_;
-    Figure::move(move);
-    if ((getColor() == WHITE && old_field.number == Field::TWO && move.new_field.number == Field::FOUR) ||
-        (getColor() == BLACK && old_field.number == Field::SEVEN && move.new_field.number == Field::FIVE)) {
-      board_.setEnPassantPawn(this);
-    }
-  } else {
-    board_.addFigure(move.pawn_promotion, move.new_field, getColor());
-    board_.removeFigure(move.old_field);  // This call will erase this object. Do not call anything below.
+  Figure::move(move);
+  if ((getColor() == WHITE && move.old_field.number == Field::TWO && move.new_field.number == Field::FOUR) ||
+      (getColor() == BLACK && move.old_field.number == Field::SEVEN && move.new_field.number == Field::FIVE)) {
+    board_.setEnPassantPawn(this);
   }
 }
 
@@ -596,6 +590,7 @@ void King::addPossibleCastlings(std::vector<Move>& moves) const {
 }
 
 void King::move(Figure::Move move) {
+  // TODO: move this to Board::makeMove
   if (move.castling == Figure::Move::Castling::QUEEN_SIDE ||
       move.castling == Figure::Move::Castling::KING_SIDE) {
     move.old_field = getPosition();

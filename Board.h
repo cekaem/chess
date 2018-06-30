@@ -72,6 +72,7 @@ class Board {
   Pawn* en_passant_pawn_{nullptr};
   bool validate_moves_{true};
   std::vector<std::unique_ptr<Figure>> figures_;
+  std::vector<std::unique_ptr<Figure>> figures_beaten_;
   std::vector<BoardDrawer*> drawers_;
   std::array<std::array<Figure*, BoardSize>, BoardSize> fields_;
 };
