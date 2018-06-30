@@ -45,7 +45,7 @@ class Board {
   Board(const Board& other) noexcept;
 
   const Figure* addFigure(Figure::Type type, Field field, Figure::Color color);
-  std::unique_ptr<Figure> removeFigure(Field field);
+  void removeFigure(Field field);
   void makeMove(Field old_field, Field new_field, Figure::Type promotion = Figure::PAWN);
   void makeMove(Figure::Move move);
   void moveFigure(Field old_field, Field new_field);

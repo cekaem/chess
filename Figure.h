@@ -30,9 +30,12 @@ class Figure {
       old_field(ofield), new_field(nfield), is_check(check), is_mate(mate),
       castling(cast), figure_beaten(beaten), pawn_promotion(promo) {}
 
+    static Castling isCastling(const Board* board, Field old_field, Field new_field);
+
     Move(Field field) : new_field(field) {}
 
-    Move(Castling cast) : castling(cast) {}
+    Move(Field ofield, Field nfield, Castling cast)
+        : old_field(ofield), new_field(nfield), castling(cast) {}
 
     bool operator==(const Move& other) const;
     friend std::ostream& operator<<(std::ostream& ostr, const Move& move);
@@ -138,6 +141,7 @@ class King : public Figure {
   bool isChecked() const;
   bool isCheckmated() const;
   bool isStalemated() const;
+  bool canCastle(Figure::Move::Castling castling) const;
 
  private:
   void addPossibleCastlings(std::vector<Move>& moves) const;

@@ -146,6 +146,24 @@ void calculateMovesForRook(std::vector<Figure::Move>& moves, const Board& board,
 
 }  // unnamed namespace
 
+Figure::Move::Castling Figure::Move::isCastling(const Board* board, Field old_field, Field new_field) {
+  const Figure* figure = board->getFigure(old_field);
+  if (figure == nullptr || figure->getType() != Figure::KING) {
+    return Figure::Move::Castling::NONE;
+  }
+  Field::Number number = figure->getColor() == Figure::WHITE ? Field::ONE : Field::EIGHT;
+  if (old_field != Field(Field::E, number)) {
+    return Figure::Move::Castling::NONE;
+  }
+  if (new_field == Field(Field::G, number)) {
+    return Figure::Move::Castling::KING_SIDE;
+  }
+  if (new_field == Field(Field::C, number)) {
+    return Figure::Move::Castling::QUEEN_SIDE;
+  }
+  return Figure::Move::Castling::NONE;
+}
+
 bool Figure::Move::operator==(const Figure::Move& other) const {
   return old_field == other.old_field &&
          new_field == other.new_field &&
@@ -500,57 +518,80 @@ std::vector<Figure::Move> King::calculatePossibleMoves() const {
   return result;
 }
 
-void King::addPossibleCastlings(std::vector<Move>& moves) const {
-  if (movedAtLeastOnce()) {
-    return;
-  }
-  // Check if king is in the right position
-  if ((getColor() == Figure::WHITE && getPosition() != Field(Field::E, Field::ONE)) ||
-      (getColor() == Figure::BLACK && getPosition() != Field(Field::E, Field::EIGHT))) {
-    return;
+bool King::canCastle(Figure::Move::Castling castling) const {
+  if (castling == Figure::Move::Castling::NONE) {
+    return true;
   }
 
-  if (isChecked()) {
-    return;
+  if (movedAtLeastOnce()) {
+    return false;
   }
 
   const Field::Number number = getColor() == Figure::WHITE ? Field::ONE : Field::EIGHT;
 
-  // Check for king castling
-  const Figure* figure = board_.getFigure(Field(Field::H, number));
-  if (figure && figure->getType() == Figure::ROOK && figure->getColor() == getColor() &&
-      figure->movedAtLeastOnce() == false && board_.getFigure(Field(Field::F, number)) == nullptr &&
-      board_.getFigure(Field(Field::G, number)) == nullptr) {
-    Board copy = board_;
-    const Figure* f = copy.getFigure(Field(Field::E, number));
-    assert(f->getType() == Figure::KING);
-    const King* king = static_cast<const King*>(f);
-    copy.makeMove(Field(Field::E, number), Field(Field::F, number));
-    if (king->isChecked() == false) {
-      copy.makeMove(Field(Field::F, number), Field(Field::G, number));
+  // Check if king is in the right position
+  if (getColor() == Figure::WHITE && getPosition() != Field(Field::E, number)) {
+    return false;
+  }
+
+  if (isChecked()) {
+    return false;
+  }
+
+  if (castling == Figure::Move::Castling::KING_SIDE) {
+    const Figure* figure = board_.getFigure(Field(Field::H, number));
+    if (figure && figure->getType() == Figure::ROOK && figure->getColor() == getColor() &&
+        figure->movedAtLeastOnce() == false && board_.getFigure(Field(Field::F, number)) == nullptr &&
+        board_.getFigure(Field(Field::G, number)) == nullptr) {
+      Board copy = board_;
+      const Figure* f = copy.getFigure(Field(Field::E, number));
+      assert(f->getType() == Figure::KING);
+      const King* king = static_cast<const King*>(f);
+      copy.makeMove(Field(Field::E, number), Field(Field::F, number));
       if (king->isChecked() == false) {
-        moves.push_back(Figure::Move(Figure::Move::Castling::KING_SIDE));
+        copy.makeMove(Field(Field::F, number), Field(Field::G, number));
+        if (king->isChecked() == false) {
+          return true;
+        }
       }
     }
   }
 
-  // Check for queen castling
-  figure = board_.getFigure(Field(Field::A, number));
-  if (figure && figure->getType() == Figure::ROOK && figure->getColor() == getColor() &&
-      figure->movedAtLeastOnce() == false && board_.getFigure(Field(Field::D, number)) == nullptr &&
-      board_.getFigure(Field(Field::C, number)) == nullptr &&
-      board_.getFigure(Field(Field::B, number)) == nullptr) {
-    Board copy = board_;
-    const Figure* f = copy.getFigure(Field(Field::E, number));
-    assert(f->getType() == Figure::KING);
-    const King* king = static_cast<const King*>(f);
-    copy.makeMove(Field(Field::E, number), Field(Field::D, number));
-    if (king->isChecked() == false) {
-      copy.makeMove(Field(Field::D, number), Field(Field::C, number));
+  if (castling == Figure::Move::Castling::QUEEN_SIDE) {
+    const Figure* figure = board_.getFigure(Field(Field::A, number));
+    if (figure && figure->getType() == Figure::ROOK && figure->getColor() == getColor() &&
+        figure->movedAtLeastOnce() == false && board_.getFigure(Field(Field::D, number)) == nullptr &&
+        board_.getFigure(Field(Field::C, number)) == nullptr &&
+        board_.getFigure(Field(Field::B, number)) == nullptr) {
+      Board copy = board_;
+      const Figure* f = copy.getFigure(Field(Field::E, number));
+      assert(f->getType() == Figure::KING);
+      const King* king = static_cast<const King*>(f);
+      copy.makeMove(Field(Field::E, number), Field(Field::D, number));
       if (king->isChecked() == false) {
-        moves.push_back(Figure::Move(Figure::Move::Castling::QUEEN_SIDE));
+        copy.makeMove(Field(Field::D, number), Field(Field::C, number));
+        if (king->isChecked() == false) {
+          return true;
+        }
       }
     }
+  }
+  return false;
+}
+
+void King::addPossibleCastlings(std::vector<Move>& moves) const {
+  const Field::Number number = getColor() == Figure::WHITE ? Field::ONE : Field::EIGHT;
+
+  if (canCastle(Figure::Move::Castling::KING_SIDE) == true) {
+    moves.push_back(Figure::Move(Field(Field::E, number),
+                                 Field(Field::G, number),
+                                 Figure::Move::Castling::KING_SIDE));
+  }
+
+  if (canCastle(Figure::Move::Castling::QUEEN_SIDE) == true) {
+        moves.push_back(Figure::Move(Field(Field::E, number),
+                                     Field(Field::C, number),
+                                     Figure::Move::Castling::QUEEN_SIDE));
   }
 }
 

@@ -76,7 +76,7 @@ const Figure* Board::addFigure(Figure::Type type, Field field, Figure::Color col
   return new_figure;  
 }
 
-std::unique_ptr<Figure> Board::removeFigure(Field field) {
+void Board::removeFigure(Field field) {
   const Figure* figure = fields_[field.letter][field.number];
   if (figure == nullptr) {
     throw NoFigureException(field);
@@ -86,14 +86,12 @@ std::unique_ptr<Figure> Board::removeFigure(Field field) {
         [figure](const auto& iter) -> bool {
           return iter.get() == figure;
         });
-  std::unique_ptr<Figure> result = std::move(*iter);
+
   figures_.erase(iter);
 
   for (auto drawer : drawers_) {
     drawer->onFigureRemoved(field);
   }
-
-  return std::move(result);
 }
 
 void Board::moveFigure(Field old_field, Field new_field) {
@@ -145,13 +143,24 @@ void Board::makeMove(Figure::Move move) {
 }
 
 void Board::makeMove(Field old_field, Field new_field, Figure::Type promotion) {
-  // TODO: detect castling
   // TODO: handle "en passant"
+
   Figure* figure = fields_[old_field.letter][old_field.number];
   if (figure == nullptr) {
     throw NoFigureException(old_field);
   }
-  Figure::Move move(old_field, new_field, false, false, Figure::Move::Castling::NONE, false, promotion);
+
+  Figure::Move::Castling castling = Figure::Move::isCastling(this, old_field, new_field);
+  if (castling != Figure::Move::Castling::NONE) {
+    if (figure->getType() != Figure::KING) {
+      throw IllegalMoveException(figure, new_field);
+    }
+    const King* king = static_cast<const King*>(figure);
+    if (king->canCastle(castling) == false) {
+      throw IllegalMoveException(figure, new_field);
+    }
+  }
+  Figure::Move move(old_field, new_field, false, false, castling, false, promotion);
   makeMove(move);
 }
 
