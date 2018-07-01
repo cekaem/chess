@@ -367,6 +367,20 @@ TEST_PROCEDURE(test6) {
     VERIFY_EQUALS(black_rook->getPosition(), Field(Field::F, Field::EIGHT));
     VERIFY_EQUALS(board.getFigure(Field(Field::F, Field::EIGHT)), black_rook);
   }
+  {
+    Board board;
+    const Figure* king = board.addFigure(Figure::KING, Field(Field::G, Field::THREE), Figure::WHITE);
+    board.addFigure(Figure::QUEEN, Field(Field::B, Field::FIVE), Figure::BLACK);
+    board.addFigure(Figure::PAWN, Field(Field::H, Field::FOUR), Figure::WHITE);
+    board.addFigure(Figure::PAWN, Field(Field::H, Field::FIVE), Figure::BLACK);
+    board.addFigure(Figure::PAWN, Field(Field::E, Field::THREE), Figure::BLACK);
+    board.addFigure(Figure::ROOK, Field(Field::F, Field::ONE), Figure::WHITE);
+    board.makeMove(Field(Field::B, Field::FIVE), Field(Field::C, Field::SIX));
+    auto moves = king->calculatePossibleMoves();
+    VERIFY_DOES_NOT_CONTAIN(moves, createMove(king, Field::G, Field::TWO, false, true));
+    VERIFY_DOES_NOT_CONTAIN(moves, createMove(king, Field::G, Field::TWO, false, false));
+    VERIFY_EQUALS(moves.size(), 3lu);
+  }
   TEST_END
 }
 

@@ -4,6 +4,7 @@
 #include "Test.h"
 #include "Board.h"
 
+#include "Engine.h"
 #include "Field.h"
 #include "Figure.h"
 
@@ -18,6 +19,7 @@ class BoardDrawerMock : public BoardDrawer {
   MOCK_METHOD3(onFigureAdded, void(Figure::Type, Figure::Color, Field));
   MOCK_METHOD1(onFigureRemoved, void(Field));
   MOCK_METHOD1(onFigureMoved, void(Figure::Move));
+  MOCK_METHOD1(onGameFinished, void(Engine::Status));
 };
 
 // Checks if Field::WrongFieldException is properly thrown from Field::Field

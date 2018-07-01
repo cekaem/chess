@@ -13,16 +13,28 @@ Engine::Engine(Board& board, std::ostream& debug_stream)
   srand(static_cast<unsigned int>(time(nullptr)));
 }
 
-bool Engine::isCheckMate() const {
+Engine::Status Engine::getStatus() const {
+  Engine::Status status = isCheckMate();
+  if (status == Engine::Status::WHITE_WON ||
+      status == Engine::Status::BLACK_WON) {
+    return status;
+  }
+  if (isStaleMate() || isDraw()) {
+    return Status::DRAW;
+  }
+  return Status::NONE;
+}
+
+Engine::Status Engine::isCheckMate() const {
   const King* king = board_.getKing(Figure::WHITE);
   if (king->isCheckmated()) {
-    return true;
+    return Status::BLACK_WON;
   }
   king = board_.getKing(Figure::BLACK);
   if (king->isCheckmated()) {
-    return true;
+    return Status::WHITE_WON;
   }
-  return false;
+  return Status::NONE;
 }
 
 bool Engine::isStaleMate() const {
@@ -53,9 +65,10 @@ int Engine::generateRandomValue(int max) const {
   return rand() % (max + 1);
 }
 
-bool Engine::makeMove(Figure::Color color) {
-  if (isCheckMate() == true || isStaleMate() == true || isDraw() == true) {
-    return false;
+Engine::Status Engine::makeMove(Figure::Color color) {
+  Engine::Status status = getStatus();
+  if (status != Status::NONE) {
+    throw GameFinishedException(status);
   }
   std::vector<Figure::Move> all_moves;
   std::vector<const Figure*> figures = board_.getFigures(color);
@@ -65,12 +78,10 @@ bool Engine::makeMove(Figure::Color color) {
   }
   size_t moves_count = all_moves.size();
   debug_stream_ << "Moves count: " << moves_count << std::endl;
-  if (all_moves.size() == 0) {
-    return false;
-  }
+
   auto move = all_moves[generateRandomValue(moves_count-1)];
   debug_stream_ << "My move (" << moves_count_ << "): " << move.old_field << "-" << move.new_field << std::endl;
   board_.makeMove(move);
   ++moves_count_;
-  return true;
+  return getStatus();
 }

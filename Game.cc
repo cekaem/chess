@@ -3,6 +3,7 @@
 #include "Board.h"
 #include "Engine.h"
 #include "Figure.h"
+#include "PgnCreator.h"
 
 namespace {
 
@@ -14,6 +15,23 @@ class TextBoardDrawer : public BoardDrawer {
   }
 
   void onFigureRemoved(Field field) override {
+  }
+
+  void onGameFinished(Engine::Status status) override {
+    switch (status) {
+      case Engine::Status::NONE:
+        break;
+      case Engine::Status::WHITE_WON:
+        ostr_ << "1-0";
+        break;
+      case Engine::Status::BLACK_WON:
+        ostr_ << "0-1";
+        break;
+      case Engine::Status::DRAW:
+        ostr_ << "1/2-1/2";
+        break;
+    }
+    ostr_ << std::endl;
   }
 
   void onFigureMoved(Figure::Move move) override {
@@ -59,12 +77,16 @@ int main() {
   Board board;
   board.setStandardBoard();
   TextBoardDrawer drawer(std::cout);
+  PgnCreator pgn_creator(std::cout);
   board.addBoardDrawer(&drawer);
+  board.addBoardDrawer(&pgn_creator);
   Engine engine(board, std::cerr);
   Figure::Color color = Figure::WHITE;
-  while(engine.makeMove(color)) {
+  Engine::Status status = Engine::Status::NONE;
+  while((status = engine.makeMove(color)) == Engine::Status::NONE) {
     color = !color;
   }
+  board.onGameFinished(status);
   std::cout << board << std::endl;
 
   return 0;

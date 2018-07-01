@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "Engine.h"
 #include "Field.h"
 #include "Figure.h"
 
@@ -16,6 +17,7 @@ class BoardDrawer {
   virtual void onFigureAdded(Figure::Type type, Figure::Color color, Field field) = 0;
   virtual void onFigureRemoved(Field field) = 0;
   virtual void onFigureMoved(Figure::Move move) = 0;
+  virtual void onGameFinished(Engine::Status status) = 0;
 };
 
 class Board {
@@ -57,6 +59,7 @@ class Board {
   const Pawn* getEnPassantPawn() const noexcept { return en_passant_pawn_; }
   const King* getKing(Figure::Color color) const noexcept;
   void setStandardBoard();
+  void onGameFinished(Engine::Status status) noexcept;
   void addBoardDrawer(BoardDrawer* drawer) noexcept;
   void removeBoardDrawer(BoardDrawer* drawer) noexcept;
 

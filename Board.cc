@@ -160,8 +160,6 @@ void Board::makeMove(Figure::Move move) {
 }
 
 void Board::makeMove(Field old_field, Field new_field, Figure::Type promotion) {
-  // TODO: handle "en passant"
-
   Figure* figure = fields_[old_field.letter][old_field.number];
   if (figure == nullptr) {
     throw NoFigureException(old_field);
@@ -178,7 +176,8 @@ void Board::makeMove(Field old_field, Field new_field, Figure::Type promotion) {
     }
   }
   bool is_promotion = Figure::Move::isPromotion(this, old_field, new_field);
-  if (is_promotion && promotion == Figure::PAWN) {
+  if ((is_promotion == true && promotion == Figure::PAWN) ||
+      (is_promotion == false && promotion != Figure::PAWN)) {
     throw IllegalMoveException(figure, new_field);
   }
   Figure::Move move(old_field, new_field, false, false, castling, false, promotion);
@@ -245,6 +244,12 @@ void Board::setStandardBoard() {
   addFigure(Figure::BISHOP, Field(Field::F, Field::EIGHT), Figure::BLACK);
   addFigure(Figure::QUEEN, Field(Field::D, Field::EIGHT), Figure::BLACK);
   addFigure(Figure::KING, Field(Field::E, Field::EIGHT), Figure::BLACK);
+}
+
+void Board::onGameFinished(Engine::Status status) noexcept {
+  for (auto* drawer: drawers_) {
+    drawer->onGameFinished(status);
+  }
 }
 
 void Board::addBoardDrawer(BoardDrawer* drawer) noexcept {
