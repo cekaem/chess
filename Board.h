@@ -8,21 +8,21 @@
 #include <utility>
 #include <vector>
 
-#include "Engine.h"
 #include "Field.h"
 #include "Figure.h"
 
-class BoardDrawer {
- public:
-  virtual void onFigureAdded(Figure::Type type, Figure::Color color, Field field) = 0;
-  virtual void onFigureRemoved(Field field) = 0;
-  virtual void onFigureMoved(Figure::Move move) = 0;
-  virtual void onGameFinished(Engine::Status status) = 0;
-};
+class BoardDrawer;
 
 class Board {
  public:
   constexpr static size_t BoardSize = 8;
+
+  enum class GameStatus {
+    NONE,
+    WHITE_WON,
+    BLACK_WON, 
+    DRAW
+  };
 
   struct NoFigureException : std::exception {
     NoFigureException(const Field& field) : field_(field) {}
@@ -43,7 +43,12 @@ class Board {
     Field field_;
   };
 
-  Board() noexcept;
+  struct BadBoardStatusException : std::exception {
+    BadBoardStatusException(const Board* board) : board_(board) {}
+    const Board* board_;
+  };
+
+  Board(bool validate_moves = true) noexcept;
   Board(const Board& other) noexcept;
 
   const Figure* addFigure(Figure::Type type, Field field, Figure::Color color);
@@ -59,7 +64,7 @@ class Board {
   const Pawn* getEnPassantPawn() const noexcept { return en_passant_pawn_; }
   const King* getKing(Figure::Color color) const noexcept;
   void setStandardBoard();
-  void onGameFinished(Engine::Status status) noexcept;
+  GameStatus getGameStatus(Figure::Color color) const;
   void addBoardDrawer(BoardDrawer* drawer) noexcept;
   void removeBoardDrawer(BoardDrawer* drawer) noexcept;
 
@@ -72,6 +77,11 @@ class Board {
   Board& operator=(const Board& other) = delete;
   Board(Board&& other) = delete;
 
+  GameStatus isCheckMate() const;
+  bool isStaleMate(Figure::Color color) const;
+  bool isDraw() const;
+  void onGameFinished(GameStatus status) noexcept;
+
   Pawn* en_passant_pawn_{nullptr};
   bool validate_moves_{true};
   std::vector<std::unique_ptr<Figure>> figures_;
@@ -79,5 +89,15 @@ class Board {
   std::vector<BoardDrawer*> drawers_;
   std::array<std::array<Figure*, BoardSize>, BoardSize> fields_;
 };
+
+class BoardDrawer {
+ public:
+  virtual void onFigureAdded(Figure::Type type, Figure::Color color, Field field) = 0;
+  virtual void onFigureRemoved(Field field) = 0;
+  virtual void onFigureMoved(Figure::Move move) = 0;
+  virtual void onGameFinished(Board::GameStatus status) = 0;
+};
+
+std::ostream& operator<<(std::ostream& ostr, Board::GameStatus status);
 
 #endif  // BOARD_H

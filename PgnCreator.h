@@ -5,7 +5,6 @@
 #include <sstream>
 
 #include "Board.h"
-#include "Engine.h"
 
 class PgnCreator : public BoardDrawer {
  public:
@@ -14,7 +13,7 @@ class PgnCreator : public BoardDrawer {
   void onFigureAdded(Figure::Type type, Figure::Color color, Field field) override {}
   void onFigureRemoved(Field field) override {}
   void onFigureMoved(Figure::Move move) override;
-  void onGameFinished(Engine::Status status) override;
+  void onGameFinished(Board::GameStatus status) override;
 
  private:
   std::ostream& ostr_;

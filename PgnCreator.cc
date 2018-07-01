@@ -3,19 +3,19 @@
 #include "Board.h"
 #include "Figure.h"
 
-void PgnCreator::onGameFinished(Engine::Status status) {
+void PgnCreator::onGameFinished(Board::GameStatus status) {
   switch (status) {
-    case Engine::Status::NONE:
+    case Board::GameStatus::NONE:
       break;
-    case Engine::Status::WHITE_WON:
+    case Board::GameStatus::WHITE_WON:
       ss_ << "1-0";
       ostr_ << "[Result \"1-0\"]" << std::endl;
       break;
-    case Engine::Status::BLACK_WON:
+    case Board::GameStatus::BLACK_WON:
       ss_ << "0-1";
       ostr_ << "[Result \"0-1\"]" << std::endl;
       break;
-    case Engine::Status::DRAW:
+    case Board::GameStatus::DRAW:
       ss_ << "1/2-1/2";
       ostr_ << "[Result \"1/2-1/2\"]" << std::endl;
       break;

@@ -3,6 +3,11 @@
 #include <algorithm>
 #include <cassert>
 
+std::ostream& operator<<(std::ostream& ostr, Board::GameStatus status) {
+  ostr << static_cast<int>(status);
+  return ostr;
+}
+
 std::ostream& operator<<(std::ostream& ostr, const Board& board) {
   ostr << "{";
   for (const auto& row : board.fields_) {
@@ -16,7 +21,7 @@ std::ostream& operator<<(std::ostream& ostr, const Board& board) {
   return ostr;
 }
 
-Board::Board() noexcept {
+Board::Board(bool validate_moves) noexcept : validate_moves_(validate_moves) {
   std::array<Figure*, BoardSize> row;
   row.fill(nullptr);
   fields_.fill(row);
@@ -113,6 +118,14 @@ void Board::makeMove(Figure::Move move) {
   if (figure == nullptr) {
     throw NoFigureException(move.old_field);
   }
+
+  if (validate_moves_) {
+    GameStatus status = getGameStatus(figure->getColor());
+    if (status != GameStatus::NONE) {
+      throw IllegalMoveException(figure, move.new_field);
+    }
+  }
+
   Figure::Color color = figure->getColor();
   if (validate_moves_) {
     auto possible_moves = figure->calculatePossibleMoves();
@@ -157,6 +170,65 @@ void Board::makeMove(Figure::Move move) {
   for (auto drawer : drawers_) {
     drawer->onFigureMoved(move);
   }
+
+  if (validate_moves_) {
+    GameStatus status = getGameStatus(!color);
+    if (status != GameStatus::NONE) {
+      onGameFinished(status);
+    }
+  }
+}
+
+Board::GameStatus Board::getGameStatus(Figure::Color color) const {
+  Board::GameStatus status = isCheckMate();
+  if (status == GameStatus::WHITE_WON ||
+      status == GameStatus::BLACK_WON) {
+    return status;
+  }
+  if (isStaleMate(color) || isDraw()) {
+    return GameStatus::DRAW;
+  }
+  return GameStatus::NONE;
+}
+
+Board::GameStatus Board::isCheckMate() const {
+  const King* king = getKing(Figure::WHITE);
+  if (king == nullptr) {
+    throw BadBoardStatusException(this);
+  }
+  if (king->isCheckmated()) {
+    return GameStatus::BLACK_WON;
+  }
+  king = getKing(Figure::BLACK);
+  if (king == nullptr) {
+    throw BadBoardStatusException(this);
+  }
+  if (king->isCheckmated()) {
+    return GameStatus::WHITE_WON;
+  }
+  return GameStatus::NONE;
+}
+
+bool Board::isStaleMate(Figure::Color color) const {
+  const King* king = getKing(color);
+  if (king == nullptr) {
+    throw BadBoardStatusException(this);
+  }
+  return king->isStalemated();
+}
+
+bool Board::isDraw() const {
+  std::vector<const Figure*> white_figures = getFigures(Figure::WHITE);
+  std::vector<const Figure*> black_figures = getFigures(Figure::BLACK);
+  assert(white_figures.size() > 0);
+  if (white_figures.size() > 1 || black_figures.size() > 1) {
+    return false;
+  }
+  if (white_figures[0]->getType() != Figure::KING ||
+      black_figures[0]->getType() != Figure::KING) {
+    throw BadBoardStatusException(this);
+  }
+  return true;
 }
 
 void Board::makeMove(Field old_field, Field new_field, Figure::Type promotion) {
@@ -246,7 +318,7 @@ void Board::setStandardBoard() {
   addFigure(Figure::KING, Field(Field::E, Field::EIGHT), Figure::BLACK);
 }
 
-void Board::onGameFinished(Engine::Status status) noexcept {
+void Board::onGameFinished(Board::GameStatus status) noexcept {
   for (auto* drawer: drawers_) {
     drawer->onGameFinished(status);
   }

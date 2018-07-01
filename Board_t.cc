@@ -4,7 +4,6 @@
 #include "Test.h"
 #include "Board.h"
 
-#include "Engine.h"
 #include "Field.h"
 #include "Figure.h"
 
@@ -19,7 +18,7 @@ class BoardDrawerMock : public BoardDrawer {
   MOCK_METHOD3(onFigureAdded, void(Figure::Type, Figure::Color, Field));
   MOCK_METHOD1(onFigureRemoved, void(Field));
   MOCK_METHOD1(onFigureMoved, void(Figure::Move));
-  MOCK_METHOD1(onGameFinished, void(Engine::Status));
+  MOCK_METHOD1(onGameFinished, void(Board::GameStatus));
 };
 
 // Checks if Field::WrongFieldException is properly thrown from Field::Field
@@ -64,6 +63,9 @@ TEST_PROCEDURE(test3) {
   Field field2(Field::C, Field::TWO);
   Board board;
   const Figure* bishop = board.addFigure(Figure::BISHOP, field1, Figure::WHITE);
+  board.addFigure(Figure::KING, Field(Field::A, Field::ONE), Figure::WHITE);
+  board.addFigure(Figure::KING, Field(Field::D, Field::EIGHT), Figure::BLACK);
+  board.addFigure(Figure::ROOK, Field(Field::E, Field::EIGHT), Figure::BLACK);
   try {
     board.makeMove(field1, field2);
   } catch(const Board::IllegalMoveException& exception) {
@@ -110,7 +112,7 @@ TEST_PROCEDURE(test5) {
 // Checks if Board::add/move/remove/getFigure(s) works correctly
 TEST_PROCEDURE(test7) {
   TEST_START
-  Board board;
+  Board board(false);
   VERIFY_IS_EQUAL(board.getFigures().size(), 0ul);
   Field field1(Field::C, Field::ONE);
   VERIFY_IS_NULL(board.getFigure(field1));
@@ -187,9 +189,11 @@ TEST_PROCEDURE(test10) {
   Field field2(Field::E, Field::FOUR);
   Field field3(Field::E, Field::FIVE);
   Field field4(Field::C, Field::TWO);
+  Field field5(Field::A, Field::EIGHT);
   EXPECT_CALL(drawer, onFigureAdded(Figure::QUEEN, Figure::BLACK, field1));
   EXPECT_CALL(drawer, onFigureAdded(Figure::BISHOP, Figure::WHITE, field3));
   EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::WHITE, field4));
+  EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::BLACK, field5));
   board.addFigure(Figure::BISHOP, field3, Figure::WHITE);
   EXPECT_CALL(drawer, onFigureMoved(Figure::Move(field1, field2, true, false, Figure::Move::Castling::NONE, false, Figure::PAWN)));
   EXPECT_CALL(drawer, onFigureMoved(Figure::Move(field2, field3, false, false, Figure::Move::Castling::NONE, true, Figure::PAWN)));
@@ -197,9 +201,66 @@ TEST_PROCEDURE(test10) {
   EXPECT_CALL(drawer, onFigureRemoved(field3));
   board.addFigure(Figure::QUEEN, field1, Figure::BLACK);
   board.addFigure(Figure::KING, field4, Figure::WHITE);
+  board.addFigure(Figure::KING, field5, Figure::BLACK);
   board.makeMove(field1, field2);
   board.makeMove(field2, field3);
   board.removeFigure(field3);
+  TEST_END
+}
+
+// Checks if BoardDrawer::onGameFinished is called correctly.
+TEST_PROCEDURE(test11) {
+  TEST_START
+  BoardDrawerMock drawer;
+  {
+    Board board;
+    board.addBoardDrawer(&drawer);
+    EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::WHITE, Field("d3")));
+    EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::BLACK, Field("a2")));
+    EXPECT_CALL(drawer, onFigureAdded(Figure::QUEEN, Figure::BLACK, Field("e3")));
+    EXPECT_CALL(drawer, onFigureMoved(
+          Figure::Move(Field("d3"), Field("e3"), false, false, Figure::Move::Castling::NONE, true, Figure::PAWN)));
+    EXPECT_CALL(drawer, onFigureRemoved(Field("e3")));
+    EXPECT_CALL(drawer, onGameFinished(Board::GameStatus::DRAW));
+
+    board.addFigure(Figure::KING, Field("d3"), Figure::WHITE);
+    board.addFigure(Figure::KING, Field("a2"), Figure::BLACK);
+    board.addFigure(Figure::QUEEN, Field("e3"), Figure::BLACK);
+
+    board.makeMove(Field("d3"), Field("e3"));
+  }
+  {
+    Board board;
+    board.addBoardDrawer(&drawer);
+    EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::WHITE, Field("a8")));
+    EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::BLACK, Field("c7")));
+    EXPECT_CALL(drawer, onFigureAdded(Figure::QUEEN, Figure::BLACK, Field("c5")));
+    EXPECT_CALL(drawer, onFigureMoved(
+          Figure::Move(Field("c5"), Field("a5"), true, true, Figure::Move::Castling::NONE, false, Figure::PAWN)));
+    EXPECT_CALL(drawer, onGameFinished(Board::GameStatus::BLACK_WON));
+
+    board.addFigure(Figure::KING, Field("a8"), Figure::WHITE);
+    board.addFigure(Figure::KING, Field("c7"), Figure::BLACK);
+    board.addFigure(Figure::QUEEN, Field("c5"), Figure::BLACK);
+
+    board.makeMove(Field("c5"), Field("a5"));
+  }
+  {
+    Board board;
+    board.addBoardDrawer(&drawer);
+    EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::WHITE, Field("a8")));
+    EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::BLACK, Field("c7")));
+    EXPECT_CALL(drawer, onFigureAdded(Figure::QUEEN, Figure::BLACK, Field("c5")));
+    EXPECT_CALL(drawer, onFigureMoved(
+          Figure::Move(Field("c5"), Field("b6"), false, false, Figure::Move::Castling::NONE, false, Figure::PAWN)));
+    EXPECT_CALL(drawer, onGameFinished(Board::GameStatus::DRAW));
+
+    board.addFigure(Figure::KING, Field("a8"), Figure::WHITE);
+    board.addFigure(Figure::KING, Field("c7"), Figure::BLACK);
+    board.addFigure(Figure::QUEEN, Field("c5"), Figure::BLACK);
+
+    board.makeMove(Field("c5"), Field("b6"));
+  }
   TEST_END
 }
 
@@ -217,6 +278,7 @@ int main() {
     TEST("Board::operator== works correctly", test8);
     TEST("Board::Board(const Board&) works correctly", test9);
     TEST("BoardDrawer::onFigureAdded/Moved/Removed are called correctly", test10);
+    TEST("BoardDrawer::onGameFinished is called correctly", test11);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;

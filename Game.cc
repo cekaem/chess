@@ -17,17 +17,17 @@ class TextBoardDrawer : public BoardDrawer {
   void onFigureRemoved(Field field) override {
   }
 
-  void onGameFinished(Engine::Status status) override {
+  void onGameFinished(Board::GameStatus status) override {
     switch (status) {
-      case Engine::Status::NONE:
+      case Board::GameStatus::NONE:
         break;
-      case Engine::Status::WHITE_WON:
+      case Board::GameStatus::WHITE_WON:
         ostr_ << "1-0";
         break;
-      case Engine::Status::BLACK_WON:
+      case Board::GameStatus::BLACK_WON:
         ostr_ << "0-1";
         break;
-      case Engine::Status::DRAW:
+      case Board::GameStatus::DRAW:
         ostr_ << "1/2-1/2";
         break;
     }
@@ -82,11 +82,10 @@ int main() {
   board.addBoardDrawer(&pgn_creator);
   Engine engine(board, std::cerr);
   Figure::Color color = Figure::WHITE;
-  Engine::Status status = Engine::Status::NONE;
-  while((status = engine.makeMove(color)) == Engine::Status::NONE) {
+  Board::GameStatus status = Board::GameStatus::NONE;
+  while((status = engine.makeMove(color)) == Board::GameStatus::NONE) {
     color = !color;
   }
-  board.onGameFinished(status);
   std::cout << board << std::endl;
 
   return 0;
