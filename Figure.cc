@@ -164,6 +164,16 @@ Figure::Move::Castling Figure::Move::isCastling(const Board* board, Field old_fi
   return Figure::Move::Castling::NONE;
 }
 
+bool Figure::Move::isPromotion(const Board* board, Field old_field, Field new_field) {
+  const Figure* figure = board->getFigure(old_field);
+  if (figure == nullptr || figure->getType() != Figure::PAWN) {
+    return false;
+  }
+  Field::Number old_number = figure->getColor() == Figure::WHITE ? Field::SEVEN : Field::TWO;
+  Field::Number new_number = figure->getColor() == Figure::WHITE ? Field::EIGHT : Field::ONE;
+  return old_field.number == old_number && new_field.number == new_number;
+}
+
 bool Figure::Move::operator==(const Figure::Move& other) const {
   return old_field == other.old_field &&
          new_field == other.new_field &&

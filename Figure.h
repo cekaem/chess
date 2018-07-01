@@ -31,6 +31,7 @@ class Figure {
       castling(cast), figure_beaten(beaten), pawn_promotion(promo) {}
 
     static Castling isCastling(const Board* board, Field old_field, Field new_field);
+    static bool isPromotion(const Board* board, Field old_field, Field new_field);
 
     Move(Field field) : new_field(field) {}
 

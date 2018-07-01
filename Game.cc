@@ -24,6 +24,23 @@ class TextBoardDrawer : public BoardDrawer {
      ostr_ << "-";
     }
     ostr_ << move.new_field;
+    switch (move.pawn_promotion) {
+      case Figure::PAWN:
+      case Figure::KING:
+        break;
+      case Figure::BISHOP:
+        ostr_ << "B";
+        break;
+      case Figure::KNIGHT:
+        ostr_ << "K";
+        break;
+      case Figure::ROOK:
+        ostr_ << "R";
+        break;
+      case Figure::QUEEN:
+        ostr_ << "Q";
+        break;
+    }
     if (move.is_mate) {
       ostr_ << "#";
     }else if (move.is_check) {

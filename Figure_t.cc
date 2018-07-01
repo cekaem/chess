@@ -464,6 +464,34 @@ TEST_PROCEDURE(test9) {
   TEST_END
 }
 
+// Checks if Board::IllegalMoveException is thrown when pawn promoting move does not contain
+// information about figure pawn should be promoted to.
+TEST_PROCEDURE(test10) {
+  TEST_START
+    Board board;
+    const King* king = static_cast<const King*>(board.addFigure(Figure::KING, Field(Field::B, Field::ONE), Figure::WHITE));
+    board.addFigure(Figure::PAWN, Field(Field::A, Field::TWO), Figure::WHITE);
+    board.addFigure(Figure::PAWN, Field(Field::B, Field::TWO), Figure::WHITE);
+    const Figure* pawn = board.addFigure(Figure::PAWN, Field(Field::D, Field::TWO), Figure::BLACK);
+    auto moves = pawn->calculatePossibleMoves();
+    VERIFY_CONTAINS(moves, createMove(pawn, Field::D, Field::ONE, false, true, true, Figure::QUEEN));
+    Field field = Field(Field::D, Field::ONE);
+    try {
+      board.makeMove(Field(Field::D, Field::TWO), field);
+    } catch (const Board::IllegalMoveException& e) {
+      VERIFY_EQUALS(e.field_, field);
+      VERIFY_EQUALS(e.figure_, pawn);
+      board.makeMove(Field(Field::D, Field::TWO), field, Figure::QUEEN);
+      const Figure* queen = board.getFigure(field);
+      VERIFY_TRUE(queen != nullptr && queen->getType() == Figure::QUEEN);
+      VERIFY_TRUE(king->isChecked());
+      VERIFY_TRUE(king->isCheckmated());
+      RETURN
+    }
+    NOT_REACHED
+  TEST_END
+}
+
 } // unnamed namespace
 
 
@@ -478,6 +506,7 @@ int main() {
     TEST("King::isChecked and King::isCheckmated works properly", test7);
     TEST("Figures does not unveil their king", test8);
     TEST("King::isStalemated works properly", test9);
+    TEST("Board::IllegalMoveException is thrown when pawn promoting move is bad", test10);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;

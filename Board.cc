@@ -177,6 +177,10 @@ void Board::makeMove(Field old_field, Field new_field, Figure::Type promotion) {
       throw IllegalMoveException(figure, new_field);
     }
   }
+  bool is_promotion = Figure::Move::isPromotion(this, old_field, new_field);
+  if (is_promotion && promotion == Figure::PAWN) {
+    throw IllegalMoveException(figure, new_field);
+  }
   Figure::Move move(old_field, new_field, false, false, castling, false, promotion);
   makeMove(move);
 }
