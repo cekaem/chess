@@ -35,6 +35,10 @@ struct Field {
                                static_cast<Number>(f[1] - '1')) {
   }
 
+  static bool isFieldValid(const std::string& f) {
+    return f.size() == 2 && f[0] >= 'a' && f[0] <= 'h' && f[1] >= '1' && f[1] <= '8';
+  }
+
   Letter letter;
   Number number;
 };

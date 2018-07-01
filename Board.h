@@ -51,10 +51,12 @@ class Board {
   Board(bool validate_moves = true) noexcept;
   Board(const Board& other) noexcept;
 
+  bool isMoveValid(Field old_field, Field new_field) const;
+
   const Figure* addFigure(Figure::Type type, Field field, Figure::Color color);
   void removeFigure(Field field);
-  void makeMove(Field old_field, Field new_field, Figure::Type promotion = Figure::PAWN);
-  void makeMove(Figure::Move move);
+  GameStatus makeMove(Field old_field, Field new_field, Figure::Type promotion = Figure::PAWN);
+  GameStatus makeMove(Figure::Move move);
   void moveFigure(Field old_field, Field new_field);
   const Figure* getFigure(Field field) const noexcept;
   const std::vector<std::unique_ptr<Figure>>& getFigures() const noexcept { return figures_; }

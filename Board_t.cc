@@ -185,26 +185,23 @@ TEST_PROCEDURE(test10) {
   BoardDrawerMock drawer;
   Board board;
   board.addBoardDrawer(&drawer);
-  Field field1(Field::D, Field::FOUR);
-  Field field2(Field::E, Field::FOUR);
-  Field field3(Field::E, Field::FIVE);
-  Field field4(Field::C, Field::TWO);
-  Field field5(Field::A, Field::EIGHT);
-  EXPECT_CALL(drawer, onFigureAdded(Figure::QUEEN, Figure::BLACK, field1));
-  EXPECT_CALL(drawer, onFigureAdded(Figure::BISHOP, Figure::WHITE, field3));
-  EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::WHITE, field4));
-  EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::BLACK, field5));
-  board.addFigure(Figure::BISHOP, field3, Figure::WHITE);
-  EXPECT_CALL(drawer, onFigureMoved(Figure::Move(field1, field2, true, false, Figure::Move::Castling::NONE, false, Figure::PAWN)));
-  EXPECT_CALL(drawer, onFigureMoved(Figure::Move(field2, field3, false, false, Figure::Move::Castling::NONE, true, Figure::PAWN)));
-  EXPECT_CALL(drawer, onFigureRemoved(field3));  // bishop beaten by queen
-  EXPECT_CALL(drawer, onFigureRemoved(field3));
-  board.addFigure(Figure::QUEEN, field1, Figure::BLACK);
-  board.addFigure(Figure::KING, field4, Figure::WHITE);
-  board.addFigure(Figure::KING, field5, Figure::BLACK);
-  board.makeMove(field1, field2);
-  board.makeMove(field2, field3);
-  board.removeFigure(field3);
+  EXPECT_CALL(drawer, onFigureAdded(Figure::QUEEN, Figure::BLACK, Field("d4")));
+  EXPECT_CALL(drawer, onFigureAdded(Figure::BISHOP, Figure::WHITE, Field("e5")));
+  EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::WHITE, Field("c2")));
+  EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::BLACK, Field("a8")));
+  EXPECT_CALL(drawer, onFigureMoved(Figure::Move(Field("d4"), Field("e4"), true, false, Figure::Move::Castling::NONE, false, Figure::PAWN)));
+  EXPECT_CALL(drawer, onFigureMoved(Figure::Move(Field("c2"), Field("c3"), false, false, Figure::Move::Castling::NONE, false, Figure::PAWN)));
+  EXPECT_CALL(drawer, onFigureMoved(Figure::Move(Field("e4"), Field("e5"), true, false, Figure::Move::Castling::NONE, true, Figure::PAWN)));
+  EXPECT_CALL(drawer, onFigureRemoved(Field("e5")));  // bishop beaten by queen
+  EXPECT_CALL(drawer, onFigureRemoved(Field("e5")));
+  board.addFigure(Figure::BISHOP, Field("e5"), Figure::WHITE);
+  board.addFigure(Figure::QUEEN, Field("d4"), Figure::BLACK);
+  board.addFigure(Figure::KING, Field("c2"), Figure::WHITE);
+  board.addFigure(Figure::KING, Field("a8"), Figure::BLACK);
+  VERIFY_EQUALS(board.makeMove(Field("d4"), Field("e4")), Board::GameStatus::NONE);
+  VERIFY_EQUALS(board.makeMove(Field("c2"), Field("c3")), Board::GameStatus::NONE);
+  VERIFY_EQUALS(board.makeMove(Field("e4"), Field("e5")), Board::GameStatus::NONE);
+  board.removeFigure(Field("e5"));
   TEST_END
 }
 
@@ -227,7 +224,7 @@ TEST_PROCEDURE(test11) {
     board.addFigure(Figure::KING, Field("a2"), Figure::BLACK);
     board.addFigure(Figure::QUEEN, Field("e3"), Figure::BLACK);
 
-    board.makeMove(Field("d3"), Field("e3"));
+    VERIFY_EQUALS(board.makeMove(Field("d3"), Field("e3")), Board::GameStatus::DRAW);
   }
   {
     Board board;
@@ -243,7 +240,7 @@ TEST_PROCEDURE(test11) {
     board.addFigure(Figure::KING, Field("c7"), Figure::BLACK);
     board.addFigure(Figure::QUEEN, Field("c5"), Figure::BLACK);
 
-    board.makeMove(Field("c5"), Field("a5"));
+    VERIFY_EQUALS(board.makeMove(Field("c5"), Field("a5")), Board::GameStatus::BLACK_WON);
   }
   {
     Board board;
@@ -259,8 +256,28 @@ TEST_PROCEDURE(test11) {
     board.addFigure(Figure::KING, Field("c7"), Figure::BLACK);
     board.addFigure(Figure::QUEEN, Field("c5"), Figure::BLACK);
 
-    board.makeMove(Field("c5"), Field("b6"));
+    VERIFY_EQUALS(board.makeMove(Field("c5"), Field("b6")), Board::GameStatus::DRAW);
   }
+  TEST_END
+}
+
+// Checks if Board::isMoveValid works correctly.
+TEST_PROCEDURE(test12) {
+  TEST_START
+  Board board;
+  VERIFY_FALSE(board.isMoveValid(Field("d1"), Field("d2")));
+  board.addFigure(Figure::KING, Field("d1"), Figure::WHITE);
+  VERIFY_FALSE(board.isMoveValid(Field("d1"), Field("d2")));  // lack of black king
+  board.addFigure(Figure::KING, Field("a3"), Figure::BLACK);
+  VERIFY_FALSE(board.isMoveValid(Field("d1"), Field("d2")));  // drawing position, insufficient material
+  board.addFigure(Figure::ROOK, Field("h3"), Figure::WHITE);
+  VERIFY_FALSE(board.isMoveValid(Field("d1"), Field("d2")));  // black king is checked
+  board.addFigure(Figure::PAWN, Field("b3"), Figure::BLACK);
+  VERIFY_TRUE(board.isMoveValid(Field("d1"), Field("d2")));
+  VERIFY_TRUE(board.isMoveValid(Field("h3"), Field("h2")));
+  VERIFY_FALSE(board.isMoveValid(Field("b3"), Field("b4")));
+  board.addFigure(Figure::BISHOP, Field("h5"), Figure::BLACK);
+  VERIFY_FALSE(board.isMoveValid(Field("h3"), Field("h2")));
   TEST_END
 }
 
@@ -279,6 +296,7 @@ int main() {
     TEST("Board::Board(const Board&) works correctly", test9);
     TEST("BoardDrawer::onFigureAdded/Moved/Removed are called correctly", test10);
     TEST("BoardDrawer::onGameFinished is called correctly", test11);
+    TEST("Board::isMoveValid works correctly", test12);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;

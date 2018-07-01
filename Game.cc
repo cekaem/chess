@@ -1,4 +1,6 @@
 #include <iostream>
+#include <string>
+#include <utility>
 
 #include "Board.h"
 #include "Engine.h"
@@ -71,6 +73,36 @@ class TextBoardDrawer : public BoardDrawer {
   std::ostream& ostr_;
 };
 
+std::pair<Field, Field> getHumanMove() {
+  bool field_ok = false;
+  Field old_field;
+  while (field_ok == false) {
+    std::cout << "> ";
+    std::string field;
+    std::cin >> field;
+    if (Field::isFieldValid(field) == true) {
+      field_ok = true;
+      old_field = Field(field.c_str());
+    } else {
+      std::cerr << "Invalid field" << std::endl;
+    }
+  }
+  field_ok = false;
+  Field new_field;
+  while (field_ok == false) {
+    std::cout << ">> ";
+    std::string field;
+    std::cin >> field;
+    if (Field::isFieldValid(field) == true) {
+      field_ok = true;
+      new_field = Field(field.c_str());
+    } else {
+      std::cerr << "Invalid field" << std::endl;
+    }
+  }
+  return std::make_pair(old_field, new_field);
+}
+
 }  // unnamed namespace
 
 int main() {
@@ -81,12 +113,24 @@ int main() {
   board.addBoardDrawer(&drawer);
   board.addBoardDrawer(&pgn_creator);
   Engine engine(board, std::cerr);
-  Figure::Color color = Figure::WHITE;
+  
   Board::GameStatus status = Board::GameStatus::NONE;
-  while((status = engine.makeMove(color)) == Board::GameStatus::NONE) {
-    color = !color;
+  while (status == Board::GameStatus::NONE) {
+    bool move_ok = false;
+    std::pair<Field, Field> human_move;
+    while (move_ok == false) {
+      human_move = getHumanMove();
+      if (board.isMoveValid(human_move.first, human_move.second) == true) {
+        move_ok = true;
+      } else {
+        std::cerr << "Invalid move." << std::endl;
+      }
+    }
+    status = board.makeMove(human_move.first, human_move.second);
+    if (status == Board::GameStatus::NONE) {
+      status = engine.makeMove(Figure::BLACK);
+    }
   }
-  std::cout << board << std::endl;
 
   return 0;
 }

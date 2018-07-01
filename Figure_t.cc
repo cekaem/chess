@@ -349,7 +349,7 @@ TEST_PROCEDURE(test6) {
     board.addFigure(Figure::ROOK, Field(Field::H, Field::ONE), Figure::WHITE);
     board.addFigure(Figure::ROOK, Field(Field::A, Field::EIGHT), Figure::BLACK);
     const Figure* black_rook = board.addFigure(Figure::ROOK, Field(Field::H, Field::EIGHT), Figure::BLACK);
-    board.makeMove(Field(Field::A, Field::ONE), Field(Field::A, Field::TWO));
+    VERIFY_EQUALS(board.makeMove(Field(Field::A, Field::ONE), Field(Field::A, Field::TWO)), Board::GameStatus::NONE);
     board.makeMove(Field(Field::A, Field::TWO), Field(Field::A, Field::ONE));
     auto moves = white_king->calculatePossibleMoves();
     VERIFY_CONTAINS(moves, createMove(white_king, Field::G, Field::ONE, false, false, false,
@@ -508,6 +508,22 @@ TEST_PROCEDURE(test10) {
   TEST_END
 }
 
+// Checks if Field::isFieldValid works correctly
+TEST_PROCEDURE(test11) {
+  TEST_START
+  VERIFY_TRUE(Field::isFieldValid("a1"));
+  VERIFY_TRUE(Field::isFieldValid("d5"));
+  VERIFY_TRUE(Field::isFieldValid("h7"));
+  VERIFY_TRUE(Field::isFieldValid("b8"));
+  VERIFY_FALSE(Field::isFieldValid(""));
+  VERIFY_FALSE(Field::isFieldValid("d77"));
+  VERIFY_FALSE(Field::isFieldValid("ab"));
+  VERIFY_FALSE(Field::isFieldValid("A1"));
+  VERIFY_FALSE(Field::isFieldValid("b9"));
+  VERIFY_FALSE(Field::isFieldValid("d"));
+  TEST_END
+}
+
 } // unnamed namespace
 
 
@@ -523,6 +539,7 @@ int main() {
     TEST("Figures does not unveil their king", test8);
     TEST("King::isStalemated works properly", test9);
     TEST("Board::IllegalMoveException is thrown when pawn promoting move is bad", test10);
+    TEST("Field::isFieldValid works correctly", test11);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;
