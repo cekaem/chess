@@ -7,7 +7,7 @@ dirs:
 
 bin: dirs game
 
-test: dirs $(BIN_DIR)/board_tests $(BIN_DIR)/figure_tests
+test: dirs $(BIN_DIR)/board_tests $(BIN_DIR)/figure_tests $(BIN_DIR)/engine_tests
 
 game: $(BIN_DIR)/game
 
@@ -16,6 +16,9 @@ $(BIN_DIR)/board_tests: $(OBJ_DIR)/Board_t.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Figur
 
 $(BIN_DIR)/figure_tests: $(OBJ_DIR)/Figure_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o Board.h Figure.h Field.h
 	$(CXX) $(CFLAGS) -o $(BIN_DIR)/figure_tests $(OBJ_DIR)/Figure_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o
+
+$(BIN_DIR)/engine_tests: $(OBJ_DIR)/Engine_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Engine.o Board.h Figure.h Field.h Engine.h
+	$(CXX) $(CFLAGS) -o $(BIN_DIR)/engine_tests $(OBJ_DIR)/Engine_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Engine.o
 
 $(BIN_DIR)/game: $(OBJ_DIR)/Game.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/PgnCreator.o Board.h Figure.h Field.h
 	$(CXX) $(CFLAGS) -o $(BIN_DIR)/game $(OBJ_DIR)/Game.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/PgnCreator.o
@@ -34,6 +37,9 @@ $(OBJ_DIR)/Board.o: Board.cc Board.h Field.h
 
 $(OBJ_DIR)/Figure_t.o: Figure_t.cc Figure.h Test.h Mock.h Board.h Field.h
 	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/Figure_t.o Figure_t.cc
+
+$(OBJ_DIR)/Engine_t.o: Engine_t.cc Figure.h Test.h Mock.h Board.h Field.h Engine.h
+	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/Engine_t.o Engine_t.cc
 
 $(OBJ_DIR)/Figure.o: Figure.cc Figure.h Field.h
 	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/Figure.o Figure.cc

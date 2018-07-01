@@ -2,6 +2,7 @@
 
 #include <exception>
 #include <iostream>
+#include <utility>
 
 #include "Board.h"
 #include "Figure.h"
@@ -10,7 +11,7 @@
 class Engine {
  public:
   Engine(Board& board, std::ostream& debug_stream);
-  Board::GameStatus makeMove(Figure::Color color);
+  Figure::Move makeMove(Figure::Color color);
 
  private:
   int generateRandomValue(int max) const;

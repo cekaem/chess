@@ -128,7 +128,8 @@ int main() {
     }
     status = board.makeMove(human_move.first, human_move.second);
     if (status == Board::GameStatus::NONE) {
-      status = engine.makeMove(Figure::BLACK);
+      engine.makeMove(Figure::BLACK);
+      status = board.getGameStatus(Figure::WHITE);
     }
   }
 

@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <utility>
 
 #include "Board.h"
 #include "Figure.h"
@@ -17,11 +18,10 @@ int Engine::generateRandomValue(int max) const {
   return rand() % (max + 1);
 }
 
-Board::GameStatus Engine::makeMove(Figure::Color color) {
+Figure::Move Engine::makeMove(Figure::Color color) {
   Board::GameStatus status = board_.getGameStatus(color);
   if (status != Board::GameStatus::NONE) {
-    // TODO: create new exception for this case
-    throw Board::IllegalMoveException(nullptr, Field());
+    throw Board::BadBoardStatusException(&board_);
   }
   std::vector<Figure::Move> all_moves;
   std::vector<const Figure*> figures = board_.getFigures(color);
@@ -32,9 +32,15 @@ Board::GameStatus Engine::makeMove(Figure::Color color) {
   size_t moves_count = all_moves.size();
   debug_stream_ << "Moves count: " << moves_count << std::endl;
 
-  auto move = all_moves[generateRandomValue(moves_count-1)];
-  debug_stream_ << "My move (" << moves_count_ << "): " << move.old_field << "-" << move.new_field << std::endl;
-  board_.makeMove(move);
+  auto my_move = all_moves[generateRandomValue(moves_count-1)];
+  for (auto& move: all_moves) {
+    if (move.is_mate == true) {
+      my_move = move;
+    }
+  }
+
+  debug_stream_ << "My move (" << moves_count_ << "): " << my_move.old_field << "-" << my_move.new_field << std::endl;
+  board_.makeMove(my_move);
   ++moves_count_;
-  return board_.getGameStatus(!color);
+  return my_move;
 }
