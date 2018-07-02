@@ -86,12 +86,28 @@ TEST_PROCEDURE(test1) {
  TEST_END
 }
 
+// Checks if engine grabs free material
+TEST_PROCEDURE(test2) {
+  TEST_START
+  {
+    Board board;
+    Engine engine(board, null_stream);
+    board.addFigure(Figure::KING, Field("a8"), Figure::BLACK);
+    board.addFigure(Figure::KING, Field("d2"), Figure::WHITE);
+    board.addFigure(Figure::QUEEN, Field("d1"), Figure::BLACK);
+    auto move = engine.makeMove(Figure::WHITE);
+    VERIFY_TRUE(MovesEqual(move, "d2-d1"));
+  }
+  TEST_END
+}
+
 } // unnamed namespace
 
 
 int main() {
   try {
-    TEST("Engines detects mate in one", test1);
+    TEST("Engine detects mate in one", test1);
+    TEST("Engine grabs free material", test2);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;
