@@ -4,7 +4,6 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
-#include <stdexcept>
 #include <utility>
 
 #include "Board.h"
@@ -24,20 +23,16 @@ Figure::Move Engine::makeMove(Figure::Color color) {
   if (status != Board::GameStatus::NONE) {
     throw Board::BadBoardStatusException(&board_);
   }
-  std::vector<Figure::Move> all_moves;
-  std::vector<const Figure*> figures = board_.getFigures(color);
-  for (const Figure* figure: figures) {
-    std::vector<Figure::Move> moves = figure->calculatePossibleMoves();
-    all_moves.insert(all_moves.end(), moves.begin(), moves.end());
-  }
-  size_t moves_count = all_moves.size();
-  debug_stream_ << "Moves count: " << moves_count << std::endl;
 
-  auto my_move = all_moves[generateRandomValue(moves_count-1)];
-  for (auto& move: all_moves) {
-    if (move.is_mate == true) {
-      my_move = move;
-    }
+  std::vector<Move> moves = generateTree(Board& board, Figure::Color color, SearchDepth - 1);
+  std::pair<int, int> result = evaluateMoves(moves, color, true);
+  int moves_to_mate = BorderValue;
+  int move_value = -BorderValue;
+  for (const auto& r: result) {
+    if 
+  }
+  if (!move_calculated) {
+    my_move = all_moves[generateRandomValue(moves_count - 1)];
   }
 
   debug_stream_ << "My move (" << moves_count_ << "): " << my_move.old_field << "-" << my_move.new_field << std::endl;
@@ -46,7 +41,7 @@ Figure::Move Engine::makeMove(Figure::Color color) {
   return my_move;
 }
 
-std::pair<int, int> Engine::evaluatePosition(const Board& board, Figure::Color my_color) const {
+std::pair<int, int> Engine::evaluateMoves(const Board& board, Figure::Color my_color) const {
   std::vector<const Figure*> my_figures = board.getFigures(my_color);
   std::vector<const Figure*> enemy_figures = board.getFigures(!my_color);
   int value = 0;
@@ -71,15 +66,14 @@ std::pair<int, int> Engine::evaluatePosition(const Board& board, Figure::Color m
   return std::make_pair(value, moves_to_mate);
 }
 
-std::pair<int, int> Engine::evaluatePosition(
+std::pair<int, int> Engine::evaluateMoves(
     const std::vector<Move>& moves,
     Figure::Color my_color,
     bool my_move) const {
-  if (moves.empty() == true) {
-    throw std::runtime_error("Internal engine's error: \"empty vector in Engine::evaluatePosition\"");
-  }
-  int value = 0;
+  assert(moves.empty() == false);
+
   int moves_to_mate = 0;
+  int value = 0;
   if (my_move) {
     value = -BorderValue;
     moves_to_mate = BorderValue;
@@ -88,20 +82,45 @@ std::pair<int, int> Engine::evaluatePosition(
     moves_to_mate = -BorderValue;
   }
 
-  std::vector<Move> helper;
-  for (Move move: moves) {
-    if (my_move == true && move.moves_to_mate <= moves_to_mate) {
-      helper.push_back(move);
+  for (auto& move: moves) {
+    if ((my_move == true && move.value >= value) ||
+        (my_move == false && move.value <= value)) {
+      value = move.value;
     }
-    if (my_move == false && move.moves_to_mate >= moves_to_mate) {
-      helper.push_back(move);
+    if (moves_to_mate == 0) {
+      continue;
+    }
+    if (move.moves_to_mate == 0) {
+      moves_to_mate = 0;
+      continue;
+    }
+    if ((my_move == true && move.moves_to_mate < moves_to_mate) ||
+        (my_move == false && move.moves_to_mate > moves_to_mate)) {
+      moves_to_mate = move.moves_to_mate;
     }
   }
-  if (moves.empty() == true) {
-    throw std::runtime_error("Internal engine's error: \"empty vector(2) in Engine::evaluatePosition\"");
-  }
+  assert(value != BorderValue && value != -BorderValue &&
+         moves_to_mate != BorderValue && moves_to_mate != -BorderValue);
+  return std::make_pair(value, moves_to_mate);
+}
 
-  for (Move move: helper) {
-    if (
+std::vector<Engine::Move> Engine::generateTree(Board& board, Figure::Color color, int depths_remaining) {
+  std::vector<Figure::Move> all_moves;
+  std::vector<const Figure*> figures = board_.getFigures(color);
+  for (const Figure* figure: figures) {
+    std::vector<Figure::Move> moves = figure->calculatePossibleMoves();
+    all_moves.insert(all_moves.end(), moves.begin(), moves.end());
   }
+  size_t moves_count = all_moves.size();
+  debug_stream_ << "Moves count: " << moves_count << std::endl;
+
+  Figure::Move my_move;
+  bool move_calculated = false;
+  for (auto& move: all_moves) {
+    if (move.is_mate == true) {
+      move_calculated = true;
+      my_move = move;
+    }
+  }
+  
 }

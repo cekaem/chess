@@ -19,7 +19,7 @@ class Engine {
   static const int BorderValue = 100;
 
   struct Move {
-    Move(Board& b) : board(b) {}
+    Move(Board& b, Figure::Move bd) : board(b), basic_data(bd) {}
     Board board;
     Figure::Move basic_data;
     int value{0};
@@ -30,10 +30,11 @@ class Engine {
     void calculateMoves();
   };
 
-  std::pair<int, int> evaluatePosition(const Board& board, Figure::Color my_color) const;
-  std::pair<int, int> evaluatePosition(const std::vector<Move>& moves,
-                                       Figure::Color my_color,
-                                       bool my_move) const;
+  std::vector<Move> generateTree(Board& board, Figure::Color color, int depths_remaining);
+  std::pair<int, int> evaluateMoves(const Board& board, Figure::Color my_color) const;
+  std::pair<int, int> evaluateMoves(const std::vector<Move>& moves,
+                                    Figure::Color my_color,
+                                    bool my_move) const;
 
   int generateRandomValue(int max) const;
 

@@ -33,6 +33,8 @@ class Figure {
     static Castling isCastling(const Board* board, Field old_field, Field new_field);
     static bool isPromotion(const Board* board, Field old_field, Field new_field);
 
+    Move() {}
+
     Move(Field field) : new_field(field) {}
 
     Move(Field ofield, Field nfield, Castling cast)
