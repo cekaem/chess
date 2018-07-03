@@ -17,7 +17,7 @@ bool MovesEqual(Figure::Move move1,
                 const std::string& move2,
                 Figure::Type promotion = Figure::PAWN) {
   if (move2.size() != 5 || move2[2] != '-') {
-    throw std::runtime_error("MovesEqual: wrong move2");
+    throw std::runtime_error("MovesEqual: wrong move");
   }
   return move1.old_field == Field(move2.substr(0, 2).c_str()) &&
          move1.new_field == Field(move2.substr(3, 2).c_str()) &&
@@ -101,6 +101,21 @@ TEST_PROCEDURE(test2) {
   TEST_END
 }
 
+// Checks if engine promotes to Queen when it has chance
+TEST_PROCEDURE(test3) {
+  TEST_START
+  {
+    Board board;
+    Engine engine(board, 3, null_stream);
+    board.addFigure(Figure::KING, Field("a6"), Figure::WHITE);
+    board.addFigure(Figure::KING, Field("d4"), Figure::BLACK);
+    board.addFigure(Figure::PAWN, Field("h7"), Figure::WHITE);
+    auto move = engine.makeMove(Figure::WHITE);
+    VERIFY_TRUE(MovesEqual(move, "h7-h8", Figure::QUEEN));
+  }
+  TEST_END
+}
+  
 } // unnamed namespace
 
 
@@ -108,6 +123,7 @@ int main() {
   try {
     TEST("Engine detects mate in one", test1);
     TEST("Engine grabs free material", test2);
+    TEST("Engine promotes pawns when it has chance", test3);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;
