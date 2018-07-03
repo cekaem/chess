@@ -73,31 +73,39 @@ class TextBoardDrawer : public BoardDrawer {
   std::ostream& ostr_;
 };
 
-std::pair<Field, Field> getHumanMove() {
-  bool field_ok = false;
+std::pair<Field, Field> getHumanMove(const Board& board) {
+  bool move_ok = false;
   Field old_field;
-  while (field_ok == false) {
-    std::cout << "> ";
-    std::string field;
-    std::cin >> field;
-    if (Field::isFieldValid(field) == true) {
-      field_ok = true;
-      old_field = Field(field.c_str());
-    } else {
-      std::cerr << "Invalid field" << std::endl;
-    }
-  }
-  field_ok = false;
   Field new_field;
-  while (field_ok == false) {
-    std::cout << ">> ";
-    std::string field;
-    std::cin >> field;
-    if (Field::isFieldValid(field) == true) {
-      field_ok = true;
-      new_field = Field(field.c_str());
+  while (move_ok == false) {
+    bool field_ok = false;
+    while (field_ok == false) {
+      std::cout << "> ";
+      std::string field;
+      std::cin >> field;
+      if (Field::isFieldValid(field) == true) {
+        field_ok = true;
+        old_field = Field(field.c_str());
+      } else {
+        std::cerr << "Invalid field" << std::endl;
+      }
+    }
+    field_ok = false;
+    while (field_ok == false) {
+      std::cout << ">> ";
+      std::string field;
+      std::cin >> field;
+      if (Field::isFieldValid(field) == true) {
+        field_ok = true;
+        new_field = Field(field.c_str());
+      } else {
+        std::cerr << "Invalid field" << std::endl;
+      }
+    }
+    if (board.isMoveValid(old_field, new_field) == true) {
+      move_ok = true;
     } else {
-      std::cerr << "Invalid field" << std::endl;
+      std::cerr << "Invalid move." << std::endl;
     }
   }
   return std::make_pair(old_field, new_field);
@@ -106,30 +114,45 @@ std::pair<Field, Field> getHumanMove() {
 }  // unnamed namespace
 
 int main() {
+  bool human_plays_white = false;
+  bool human_plays_black = false;
+  int engine_strength = 0;
+
+  std::cout << "Human plays white?" << std::endl;
+  std::cout << "> ";
+  std::cin >> human_plays_white;
+  std::cout << "Human plays black?" << std::endl;
+  std::cout << "> ";
+  std::cin >> human_plays_black;
+  std::cout << "Engine's search depth?" << std::endl;
+  std::cout << "> ";
+  std::cin >> engine_strength;
+
   Board board;
   board.setStandardBoard();
   TextBoardDrawer drawer(std::cout);
   PgnCreator pgn_creator(std::cout);
   board.addBoardDrawer(&drawer);
   board.addBoardDrawer(&pgn_creator);
-  Engine engine(board, 5, std::cerr);
+  Engine engine(board, engine_strength, std::cerr);
   
   Board::GameStatus status = Board::GameStatus::NONE;
   while (status == Board::GameStatus::NONE) {
-    bool move_ok = false;
-    std::pair<Field, Field> human_move;
-    while (move_ok == false) {
-      human_move = getHumanMove();
-      if (board.isMoveValid(human_move.first, human_move.second) == true) {
-        move_ok = true;
-      } else {
-        std::cerr << "Invalid move." << std::endl;
-      }
+    if (human_plays_white == true) {
+      std::pair<Field, Field> human_move = getHumanMove(board);;
+      status = board.makeMove(human_move.first, human_move.second);
+    } else {
+      engine.makeMove(Figure::WHITE);
+      status = board.getGameStatus(Figure::BLACK);
     }
-    status = board.makeMove(human_move.first, human_move.second);
     if (status == Board::GameStatus::NONE) {
-      engine.makeMove(Figure::BLACK);
-      status = board.getGameStatus(Figure::WHITE);
+      if (human_plays_white == true) {
+        std::pair<Field, Field> human_move = getHumanMove(board);;
+        status = board.makeMove(human_move.first, human_move.second);
+      } else {
+        engine.makeMove(Figure::BLACK);
+        status = board.getGameStatus(Figure::WHITE);
+      }
     }
   }
 

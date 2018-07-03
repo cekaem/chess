@@ -534,7 +534,7 @@ bool King::canCastle(Figure::Move::Castling castling) const {
   const Field::Number number = getColor() == Figure::WHITE ? Field::ONE : Field::EIGHT;
 
   // Check if king is in the right position
-  if (getColor() == Figure::WHITE && getPosition() != Field(Field::E, number)) {
+  if (getPosition() != Field(Field::E, number)) {
     return false;
   }
 
