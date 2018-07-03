@@ -112,7 +112,7 @@ int main() {
   PgnCreator pgn_creator(std::cout);
   board.addBoardDrawer(&drawer);
   board.addBoardDrawer(&pgn_creator);
-  Engine engine(board, std::cerr);
+  Engine engine(board, 5, std::cerr);
   
   Board::GameStatus status = Board::GameStatus::NONE;
   while (status == Board::GameStatus::NONE) {

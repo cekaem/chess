@@ -11,30 +11,29 @@
 
 class Engine {
  public:
-  Engine(Board& board, std::ostream& debug_stream);
+  Engine(Board& board, unsigned search_depth, std::ostream& debug_stream);
   Figure::Move makeMove(Figure::Color color);
 
  private:
-  static const int SearchDepth = 3;
+  static const int SearchDepth = 5;
 
     struct Move {
-    int value{0};
-    int moves_to_mate{0};
-    std::vector<Move> moves;
+      Move() {}
+      Move(int v, int m, bool d) : value(v), moves_to_mate(m), is_draw(d) {}
+      int value{0};
+      int moves_to_mate{0};
+      bool is_draw{false};
   };
 
-  std::vector<Move> generateTree(Board& board, Figure::Color color, int depths_remaining);
-  std::pair<int, int> evaluateMoves(const Board& board, Figure::Color my_color) const;
-  std::pair<int, int> evaluateMoves(const std::vector<Move>& moves,
-                                    Figure::Color my_color,
-                                    bool my_move) const;
+  Move evaluateBoardForLastNode(const Board& board, Figure::Color color, bool my_move) const;
+  Move evaluateBoard(const Board& board, Figure::Color color, bool my_move, int depths_remaining) const;
 
   int generateRandomValue(int max) const;
 
   Board& board_;
+  unsigned search_depth_{1u};
   std::ostream& debug_stream_;
   int moves_count_{0};
-  std::vector<Move> moves_;
 };
 
 #define ENGINE_H

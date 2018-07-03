@@ -9,8 +9,12 @@
 #include "Board.h"
 #include "Figure.h"
 
-Engine::Engine(Board& board, std::ostream& debug_stream)
-  : board_(board), debug_stream_(debug_stream) {
+namespace {
+static const int BorderValue = 1000;
+}  // unnamed namespace
+
+Engine::Engine(Board& board, unsigned search_depth, std::ostream& debug_stream)
+  : board_(board), search_depth_(search_depth), debug_stream_(debug_stream) {
   srand(static_cast<unsigned int>(time(nullptr)));
 }
 
@@ -24,15 +28,46 @@ Figure::Move Engine::makeMove(Figure::Color color) {
     throw Board::BadBoardStatusException(&board_);
   }
 
-  std::vector<Move> moves = generateTree(Board& board, Figure::Color color, SearchDepth - 1);
-  std::pair<int, int> result = evaluateMoves(moves, color, true);
-  int moves_to_mate = BorderValue;
-  int move_value = -BorderValue;
-  for (const auto& r: result) {
-    if 
+  std::vector<std::pair<Figure::Move, Move>> moves_pairs;
+  std::vector<const Figure*> figures = board_.getFigures(color);
+  for (const Figure* figure: figures) {
+    std::vector<Figure::Move> moves = figure->calculatePossibleMoves();
+    for (Figure::Move& move: moves) {
+      Board copy = board_;
+      copy.makeMove(move);
+      // debug_stream_ << "Evaluating move: " << move.old_field << "-" << move.new_field << std::endl;
+      Engine::Move engine_move = evaluateBoard(copy, !color, false, search_depth_ - 1);
+      moves_pairs.push_back(std::make_pair(move, engine_move));
+    }
   }
-  if (!move_calculated) {
-    my_move = all_moves[generateRandomValue(moves_count - 1)];
+
+  // TODO: implement delaying certain mate
+  // Iterate through all moves and look for mate and for best value.
+  int moves_to_mate = BorderValue;
+  int the_best_value = -BorderValue;
+  Figure::Move mating_move;
+  for (auto& move: moves_pairs) {
+    if (move.second.moves_to_mate > 0 && move.second.moves_to_mate < moves_to_mate) {
+      moves_to_mate = move.second.moves_to_mate;
+      mating_move = move.first;
+    }
+    if (move.second.value > the_best_value) {
+      the_best_value = move.second.value;
+    }
+  }
+
+  Figure::Move my_move;
+  if (moves_to_mate != BorderValue) {
+    my_move = mating_move;
+  } else {
+    // Collect all moves with the best value and choose one (random choice).
+    std::vector<Figure::Move> the_best_moves;
+    for (auto& move: moves_pairs) {
+      if (move.second.value == the_best_value) {
+        the_best_moves.push_back(move.first);
+      }
+    }
+    my_move = the_best_moves[generateRandomValue(the_best_moves.size() - 1)];
   }
 
   debug_stream_ << "My move (" << moves_count_ << "): " << my_move.old_field << "-" << my_move.new_field << std::endl;
@@ -41,9 +76,9 @@ Figure::Move Engine::makeMove(Figure::Color color) {
   return my_move;
 }
 
-std::pair<int, int> Engine::evaluateMoves(const Board& board, Figure::Color my_color) const {
-  std::vector<const Figure*> my_figures = board.getFigures(my_color);
-  std::vector<const Figure*> enemy_figures = board.getFigures(!my_color);
+Engine::Move Engine::evaluateBoardForLastNode(const Board& board, Figure::Color color, bool my_move) const {
+  std::vector<const Figure*> my_figures = my_move ? board.getFigures(color) : board.getFigures(!color);
+  std::vector<const Figure*> enemy_figures = my_move ? board.getFigures(!color) : board.getFigures(color);
   int value = 0;
   for (const Figure* figure: my_figures) {
     value += figure->getValue();
@@ -52,22 +87,43 @@ std::pair<int, int> Engine::evaluateMoves(const Board& board, Figure::Color my_c
     value -= figure->getValue();
   }
 
-  Board::GameStatus status = board.getGameStatus(my_color);
-  assert(my_color == Figure::WHITE ?
-      status != Board::GameStatus::BLACK_WON : status != Board::GameStatus::WHITE_WON);
-  int moves_to_mate =
-      (status == Board::GameStatus::WHITE_WON || status == Board::GameStatus::BLACK_WON) ? 0 : 1;
+  Board::GameStatus status = board.getGameStatus(color);
+  int moves_to_mate = 0;
+  if (status == Board::GameStatus::WHITE_WON || status == Board::GameStatus::BLACK_WON) {
+    moves_to_mate = my_move ? -1 : 1;
+  }
 
-  return std::make_pair(value, moves_to_mate);
+  return Move(value, moves_to_mate, status == Board::GameStatus::DRAW);
 }
 
-std::pair<int, int> Engine::evaluateMoves(
-    const std::vector<Move>& moves,
-    Figure::Color my_color,
-    bool my_move) const {
-  static const int BorderValue = 100;
+Engine::Move Engine::evaluateBoard(
+    const Board& board,
+    Figure::Color color,
+    bool my_move,
+    int depths_remaining) const {
+  Board::GameStatus status = board.getGameStatus(color);
+  if (status != Board::GameStatus::NONE) {
+    return evaluateBoardForLastNode(board, color, my_move);
+  }
 
-  assert(moves.empty() == false);
+  std::vector<Move> engine_moves;
+
+  std::vector<const Figure*> figures = board.getFigures(color);
+  for (const Figure* figure: figures) {
+    std::vector<Figure::Move> moves = figure->calculatePossibleMoves();
+    for (Figure::Move& move: moves) {
+      // debug_stream_ << "Evaluating move: " << move.old_field << "-" << move.new_field << std::endl;
+      Board copy = board;
+      copy.makeMove(move);
+      Engine::Move engine_move;
+      if (depths_remaining == 0) {
+        engine_move = evaluateBoardForLastNode(copy, !color, !my_move);
+      } else {
+        engine_move = evaluateBoard(copy, !color, !my_move, depths_remaining - 1);
+      }
+      engine_moves.push_back(engine_move);
+    }
+  }
 
   int value = 0;
   if (my_move) {
@@ -82,14 +138,14 @@ std::pair<int, int> Engine::evaluateMoves(
   int the_biggest_negative_value = 0;
   bool zero_exists = false;
 
-  for (auto& move: moves) {
+  for (auto& move: engine_moves) {
     if ((my_move == true && move.value >= value) ||
         (my_move == false && move.value <= value)) {
       value = move.value;
     }
 
     if (move.moves_to_mate == 0) {
-      zero_exists == true;
+      zero_exists = true;
       continue;
     }
 
@@ -130,16 +186,5 @@ std::pair<int, int> Engine::evaluateMoves(
   }
 
   assert(value != BorderValue && value != -BorderValue && moves_to_mate != BorderValue);
-  return std::make_pair(value, moves_to_mate);
-}
-
-std::vector<Engine::Move> Engine::generateTree(Board& board, Figure::Color my_color, int depths_remaining) {
-  std::vector<Engine::Move> result;
-  std::vector<const Figure*> my_figures = board_.getFigures(my_color);
-  for (const Figure* figure: my_figures) {
-    std::vector<Figure::Move> moves = figure->calculatePossibleMoves();
-    for (Figure::Move& move: moves) {
-
-    }
-  }
+  return Move(value, moves_to_mate, false);
 }

@@ -34,7 +34,7 @@ TEST_PROCEDURE(test1) {
   TEST_START
   {
     Board board;
-    Engine engine(board, null_stream);
+    Engine engine(board, 3, null_stream);
     board.addFigure(Figure::KING, Field("a8"), Figure::BLACK);
     board.addFigure(Figure::KING, Field("c7"), Figure::WHITE);
     board.addFigure(Figure::ROOK, Field("f6"), Figure::WHITE);
@@ -43,7 +43,7 @@ TEST_PROCEDURE(test1) {
   }
   {
     Board board;
-    Engine engine(board, null_stream);
+    Engine engine(board, 3, null_stream);
     board.addFigure(Figure::KING, Field("a7"), Figure::BLACK);
     board.addFigure(Figure::KING, Field("h1"), Figure::WHITE);
     board.addFigure(Figure::BISHOP, Field("d5"), Figure::WHITE);
@@ -56,7 +56,7 @@ TEST_PROCEDURE(test1) {
   }
   {
     Board board;
-    Engine engine(board, null_stream);
+    Engine engine(board, 3, null_stream);
     board.addFigure(Figure::KING, Field("e1"), Figure::BLACK);
     board.addFigure(Figure::KING, Field("h1"), Figure::WHITE);
     board.addFigure(Figure::PAWN, Field("g3"), Figure::WHITE);
@@ -71,7 +71,7 @@ TEST_PROCEDURE(test1) {
   }
   {
     Board board;
-    Engine engine(board, null_stream);
+    Engine engine(board, 3, null_stream);
     board.addFigure(Figure::KING, Field("b8"), Figure::BLACK);
     board.addFigure(Figure::KING, Field("d8"), Figure::WHITE);
     board.addFigure(Figure::PAWN, Field("b5"), Figure::WHITE);
@@ -91,7 +91,7 @@ TEST_PROCEDURE(test2) {
   TEST_START
   {
     Board board;
-    Engine engine(board, null_stream);
+    Engine engine(board, 3, null_stream);
     board.addFigure(Figure::KING, Field("a8"), Figure::BLACK);
     board.addFigure(Figure::KING, Field("d2"), Figure::WHITE);
     board.addFigure(Figure::QUEEN, Field("d1"), Figure::BLACK);
