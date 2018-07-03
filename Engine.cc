@@ -52,16 +52,11 @@ std::pair<int, int> Engine::evaluateMoves(const Board& board, Figure::Color my_c
     value -= figure->getValue();
   }
 
-  int moves_to_mate = 0;
   Board::GameStatus status = board.getGameStatus(my_color);
-  if (my_color == Figure::WHITE && status == Board::GameStatus::WHITE_WON ||
-      my_color == Figure::BLACK && status == Board::GameStatus::BLACK_WON) {
-    moves_to_mate = 1;
-  }
-  if (my_color == Figure::WHITE && status == Board::GameStatus::BLACK_WON ||
-      my_color == Figure::BLACK && status == Board::GameStatus::WHITE_WON) {
-    moves_to_mate = -1;
-  }
+  assert(my_color == Figure::WHITE ?
+      status != Board::GameStatus::BLACK_WON : status != Board::GameStatus::WHITE_WON);
+  int moves_to_mate =
+      (status == Board::GameStatus::WHITE_WON || status == Board::GameStatus::BLACK_WON) ? 0 : 1;
 
   return std::make_pair(value, moves_to_mate);
 }
@@ -70,57 +65,81 @@ std::pair<int, int> Engine::evaluateMoves(
     const std::vector<Move>& moves,
     Figure::Color my_color,
     bool my_move) const {
+  static const int BorderValue = 100;
+
   assert(moves.empty() == false);
 
-  int moves_to_mate = 0;
   int value = 0;
   if (my_move) {
     value = -BorderValue;
-    moves_to_mate = BorderValue;
   } else {
     value = BorderValue;
-    moves_to_mate = -BorderValue;
   }
+
+  int the_smallest_value = 0;
+  int the_smallest_positive_value = 0;
+  int the_biggest_value = 0;
+  int the_biggest_negative_value = 0;
+  bool zero_exists = false;
 
   for (auto& move: moves) {
     if ((my_move == true && move.value >= value) ||
         (my_move == false && move.value <= value)) {
       value = move.value;
     }
-    if (moves_to_mate == 0) {
-      continue;
-    }
+
     if (move.moves_to_mate == 0) {
-      moves_to_mate = 0;
+      zero_exists == true;
       continue;
     }
-    if ((my_move == true && move.moves_to_mate < moves_to_mate) ||
-        (my_move == false && move.moves_to_mate > moves_to_mate)) {
-      moves_to_mate = move.moves_to_mate;
+
+    if (my_move == true) {
+      if (move.moves_to_mate > 0 && move.moves_to_mate < the_smallest_positive_value) {
+        the_smallest_positive_value = move.moves_to_mate;
+      } else if (move.moves_to_mate < 0 && move.moves_to_mate < the_smallest_value) {
+        the_smallest_value = move.moves_to_mate;
+      }
+    } else {
+      if (move.moves_to_mate < 0 && move.moves_to_mate > the_biggest_negative_value) {
+        the_biggest_negative_value = move.moves_to_mate;
+      } else if (move.moves_to_mate > the_biggest_value) {
+        the_biggest_value = move.moves_to_mate;
+      }
     }
   }
-  assert(value != BorderValue && value != -BorderValue &&
-         moves_to_mate != BorderValue && moves_to_mate != -BorderValue);
+
+  int moves_to_mate = BorderValue;
+  if (my_move == true) {
+    if (the_smallest_positive_value > 0) {
+      moves_to_mate = the_smallest_positive_value + 1;
+    } else if (zero_exists == true) {
+      moves_to_mate = 0;
+    } else {
+      assert(the_smallest_value < 0);
+      moves_to_mate = the_smallest_value - 1;
+    }
+  } else {
+    if (the_biggest_negative_value < 0) {
+      moves_to_mate = the_biggest_negative_value;
+    } else if (zero_exists == true) {
+      moves_to_mate = 0;
+    } else {
+      assert(the_biggest_value > 0);
+      moves_to_mate = the_biggest_value + 1;
+    }
+  }
+
+  assert(value != BorderValue && value != -BorderValue && moves_to_mate != BorderValue);
   return std::make_pair(value, moves_to_mate);
 }
 
-std::vector<Engine::Move> Engine::generateTree(Board& board, Figure::Color color, int depths_remaining) {
-  std::vector<Figure::Move> all_moves;
-  std::vector<const Figure*> figures = board_.getFigures(color);
-  for (const Figure* figure: figures) {
+std::vector<Engine::Move> Engine::generateTree(Board& board, Figure::Color my_color, int depths_remaining) {
+  std::vector<Engine::Move> result;
+  std::vector<const Figure*> my_figures = board_.getFigures(my_color);
+  for (const Figure* figure: my_figures) {
     std::vector<Figure::Move> moves = figure->calculatePossibleMoves();
-    all_moves.insert(all_moves.end(), moves.begin(), moves.end());
-  }
-  size_t moves_count = all_moves.size();
-  debug_stream_ << "Moves count: " << moves_count << std::endl;
+    for (Figure::Move& move: moves) {
 
-  Figure::Move my_move;
-  bool move_calculated = false;
-  for (auto& move: all_moves) {
-    if (move.is_mate == true) {
-      move_calculated = true;
-      my_move = move;
     }
   }
-  
 }

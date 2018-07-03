@@ -16,18 +16,11 @@ class Engine {
 
  private:
   static const int SearchDepth = 3;
-  static const int BorderValue = 100;
 
-  struct Move {
-    Move(Board& b, Figure::Move bd) : board(b), basic_data(bd) {}
-    Board board;
-    Figure::Move basic_data;
+    struct Move {
     int value{0};
     int moves_to_mate{0};
-    bool moves_calculated{false};
     std::vector<Move> moves;
-
-    void calculateMoves();
   };
 
   std::vector<Move> generateTree(Board& board, Figure::Color color, int depths_remaining);
