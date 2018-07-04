@@ -139,6 +139,7 @@ void Board::moveFigure(Field old_field, Field new_field) {
 }
 
 Board::GameStatus Board::makeMove(Figure::Move move) {
+  assert(is_in_reversing_mode_ == false);
   Figure* figure = fields_[move.old_field.letter][move.old_field.number];
   if (figure == nullptr) {
     throw NoFigureException(move.old_field);
@@ -297,6 +298,32 @@ const King* Board::getKing(Figure::Color color) const noexcept {
     }
   }
   return nullptr;
+}
+
+void Board::makeReversibleMove(Figure::Move move) {
+  assert(in_analyze_mode_ == true);
+  is_in_reversing_mode_ = true;
+  ReversibleMove reversible_move(move);
+  Figure* bitten_figure = fields_[move.new_field.letter][move.new_field.number];
+  fields_[move.new_field.letter][move.new_field.number] = nullptr;
+  if (bitten_figure != nullptr) {
+    auto iter = std::find_if(figures_.begin(), figures_.end(),
+        [bitten_figure](const auto& iter) -> bool {
+          return iter.get() == bitten_figure;
+        });
+    assert(iter != std::end(figures_));
+    reversible_move.bitten_figure = std::move(*iter);
+    figures_.erase(iter);
+  }
+  moveFigure(move.old_field, move.new_field);
+  reversible_moves_.push_back(std::move(reversible_move));
+}
+
+void Board::undoLastReversibleMove() {
+  assert(in_analyze_mode_ == true);
+  assert(reversible_moves_.empty() == false);
+  ReversibleMove reversible_move = std::move(reversible_moves_.back());
+  reversible_moves_.pop_back();
 }
 
 void Board::setStandardBoard() {

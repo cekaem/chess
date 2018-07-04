@@ -48,6 +48,29 @@ class Board {
     const Board* board_;
   };
 
+  struct ReversibleMove {
+    ReversibleMove(Figure::Move& move)
+      : old_field(move.old_field),
+        new_field(move.new_field),
+        promotion_move(move.pawn_promotion != Figure::PAWN),
+        castling_move(move.castling != Figure::Move::Castling::NONE) {
+    }
+
+    ReversibleMove(ReversibleMove&& other)
+      : old_field(other.old_field),
+        new_field(other.new_field),
+        bitten_figure(std::move(other.bitten_figure)),
+        promotion_move(other.promotion_move),
+        castling_move(other.castling_move) {
+    }
+
+    Field old_field;
+    Field new_field;
+    std::unique_ptr<Figure> bitten_figure;
+    bool promotion_move{false};
+    bool castling_move{false};
+  };
+
   Board() noexcept;
   Board(const Board& other) noexcept;
 
@@ -77,6 +100,9 @@ class Board {
 
   friend std::ostream& operator<<(std::ostream& ostr, const Board& board);
 
+  void makeReversibleMove(Figure::Move move);
+  void undoLastReversibleMove();
+
  private:
   Board& operator=(const Board& other) = delete;
   Board(Board&& other) = delete;
@@ -88,10 +114,11 @@ class Board {
 
   Pawn* en_passant_pawn_{nullptr};
   bool in_analyze_mode_{false};
+  bool is_in_reversing_mode_{false};
   std::vector<std::unique_ptr<Figure>> figures_;
-  std::vector<std::unique_ptr<Figure>> figures_beaten_;
   std::vector<BoardDrawer*> drawers_;
   std::array<std::array<Figure*, BoardSize>, BoardSize> fields_;
+  std::vector<ReversibleMove> reversible_moves_;
 };
 
 class BoardDrawer {
