@@ -269,7 +269,6 @@ void Figure::updateMoves(std::vector<Figure::Move>& moves) const {
 void Figure::move(Figure::Move move) {
   field_ = move.new_field;
   moved_at_least_once_ = true;
-  board_.setEnPassantPawn(nullptr);
 }
 
 bool Figure::operator==(const Figure& other) const {
@@ -278,14 +277,6 @@ bool Figure::operator==(const Figure& other) const {
 
 bool Figure::operator!=(const Figure& other) const {
   return !(*this == other);
-}
-
-void Pawn::move(Figure::Move move) {
-  Figure::move(move);
-  if ((getColor() == WHITE && move.old_field.number == Field::TWO && move.new_field.number == Field::FOUR) ||
-      (getColor() == BLACK && move.old_field.number == Field::SEVEN && move.new_field.number == Field::FIVE)) {
-    board_.setEnPassantPawn(this);
-  }
 }
 
 bool Pawn::canPromote() const {
@@ -597,29 +588,4 @@ void King::addPossibleCastlings(std::vector<Move>& moves) const {
                                      Field(Field::C, number),
                                      Figure::Move::Castling::QUEEN_SIDE));
   }
-}
-
-void King::move(Figure::Move move) {
-  // TODO: move this to Board::makeMove
-  if (move.castling == Figure::Move::Castling::QUEEN_SIDE ||
-      move.castling == Figure::Move::Castling::KING_SIDE) {
-    move.old_field = getPosition();
-    if (move.old_field !=
-        (getColor() == Figure::WHITE ? Field(Field::E, Field::ONE) : Field(Field::E, Field::EIGHT))) {
-      throw Board::IllegalMoveException(this, getPosition());
-    }
-    move.new_field = getPosition();
-    move.new_field.letter = move.castling == Figure::Move::Castling::KING_SIDE ? Field::G : Field::C;
-    const Figure* rook =
-        move.castling == Figure::Move::Castling::KING_SIDE ?
-            board_.getFigure(Field(Field::H, getPosition().number)) :
-            board_.getFigure(Field(Field::A, getPosition().number));
-    if (rook == nullptr || rook->getType() != Figure::ROOK) {
-      throw Board::IllegalMoveException(this, getPosition());
-    }
-    board_.moveFigure(rook->getPosition(),
-                      Field(move.castling == Figure::Move::Castling::KING_SIDE ? Field::F : Field::D,
-                            getPosition().number));
-  }
-  Figure::move(move);
 }

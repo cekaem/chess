@@ -49,9 +49,10 @@ class Board {
   };
 
   struct ReversibleMove {
-    ReversibleMove(Figure::Move& move)
+    ReversibleMove(Figure::Move& move, std::unique_ptr<Figure> bf)
       : old_field(move.old_field),
         new_field(move.new_field),
+        bitten_figure(std::move(bf)),
         promotion_move(move.pawn_promotion != Figure::PAWN),
         castling_move(move.castling != Figure::Move::Castling::NONE) {
     }
@@ -77,7 +78,7 @@ class Board {
   bool isMoveValid(Field old_field, Field new_field) const;
 
   const Figure* addFigure(Figure::Type type, Field field, Figure::Color color);
-  void removeFigure(Field field);
+  std::unique_ptr<Figure> removeFigure(Field field);
   GameStatus makeMove(Field old_field, Field new_field, Figure::Type promotion = Figure::PAWN);
   GameStatus makeMove(Figure::Move move);
   void moveFigure(Field old_field, Field new_field);
@@ -85,7 +86,6 @@ class Board {
   const std::vector<std::unique_ptr<Figure>>& getFigures() const noexcept { return figures_; }
   std::vector<const Figure*> getFigures(Figure::Color color) const noexcept;
   const auto& getFields() const noexcept { return fields_; }
-  void setEnPassantPawn(Pawn* pawn) noexcept { en_passant_pawn_ = pawn; }
   const Pawn* getEnPassantPawn() const noexcept { return en_passant_pawn_; }
   const King* getKing(Figure::Color color) const noexcept;
   void setStandardBoard();
@@ -93,15 +93,14 @@ class Board {
   void addBoardDrawer(BoardDrawer* drawer) noexcept;
   void removeBoardDrawer(BoardDrawer* drawer) noexcept;
 
-  void setAnalizeMode(bool analyze_mode) noexcept { in_analyze_mode_ = analyze_mode; }
-
   bool operator==(const Board& other) const noexcept;
   bool operator!=(const Board& other) const noexcept;
 
   friend std::ostream& operator<<(std::ostream& ostr, const Board& board);
 
-  void makeReversibleMove(Figure::Move move);
+  void setReversibleMode(bool reversible_mode) { is_in_reversing_mode_ = reversible_mode; }
   void undoLastReversibleMove();
+  void undoAllReversibleMoves();
 
  private:
   Board& operator=(const Board& other) = delete;
@@ -111,8 +110,9 @@ class Board {
   bool isStaleMate(Figure::Color color) const;
   bool isDraw() const;
   void onGameFinished(GameStatus status) noexcept;
+  void handleCastling(Figure::Move& move);
 
-  Pawn* en_passant_pawn_{nullptr};
+  const Pawn* en_passant_pawn_{nullptr};
   bool in_analyze_mode_{false};
   bool is_in_reversing_mode_{false};
   std::vector<std::unique_ptr<Figure>> figures_;

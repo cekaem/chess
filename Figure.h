@@ -66,7 +66,7 @@ class Figure {
 
   virtual std::vector<Move> calculatePossibleMoves() const = 0;
   virtual Type getType() const = 0;
-  virtual void move(Figure::Move move);
+  void move(Figure::Move move);
 
   bool operator==(const Figure& other) const;
   bool operator!=(const Figure& other) const;
@@ -94,7 +94,6 @@ class Pawn : public Figure {
  public:
   Pawn(Board& board, Field field, Color color) noexcept
     : Figure(board, field, color, PAWN_VALUE) {}
-  void move(Figure::Move field) override;
   std::vector<Move> calculatePossibleMoves() const override;
   Type getType() const override { return PAWN; }
 
@@ -139,7 +138,6 @@ class King : public Figure {
   King(Board& board, Field field, Color color) noexcept
     : Figure(board, field, color, KING_VALUE) {}
   std::vector<Move> calculatePossibleMoves() const override;
-  void move(Figure::Move field) override;
   Type getType() const override { return KING; }
   bool isChecked() const;
   bool isCheckmated() const;

@@ -26,7 +26,7 @@ class Engine {
   };
 
   Move evaluateBoardForLastNode(const Board& board, Figure::Color color, bool my_move) const;
-  Move evaluateBoard(const Board& board, Figure::Color color, bool my_move, int depths_remaining) const;
+  Move evaluateBoard(Board& board, Figure::Color color, bool my_move, int depths_remaining) const;
 
   int generateRandomValue(int max) const;
 

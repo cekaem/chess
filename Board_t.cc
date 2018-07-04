@@ -283,6 +283,31 @@ TEST_PROCEDURE(test12) {
   TEST_END
 }
 
+// Checks if Board::undoLastReversibleMove works correctly.
+TEST_PROCEDURE(test13) {
+  TEST_START
+  Board board;
+  board.addFigure(Figure::KING, Field("e1"), Figure::WHITE);
+  board.addFigure(Figure::ROOK, Field("h1"), Figure::WHITE);
+  board.addFigure(Figure::PAWN, Field("b2"), Figure::WHITE);
+  board.addFigure(Figure::PAWN, Field("g7"), Figure::WHITE);
+  board.addFigure(Figure::KING, Field("d8"), Figure::BLACK);
+  board.addFigure(Figure::QUEEN, Field("h8"), Figure::BLACK);
+  board.addFigure(Figure::PAWN, Field("c4"), Figure::BLACK);
+
+  Board copy = board;
+  copy.setReversibleMode(true);
+  copy.makeMove("b2", "b4");
+  copy.makeMove("c4", "b3");
+  copy.makeMove("g7", "h8", Figure::BISHOP);
+  copy.makeMove("d8", "c8");
+  copy.makeMove("e1", "g1");
+  VERIFY_TRUE(board != copy);
+  copy.undoAllReversibleMoves();
+  VERIFY_TRUE(board == copy);
+  TEST_END
+}
+
 } // unnamed namespace
 
 
@@ -299,6 +324,7 @@ int main() {
     TEST("BoardDrawer::onFigureAdded/Moved/Removed are called correctly", test10);
     TEST("BoardDrawer::onGameFinished is called correctly", test11);
     TEST("Board::isMoveValid works correctly", test12);
+    TEST("Board::undoLastReversibleMove works correctly", test13);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;
