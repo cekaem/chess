@@ -112,14 +112,16 @@ TEST_PROCEDURE(test5) {
 // Checks if Board::add/move/remove/getFigure(s) works correctly
 TEST_PROCEDURE(test7) {
   TEST_START
-  Board board(false);
+  Board board;
   VERIFY_IS_EQUAL(board.getFigures().size(), 0ul);
   Field field1(Field::C, Field::ONE);
   VERIFY_IS_NULL(board.getFigure(field1));
+  board.addFigure(Figure::KING, Field("d3"), Figure::WHITE);
+  board.addFigure(Figure::KING, Field("g7"), Figure::BLACK);
   const Figure* queen = board.addFigure(Figure::QUEEN, field1, Figure::BLACK);
   VERIFY(queen->getType() == Figure::QUEEN);
   VERIFY_EQUALS(queen->getPosition(), field1);
-  VERIFY_EQUALS(board.getFigures().size(), 1ul);
+  VERIFY_EQUALS(board.getFigures().size(), 3ul);
   VERIFY_CONTAINS(board.getFigures(), queen);
   VERIFY_EQUALS(board.getFigure(field1), queen);
   Field field2(Field::F, Field::FOUR);
@@ -127,16 +129,16 @@ TEST_PROCEDURE(test7) {
   auto white_figures = board.getFigures(Figure::WHITE);
   auto black_figures = board.getFigures(Figure::BLACK);
   VERIFY_CONTAINS(white_figures, knight);
-  VERIFY_EQUALS(white_figures.size(), 1ul);
+  VERIFY_EQUALS(white_figures.size(), 2ul);
   VERIFY_CONTAINS(black_figures, queen);
-  VERIFY_EQUALS(black_figures.size(), 1ul);
+  VERIFY_EQUALS(black_figures.size(), 2ul);
   board.makeMove(field1, field2);
   VERIFY_EQUALS(board.getFigure(field2), queen);
   VERIFY_EQUALS(queen->getPosition(), field2);
   VERIFY_CONTAINS(board.getFigures(), queen);
   board.removeFigure(field2);
   VERIFY_IS_NULL(board.getFigure(field2));
-  VERIFY_IS_EQUAL(board.getFigures().size(), 0ul);
+  VERIFY_IS_EQUAL(board.getFigures().size(), 2ul);
   TEST_END
 }
 

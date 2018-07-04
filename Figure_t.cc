@@ -60,8 +60,10 @@ TEST_PROCEDURE(test1) {
     VERIFY_EQUALS(moves.size(), 1lu);
   }
   {
-    Board board(false);
+    Board board;
     VERIFY_IS_NULL(board.getEnPassantPawn());
+    board.addFigure(Figure::KING, Field(Field::A, Field::TWO), Figure::WHITE);
+    board.addFigure(Figure::KING, Field(Field::A, Field::FOUR), Figure::BLACK);
     const Figure* pawn1 = board.addFigure(Figure::PAWN, Field(Field::H, Field::TWO), Figure::WHITE);
     const Figure* pawn2 = board.addFigure(Figure::PAWN, Field(Field::G, Field::FOUR), Figure::BLACK);
     const Figure* pawn3 = board.addFigure(Figure::PAWN, Field(Field::C, Field::FIVE), Figure::WHITE);

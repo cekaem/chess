@@ -21,7 +21,7 @@ std::ostream& operator<<(std::ostream& ostr, const Board& board) {
   return ostr;
 }
 
-Board::Board(bool validate_moves) noexcept : validate_moves_(validate_moves) {
+Board::Board() noexcept {
   std::array<Figure*, BoardSize> row;
   row.fill(nullptr);
   fields_.fill(row);
@@ -36,7 +36,7 @@ Board::Board(const Board& other) noexcept {
   for (const auto& figure : figures) {
     addFigure(figure->getType(), figure->getPosition(), figure->getColor());
   }
-  validate_moves_ = false;
+  in_analyze_mode_ = true;
 }
 
 bool Board::isMoveValid(Field old_field, Field new_field) const {
@@ -144,7 +144,7 @@ Board::GameStatus Board::makeMove(Figure::Move move) {
     throw NoFigureException(move.old_field);
   }
 
-  if (validate_moves_ && isMoveValid(move.old_field, move.new_field) == false) {
+  if (in_analyze_mode_ == false && isMoveValid(move.old_field, move.new_field) == false) {
     throw IllegalMoveException(figure, move.new_field);
   }
 
@@ -173,7 +173,7 @@ Board::GameStatus Board::makeMove(Figure::Move move) {
 
   // Update fields is_check and is_mate
   const King* king = static_cast<const King*>(getKing(!color));
-  if (king && validate_moves_) {
+  if (king && in_analyze_mode_ == false) {
     move.is_check = king->isChecked();
     move.is_mate = king->isCheckmated();
   }
@@ -182,7 +182,7 @@ Board::GameStatus Board::makeMove(Figure::Move move) {
   }
 
   GameStatus status = GameStatus::NONE;
-  if (validate_moves_) {
+  if (in_analyze_mode_ == false) {
     status = getGameStatus(!color);
     if (status != GameStatus::NONE) {
       onGameFinished(status);

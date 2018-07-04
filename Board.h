@@ -48,7 +48,7 @@ class Board {
     const Board* board_;
   };
 
-  Board(bool validate_moves = true) noexcept;
+  Board() noexcept;
   Board(const Board& other) noexcept;
 
   bool isMoveValid(Field old_field, Field new_field) const;
@@ -70,6 +70,8 @@ class Board {
   void addBoardDrawer(BoardDrawer* drawer) noexcept;
   void removeBoardDrawer(BoardDrawer* drawer) noexcept;
 
+  void setAnalizeMode(bool analyze_mode) noexcept { in_analyze_mode_ = analyze_mode; }
+
   bool operator==(const Board& other) const noexcept;
   bool operator!=(const Board& other) const noexcept;
 
@@ -85,7 +87,7 @@ class Board {
   void onGameFinished(GameStatus status) noexcept;
 
   Pawn* en_passant_pawn_{nullptr};
-  bool validate_moves_{true};
+  bool in_analyze_mode_{false};
   std::vector<std::unique_ptr<Figure>> figures_;
   std::vector<std::unique_ptr<Figure>> figures_beaten_;
   std::vector<BoardDrawer*> drawers_;
