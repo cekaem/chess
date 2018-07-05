@@ -43,7 +43,7 @@ Board::Board(const Board& other) noexcept {
   in_analyze_mode_ = true;
 }
 
-bool Board::isMoveValid(Field old_field, Field new_field) const {
+bool Board::isMoveValid(Field old_field, Field new_field) {
   Figure* figure = fields_[old_field.letter][old_field.number];
   if (figure == nullptr) {
     return false;
@@ -58,7 +58,7 @@ bool Board::isMoveValid(Field old_field, Field new_field) const {
     return false;
   }
 
-  auto possible_moves = figure->calculatePossibleMoves();
+  auto possible_moves = calculateMovesForFigure(figure);
   auto iter = std::find_if(possible_moves.begin(), possible_moves.end(),
       [new_field](const auto& m) -> bool {
         // TODO: check more than just new_field?
@@ -196,10 +196,9 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
   fields_[move.old_field.letter][move.old_field.number] = nullptr;
 
   // Update fields is_check and is_mate
-  const King* king = static_cast<const King*>(getKing(!color));
-  if (king && in_analyze_mode_ == false) {
-    move.is_check = king->isChecked();
-    move.is_mate = king->isCheckmated();
+  if (in_analyze_mode_ == false) {
+    move.is_check = isKingChecked(!color);
+    move.is_mate = isKingCheckmated(!color);
   }
   for (auto drawer : drawers_) {
     drawer->onFigureMoved(move);
@@ -221,6 +220,61 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
   return status;
 }
 
+bool Board::isKingChecked(Figure::Color color) {
+  const King* king = getKing(color);
+  if (king == nullptr) {
+    return false;
+  }
+  const auto& figures = getFigures(!color);
+  for (const auto& figure: figures) {
+    auto moves = figure->calculatePossibleMoves();
+    auto iter = std::find_if(moves.begin(), moves.end(),
+        [king](const auto& move) -> bool {
+          return move.new_field == king->getPosition();
+        });
+    if (iter != moves.end()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Board::isKingCheckmated(Figure::Color color) {
+  const King* king = getKing(color);
+  if (king == nullptr || isKingChecked(color) == false) {
+    return false;
+  }
+  auto moves = king->calculatePossibleMoves();
+  bool is_mate = true;
+  for (const auto& move: moves) {
+    makeMove(move, true);
+    is_mate = isKingChecked(color);
+    undoLastReversibleMove();
+    if (is_mate == false) {
+      break;
+    }
+  }
+  return is_mate;
+}
+
+bool Board::isKingStalemated(Figure::Color color) {
+  const King* king = getKing(color);
+  if (king == nullptr || isKingChecked(color) == true) {
+    return false;
+  }
+  auto moves = king->calculatePossibleMoves();
+  bool is_stalemate = true;
+  for (const auto& move: moves) {
+    makeMove(move, true);
+    is_stalemate = isKingChecked(color);
+    undoLastReversibleMove();
+    if (is_stalemate == false) {
+      break;
+    }
+  }
+  return is_stalemate;
+}
+
 Board::GameStatus Board::getGameStatus(Figure::Color color) const {
   Board::GameStatus status = isCheckMate();
   if (status == GameStatus::WHITE_WON ||
@@ -230,8 +284,7 @@ Board::GameStatus Board::getGameStatus(Figure::Color color) const {
   if (isStaleMate(color) || isDraw()) {
     return GameStatus::DRAW;
   }
-  const King* king = getKing(!color);
-  if (king->isChecked()) {
+  if (isKingChecked(!color)) {
     throw BadBoardStatusException(this);
   }
 
@@ -243,14 +296,14 @@ Board::GameStatus Board::isCheckMate() const {
   if (king == nullptr) {
     throw BadBoardStatusException(this);
   }
-  if (king->isCheckmated()) {
+  if (isKingCheckmated(Figure::WHITE)) {
     return GameStatus::BLACK_WON;
   }
   king = getKing(Figure::BLACK);
   if (king == nullptr) {
     throw BadBoardStatusException(this);
   }
-  if (king->isCheckmated()) {
+  if (isKingCheckmated(Figure::BLACK)) {
     return GameStatus::WHITE_WON;
   }
   return GameStatus::NONE;
@@ -261,7 +314,7 @@ bool Board::isStaleMate(Figure::Color color) const {
   if (king == nullptr) {
     throw BadBoardStatusException(this);
   }
-  return king->isStalemated();
+  return isKingStalemated(color);
 }
 
 bool Board::isDraw() const {
@@ -301,6 +354,30 @@ Board::GameStatus Board::makeMove(Field old_field, Field new_field, Figure::Type
   }
   Figure::Move move(old_field, new_field, false, false, castling, false, promotion);
   return makeMove(move, rev_mode);
+}
+
+bool Board::moveUnveilsKing(Figure::Move& move, Figure::Color color) {
+  makeMove(move, true);
+  if (isKingChecked(color) == true) {
+    return true;
+  }
+
+  if (isKingChecked(!color)) {
+    move.is_check = true;
+  }
+  if (isKingCheckmated(!color)) {
+    move.is_mate = true;
+  }
+  return false;
+}
+
+std::vector<Figure::Move> Board::calculateMovesForFigure(const Figure* figure) {
+  std::vector<Figure::Move> moves = figure->calculatePossibleMoves();
+  moves.erase(std::remove_if(moves.begin(), moves.end(),
+      [this, figure](auto& move) -> bool {
+        return moveUnveilsKing(move, figure->getColor());
+      }), moves.end());
+  return moves;
 }
 
 const Figure* Board::getFigure(Field field) const noexcept {

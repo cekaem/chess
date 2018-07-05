@@ -29,10 +29,10 @@ Figure::Move Engine::makeMove(Figure::Color color) {
   }
 
   std::vector<std::pair<Figure::Move, Move>> moves_pairs;
-  std::vector<const Figure*> figures = board_.getFigures(color);
   Board copy = board_;
+  std::vector<const Figure*> figures = copy.getFigures(color);
   for (const Figure* figure: figures) {
-    std::vector<Figure::Move> moves = figure->calculatePossibleMoves();
+    std::vector<Figure::Move> moves = copy.calculateMovesForFigure(figure);
     for (Figure::Move& move: moves) {
       copy.makeMove(move, true);
       // debug_stream_ << "Evaluating move: " << move.old_field << "-" << move.new_field << std::endl;
@@ -111,7 +111,7 @@ Engine::Move Engine::evaluateBoard(
 
   std::vector<const Figure*> figures = board.getFigures(color);
   for (const Figure* figure: figures) {
-    std::vector<Figure::Move> moves = figure->calculatePossibleMoves();
+    std::vector<Figure::Move> moves = board.calculateMovesForFigure(figure);
     for (Figure::Move& move: moves) {
       // debug_stream_ << "Evaluating move: " << move.old_field << "-" << move.new_field << std::endl;
       board.makeMove(move, true);

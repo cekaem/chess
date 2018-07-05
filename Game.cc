@@ -73,7 +73,7 @@ class TextBoardDrawer : public BoardDrawer {
   std::ostream& ostr_;
 };
 
-std::pair<Field, Field> getHumanMove(const Board& board) {
+std::pair<Field, Field> getHumanMove(Board& board) {
   bool move_ok = false;
   Field old_field;
   Field new_field;

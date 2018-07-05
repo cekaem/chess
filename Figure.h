@@ -59,11 +59,6 @@ class Figure {
   void lookForKingUnveils(bool look) const { look_for_king_unveils_ = look; }
   bool looksForKingUnveils() const { return look_for_king_unveils_; }
 
-  // Updates fields: is_check, is_mate and figure_beaten in move. Also checks
-  // if move doesn't unveil the king. Returns true if it does and so it's illegal.
-  bool updateMove(Move& move) const;
-  void updateMoves(std::vector<Move>& moves) const;
-
   virtual std::vector<Move> calculatePossibleMoves() const = 0;
   virtual Type getType() const = 0;
   void move(Figure::Move move);
@@ -139,9 +134,6 @@ class King : public Figure {
     : Figure(board, field, color, KING_VALUE) {}
   std::vector<Move> calculatePossibleMoves() const override;
   Type getType() const override { return KING; }
-  bool isChecked() const;
-  bool isCheckmated() const;
-  bool isStalemated() const;
   bool canCastle(Figure::Move::Castling castling) const;
 
  private:

@@ -76,7 +76,7 @@ class Board {
   Board() noexcept;
   Board(const Board& other) noexcept;
 
-  bool isMoveValid(Field old_field, Field new_field) const;
+  bool isMoveValid(Field old_field, Field new_field);
 
   const Figure* addFigure(Figure::Type type, Field field, Figure::Color color);
   std::unique_ptr<Figure> removeFigure(Field field);
@@ -93,6 +93,10 @@ class Board {
   GameStatus getGameStatus(Figure::Color color) const;
   void addBoardDrawer(BoardDrawer* drawer) noexcept;
   void removeBoardDrawer(BoardDrawer* drawer) noexcept;
+  std::vector<Figure::Move> calculateMovesForFigure(const Figure* figure);
+  bool isKingChecked(Figure::Color color);
+  bool isKingCheckmated(Figure::Color color);
+  bool isKingStalemated(Figure::Color color);
 
   bool operator==(const Board& other) const noexcept;
   bool operator!=(const Board& other) const noexcept;
@@ -111,6 +115,7 @@ class Board {
   bool isDraw() const;
   void onGameFinished(GameStatus status) noexcept;
   void handleCastling(Figure::Move& move);
+  bool moveUnveilsKing(Figure::Move& move, Figure::Color color);
 
   const Pawn* en_passant_pawn_{nullptr};
   bool in_analyze_mode_{false};
