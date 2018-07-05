@@ -128,6 +128,7 @@ int main() {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;
   }
+  std::cout << "Number of copies: " << Board::number_of_copies_ << std::endl;
   int failed_tests = Test::get_number_of_failed_tests();
   if (failed_tests > 0) {
     std::cout << failed_tests << " test(s) failed." << std::endl;

@@ -296,12 +296,11 @@ TEST_PROCEDURE(test13) {
   board.addFigure(Figure::PAWN, Field("c4"), Figure::BLACK);
 
   Board copy = board;
-  copy.setReversibleMode(true);
-  copy.makeMove("b2", "b4");
-  copy.makeMove("c4", "b3");
-  copy.makeMove("g7", "h8", Figure::BISHOP);
-  copy.makeMove("d8", "c8");
-  copy.makeMove("e1", "g1");
+  copy.makeMove("b2", "b4", Figure::PAWN, true);
+  copy.makeMove("c4", "b3", Figure::PAWN, true);
+  copy.makeMove("g7", "h8", Figure::BISHOP, true);
+  copy.makeMove("d8", "c8", Figure::PAWN, true);
+  copy.makeMove("e1", "g1", Figure::PAWN, true);
   VERIFY_TRUE(board != copy);
   copy.undoAllReversibleMoves();
   VERIFY_TRUE(board == copy);

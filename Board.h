@@ -15,6 +15,7 @@ class BoardDrawer;
 
 class Board {
  public:
+  static int number_of_copies_;
   constexpr static size_t BoardSize = 8;
 
   enum class GameStatus {
@@ -79,8 +80,8 @@ class Board {
 
   const Figure* addFigure(Figure::Type type, Field field, Figure::Color color);
   std::unique_ptr<Figure> removeFigure(Field field);
-  GameStatus makeMove(Field old_field, Field new_field, Figure::Type promotion = Figure::PAWN);
-  GameStatus makeMove(Figure::Move move);
+  GameStatus makeMove(Field old_field, Field new_field, Figure::Type promotion = Figure::PAWN, bool rev_mode = false);
+  GameStatus makeMove(Figure::Move move, bool rev_mode = false);
   void moveFigure(Field old_field, Field new_field);
   const Figure* getFigure(Field field) const noexcept;
   const std::vector<std::unique_ptr<Figure>>& getFigures() const noexcept { return figures_; }
@@ -98,7 +99,6 @@ class Board {
 
   friend std::ostream& operator<<(std::ostream& ostr, const Board& board);
 
-  void setReversibleMode(bool reversible_mode) { is_in_reversing_mode_ = reversible_mode; }
   void undoLastReversibleMove();
   void undoAllReversibleMoves();
 
@@ -114,7 +114,6 @@ class Board {
 
   const Pawn* en_passant_pawn_{nullptr};
   bool in_analyze_mode_{false};
-  bool is_in_reversing_mode_{false};
   std::vector<std::unique_ptr<Figure>> figures_;
   std::vector<BoardDrawer*> drawers_;
   std::array<std::array<Figure*, BoardSize>, BoardSize> fields_;

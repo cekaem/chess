@@ -31,11 +31,10 @@ Figure::Move Engine::makeMove(Figure::Color color) {
   std::vector<std::pair<Figure::Move, Move>> moves_pairs;
   std::vector<const Figure*> figures = board_.getFigures(color);
   Board copy = board_;
-  copy.setReversibleMode(true);
   for (const Figure* figure: figures) {
     std::vector<Figure::Move> moves = figure->calculatePossibleMoves();
     for (Figure::Move& move: moves) {
-      copy.makeMove(move);
+      copy.makeMove(move, true);
       // debug_stream_ << "Evaluating move: " << move.old_field << "-" << move.new_field << std::endl;
       Engine::Move engine_move = evaluateBoard(copy, !color, false, search_depth_ - 1);
       copy.undoLastReversibleMove();
@@ -115,7 +114,7 @@ Engine::Move Engine::evaluateBoard(
     std::vector<Figure::Move> moves = figure->calculatePossibleMoves();
     for (Figure::Move& move: moves) {
       // debug_stream_ << "Evaluating move: " << move.old_field << "-" << move.new_field << std::endl;
-      board.makeMove(move);
+      board.makeMove(move, true);
       Engine::Move engine_move;
       if (depths_remaining == 0) {
         engine_move = evaluateBoardForLastNode(board, !color, !my_move);

@@ -4,6 +4,8 @@
 #include <cassert>
 #include <cstdlib>
 
+int Board::number_of_copies_ = 0;
+
 std::ostream& operator<<(std::ostream& ostr, Board::GameStatus status) {
   ostr << static_cast<int>(status);
   return ostr;
@@ -29,6 +31,7 @@ Board::Board() noexcept {
 }
 
 Board::Board(const Board& other) noexcept {
+  ++number_of_copies_;
   std::array<Figure*, BoardSize> row;
   row.fill(nullptr);
   fields_.fill(row);
@@ -142,7 +145,7 @@ void Board::moveFigure(Field old_field, Field new_field) {
   figure->move(new_field);
 }
 
-Board::GameStatus Board::makeMove(Figure::Move move) {
+Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
   Figure* figure = fields_[move.old_field.letter][move.old_field.number];
   if (figure == nullptr) {
     throw NoFigureException(move.old_field);
@@ -210,7 +213,7 @@ Board::GameStatus Board::makeMove(Figure::Move move) {
     }
   }
 
-  if (is_in_reversing_mode_ == true) {
+  if (rev_mode == true) {
     ReversibleMove reversible_move(move, std::move(beaten_figure));
     reversible_moves_.push_back(std::move(reversible_move));
   }
@@ -275,7 +278,7 @@ bool Board::isDraw() const {
   return true;
 }
 
-Board::GameStatus Board::makeMove(Field old_field, Field new_field, Figure::Type promotion) {
+Board::GameStatus Board::makeMove(Field old_field, Field new_field, Figure::Type promotion, bool rev_mode) {
   Figure* figure = fields_[old_field.letter][old_field.number];
   if (figure == nullptr) {
     throw NoFigureException(old_field);
@@ -297,7 +300,7 @@ Board::GameStatus Board::makeMove(Field old_field, Field new_field, Figure::Type
     throw IllegalMoveException(figure, new_field);
   }
   Figure::Move move(old_field, new_field, false, false, castling, false, promotion);
-  return makeMove(move);
+  return makeMove(move, rev_mode);
 }
 
 const Figure* Board::getFigure(Field field) const noexcept {
