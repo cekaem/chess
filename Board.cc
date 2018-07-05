@@ -145,6 +145,11 @@ void Board::moveFigure(Field old_field, Field new_field) {
   figure->move(new_field);
 }
 
+Board::ReversibleMoveWrapper Board::makeReversibleMove(Figure::Move move) {
+  makeMove(move, true);
+  return Board::ReversibleMoveWrapper(*this);
+}
+
 Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
   Figure* figure = fields_[move.old_field.letter][move.old_field.number];
   if (figure == nullptr) {
@@ -247,9 +252,8 @@ bool Board::isKingCheckmated(Figure::Color color) {
   auto moves = king->calculatePossibleMoves();
   bool is_mate = true;
   for (const auto& move: moves) {
-    makeMove(move, true);
+    auto wrapper = makeReversibleMove(move);
     is_mate = isKingChecked(color);
-    undoLastReversibleMove();
     if (is_mate == false) {
       break;
     }
@@ -265,9 +269,8 @@ bool Board::isKingStalemated(Figure::Color color) {
   auto moves = king->calculatePossibleMoves();
   bool is_stalemate = true;
   for (const auto& move: moves) {
-    makeMove(move, true);
+    auto wrapper = makeReversibleMove(move);
     is_stalemate = isKingChecked(color);
-    undoLastReversibleMove();
     if (is_stalemate == false) {
       break;
     }
@@ -275,7 +278,7 @@ bool Board::isKingStalemated(Figure::Color color) {
   return is_stalemate;
 }
 
-Board::GameStatus Board::getGameStatus(Figure::Color color) const {
+Board::GameStatus Board::getGameStatus(Figure::Color color) {
   Board::GameStatus status = isCheckMate();
   if (status == GameStatus::WHITE_WON ||
       status == GameStatus::BLACK_WON) {
@@ -291,7 +294,7 @@ Board::GameStatus Board::getGameStatus(Figure::Color color) const {
   return GameStatus::NONE;
 }
 
-Board::GameStatus Board::isCheckMate() const {
+Board::GameStatus Board::isCheckMate() {
   const King* king = getKing(Figure::WHITE);
   if (king == nullptr) {
     throw BadBoardStatusException(this);
@@ -309,7 +312,7 @@ Board::GameStatus Board::isCheckMate() const {
   return GameStatus::NONE;
 }
 
-bool Board::isStaleMate(Figure::Color color) const {
+bool Board::isStaleMate(Figure::Color color) {
   const King* king = getKing(color);
   if (king == nullptr) {
     throw BadBoardStatusException(this);
@@ -356,10 +359,36 @@ Board::GameStatus Board::makeMove(Field old_field, Field new_field, Figure::Type
   return makeMove(move, rev_mode);
 }
 
-bool Board::moveUnveilsKing(Figure::Move& move, Figure::Color color) {
-  makeMove(move, true);
+bool Board::isMoveValid(Figure::Move& move, Figure::Color color) {
+  if (move.castling == Figure::Move::Castling::KING_SIDE) {
+    const Field::Number number = color == Figure::WHITE ? Field::ONE : Field::EIGHT;
+    if (isKingChecked(color) == true) {
+      return false;
+    }
+    Figure::Move m(move.old_field,
+                   Field(static_cast<Field::Letter>(move.old_field.letter + 1), number),
+                   Figure::Move::Castling::NONE);
+    auto wrapper = makeReversibleMove(m);
+    if (isKingChecked(color) == true) {
+      return false;
+    }
+  } else if (move.castling == Figure::Move::Castling::QUEEN_SIDE) {
+    const Field::Number number = color == Figure::WHITE ? Field::ONE : Field::EIGHT;
+    if (isKingChecked(color) == true) {
+      return false;
+    }
+    Figure::Move m(move.old_field,
+                   Field(static_cast<Field::Letter>(move.old_field.letter - 1), number),
+                   Figure::Move::Castling::NONE);
+    auto wrapper = makeReversibleMove(m);
+    if (isKingChecked(color) == true) {
+      return false;
+    }
+  }
+
+  auto wrapper = makeReversibleMove(move);
   if (isKingChecked(color) == true) {
-    return true;
+    return false;
   }
 
   if (isKingChecked(!color)) {
@@ -375,8 +404,8 @@ std::vector<Figure::Move> Board::calculateMovesForFigure(const Figure* figure) {
   std::vector<Figure::Move> moves = figure->calculatePossibleMoves();
   moves.erase(std::remove_if(moves.begin(), moves.end(),
       [this, figure](auto& move) -> bool {
-        return moveUnveilsKing(move, figure->getColor());
-      }), moves.end());
+        return isMoveValid(move, figure->getColor()) == false;
+      }));
   return moves;
 }
 

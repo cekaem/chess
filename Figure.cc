@@ -418,44 +418,21 @@ std::vector<Figure::Move> King::calculatePossibleMoves() const {
 }
 
 bool King::canCastle(Figure::Move::Castling castling) const {
-  if (castling == Figure::Move::Castling::NONE) {
-    return true;
-  }
-
   if (movedAtLeastOnce()) {
     return false;
   }
-
   const Field::Number number = getColor() == Figure::WHITE ? Field::ONE : Field::EIGHT;
-
   // Check if king is in the right position
   if (getPosition() != Field(Field::E, number)) {
     return false;
   }
 
-  if (board_.isKingChecked(getColor())) {
-    return false;
-  }
-
-  bool result = false;
   if (castling == Figure::Move::Castling::KING_SIDE) {
     const Figure* figure = board_.getFigure(Field(Field::H, number));
     if (figure && figure->getType() == Figure::ROOK && figure->getColor() == getColor() &&
         figure->movedAtLeastOnce() == false && board_.getFigure(Field(Field::F, number)) == nullptr &&
         board_.getFigure(Field(Field::G, number)) == nullptr) {
-      Board copy = board_;
-      const Figure* f = copy.getFigure(Field(Field::E, number));
-      assert(f->getType() == Figure::KING);
-      const King* king = static_cast<const King*>(f)i;
-      copy.makeMove(Field(Field::E, number), Field(Field::F, number), Figure::PAWN, true);
-      if (board_.isKingChecked(getColor()) == false) {
-        copy.makeMove(Field(Field::F, number), Field(Field::G, number), Figure::PAWN, true);
-        if (board_.isKingChecked(getColor()) == false) {
-          result = true;
-        }
-        board_.undoLastReversibleMove();
-      }
-      board_.undoLastReversibleMove();
+      return true;
     }
   }
 
@@ -465,22 +442,10 @@ bool King::canCastle(Figure::Move::Castling castling) const {
         figure->movedAtLeastOnce() == false && board_.getFigure(Field(Field::D, number)) == nullptr &&
         board_.getFigure(Field(Field::C, number)) == nullptr &&
         board_.getFigure(Field(Field::B, number)) == nullptr) {
-      Board copy = board_;
-      const Figure* f = copy.getFigure(Field(Field::E, number));
-      assert(f->getType() == Figure::KING);
-      const King* king = static_cast<const King*>(f);
-      copy.makeMove(Field(Field::E, number), Field(Field::D, number), Figure::PAWN, true);
-      if (board_.isKingChecked(getColor()) == false) {
-        copy.makeMove(Field(Field::D, number), Field(Field::C, number), Figure::PAWN, true);
-        if (board_.isKingChecked(getColor()) == false) {
-          result = true;
-        }
-        board_.undoLastReversibleMove();
-      }
-      board_.undoLastReversibleMove();
+      return true;
     }
   }
-  return result;
+  return false;
 }
 
 void King::addPossibleCastlings(std::vector<Move>& moves) const {

@@ -73,6 +73,19 @@ class Board {
     bool castling_move{false};
   };
 
+  class ReversibleMoveWrapper {
+   public:
+    ReversibleMoveWrapper(Board& board) : board_(board) {
+    }
+
+    ~ReversibleMoveWrapper() {
+      board_.undoLastReversibleMove();
+    }
+
+   private:
+    Board& board_;
+  };
+
   Board() noexcept;
   Board(const Board& other) noexcept;
 
@@ -82,6 +95,7 @@ class Board {
   std::unique_ptr<Figure> removeFigure(Field field);
   GameStatus makeMove(Field old_field, Field new_field, Figure::Type promotion = Figure::PAWN, bool rev_mode = false);
   GameStatus makeMove(Figure::Move move, bool rev_mode = false);
+  ReversibleMoveWrapper makeReversibleMove(Figure::Move move);
   void moveFigure(Field old_field, Field new_field);
   const Figure* getFigure(Field field) const noexcept;
   const std::vector<std::unique_ptr<Figure>>& getFigures() const noexcept { return figures_; }
@@ -90,7 +104,7 @@ class Board {
   const Pawn* getEnPassantPawn() const noexcept { return en_passant_pawn_; }
   const King* getKing(Figure::Color color) const noexcept;
   void setStandardBoard();
-  GameStatus getGameStatus(Figure::Color color) const;
+  GameStatus getGameStatus(Figure::Color color);
   void addBoardDrawer(BoardDrawer* drawer) noexcept;
   void removeBoardDrawer(BoardDrawer* drawer) noexcept;
   std::vector<Figure::Move> calculateMovesForFigure(const Figure* figure);
@@ -110,12 +124,12 @@ class Board {
   Board& operator=(const Board& other) = delete;
   Board(Board&& other) = delete;
 
-  GameStatus isCheckMate() const;
-  bool isStaleMate(Figure::Color color) const;
+  GameStatus isCheckMate();
+  bool isStaleMate(Figure::Color color);
   bool isDraw() const;
   void onGameFinished(GameStatus status) noexcept;
   void handleCastling(Figure::Move& move);
-  bool moveUnveilsKing(Figure::Move& move, Figure::Color color);
+  bool isMoveValid(Figure::Move& move, Figure::Color color);
 
   const Pawn* en_passant_pawn_{nullptr};
   bool in_analyze_mode_{false};
