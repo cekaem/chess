@@ -40,32 +40,6 @@ Board::Board(const Board& other) noexcept {
   for (const auto& figure : figures) {
     addFigure(figure->getType(), figure->getPosition(), figure->getColor());
   }
-  in_analyze_mode_ = true;
-}
-
-bool Board::isMoveValid(Field old_field, Field new_field) {
-  Figure* figure = fields_[old_field.letter][old_field.number];
-  if (figure == nullptr) {
-    return false;
-  }
-
-  try {
-    GameStatus status = getGameStatus(figure->getColor());
-    if (status != GameStatus::NONE) {
-      return false;
-    }
-  } catch(const BadBoardStatusException&) {
-    return false;
-  }
-
-  auto possible_moves = calculateMovesForFigure(figure);
-  auto iter = std::find_if(possible_moves.begin(), possible_moves.end(),
-      [new_field](const auto& m) -> bool {
-        // TODO: check more than just new_field?
-        return new_field == m.new_field;
-      });
-
-  return iter != possible_moves.end();
 }
 
 bool Board::operator==(const Board& other) const noexcept {
@@ -126,9 +100,6 @@ std::unique_ptr<Figure> Board::removeFigure(Field field) {
   std::unique_ptr<Figure> result = std::move(*iter);
   figures_.erase(iter);
 
-  for (auto drawer : drawers_) {
-    drawer->onFigureRemoved(field);
-  }
   return result;
 }
 
@@ -156,7 +127,7 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
     throw NoFigureException(move.old_field);
   }
 
-  if (in_analyze_mode_ == false && isMoveValid(move.old_field, move.new_field) == false) {
+  if (rev_mode == false && isMoveValid(move.old_field, move.new_field) == false) {
     throw IllegalMoveException(figure, move.new_field);
   }
 
@@ -164,6 +135,11 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
   if (fields_[move.new_field.letter][move.new_field.number] != nullptr) {
     beaten_figure = std::move(removeFigure(move.new_field));
     move.figure_beaten = true;
+    if (rev_mode == false) {
+      for (auto drawer : drawers_) {
+        drawer->onFigureRemoved(move.new_field);
+      }
+    }
   }
 
   Figure::Color color = figure->getColor();
@@ -191,6 +167,11 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
     const Pawn* pawn = static_cast<const Pawn*>(figure);
     addFigure(move.pawn_promotion, move.new_field, pawn->getColor());
     removeFigure(move.old_field);
+    if (rev_mode == false) {
+      for (auto drawer : drawers_) {
+        drawer->onFigureRemoved(move.old_field);
+      }
+    }
     figure = nullptr;
   }
 
@@ -201,16 +182,16 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
   fields_[move.old_field.letter][move.old_field.number] = nullptr;
 
   // Update fields is_check and is_mate
-  if (in_analyze_mode_ == false) {
+  if (rev_mode == false) {
     move.is_check = isKingChecked(!color);
     move.is_mate = isKingCheckmated(!color);
-  }
-  for (auto drawer : drawers_) {
-    drawer->onFigureMoved(move);
+    for (auto drawer : drawers_) {
+      drawer->onFigureMoved(move);
+    }
   }
 
   GameStatus status = GameStatus::NONE;
-  if (in_analyze_mode_ == false) {
+  if (rev_mode == false) {
     status = getGameStatus(!color);
     if (status != GameStatus::NONE) {
       onGameFinished(status);
@@ -357,6 +338,10 @@ Board::GameStatus Board::makeMove(Field old_field, Field new_field, Figure::Type
   }
   Figure::Move move(old_field, new_field, false, false, castling, false, promotion);
   return makeMove(move, rev_mode);
+}
+
+bool Board::isMoveValid(Field old_field, Field new_field) {
+
 }
 
 bool Board::isMoveValid(Figure::Move& move, Figure::Color color) {

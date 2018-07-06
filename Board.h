@@ -132,7 +132,6 @@ class Board {
   bool isMoveValid(Figure::Move& move, Figure::Color color);
 
   const Pawn* en_passant_pawn_{nullptr};
-  bool in_analyze_mode_{false};
   std::vector<std::unique_ptr<Figure>> figures_;
   std::vector<BoardDrawer*> drawers_;
   std::array<std::array<Figure*, BoardSize>, BoardSize> fields_;

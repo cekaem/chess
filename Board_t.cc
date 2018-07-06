@@ -195,7 +195,6 @@ TEST_PROCEDURE(test10) {
   EXPECT_CALL(drawer, onFigureMoved(Figure::Move(Field("c2"), Field("c3"), false, false, Figure::Move::Castling::NONE, false, Figure::PAWN)));
   EXPECT_CALL(drawer, onFigureMoved(Figure::Move(Field("e4"), Field("e5"), true, false, Figure::Move::Castling::NONE, true, Figure::PAWN)));
   EXPECT_CALL(drawer, onFigureRemoved(Field("e5")));  // bishop beaten by queen
-  EXPECT_CALL(drawer, onFigureRemoved(Field("e5")));
   board.addFigure(Figure::BISHOP, Field("e5"), Figure::WHITE);
   board.addFigure(Figure::QUEEN, Field("d4"), Figure::BLACK);
   board.addFigure(Figure::KING, Field("c2"), Figure::WHITE);
@@ -203,7 +202,6 @@ TEST_PROCEDURE(test10) {
   VERIFY_EQUALS(board.makeMove(Field("d4"), Field("e4")), Board::GameStatus::NONE);
   VERIFY_EQUALS(board.makeMove(Field("c2"), Field("c3")), Board::GameStatus::NONE);
   VERIFY_EQUALS(board.makeMove(Field("e4"), Field("e5")), Board::GameStatus::NONE);
-  board.removeFigure(Field("e5"));
   TEST_END
 }
 
