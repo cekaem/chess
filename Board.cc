@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cstdlib>
 
 int Board::number_of_copies_ = 0;
 
@@ -40,6 +39,30 @@ Board::Board(const Board& other) noexcept {
   for (const auto& figure : figures) {
     addFigure(figure->getType(), figure->getPosition(), figure->getColor());
   }
+}
+
+bool Board::isMoveValid(Field old_field, Field new_field) {
+  Figure* figure = fields_[old_field.letter][old_field.number];
+  if (figure == nullptr) {
+    return false;
+  }
+
+  try {
+    GameStatus status = getGameStatus(figure->getColor());
+    if (status != GameStatus::NONE) {
+      return false;
+    }
+  } catch(const BadBoardStatusException&) {
+    return false;
+  }
+
+  auto possible_moves = calculateMovesForFigure(figure);
+  auto iter = std::find_if(possible_moves.begin(), possible_moves.end(),
+      [new_field](const auto& m) -> bool {
+        return new_field == m.new_field;
+      });
+
+  return iter != possible_moves.end();
 }
 
 bool Board::operator==(const Board& other) const noexcept {
@@ -103,7 +126,7 @@ std::unique_ptr<Figure> Board::removeFigure(Field field) {
   return result;
 }
 
-void Board::moveFigure(Field old_field, Field new_field) {
+void Board::moveFigure(Field old_field, Field new_field, bool moved) {
   Figure* figure = fields_[old_field.letter][old_field.number];
   if (figure == nullptr) {
     throw NoFigureException(old_field);
@@ -113,7 +136,8 @@ void Board::moveFigure(Field old_field, Field new_field) {
   }
   fields_[new_field.letter][new_field.number] = figure;
   fields_[old_field.letter][old_field.number] = nullptr;
-  figure->move(new_field);
+  figure->setPosition(new_field);
+  figure->setMovedAtLeastOnce(moved);
 }
 
 Board::ReversibleMoveWrapper Board::makeReversibleMove(Figure::Move move) {
@@ -127,7 +151,9 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
     throw NoFigureException(move.old_field);
   }
 
-  if (rev_mode == false && isMoveValid(move.old_field, move.new_field) == false) {
+  Figure::Color color = figure->getColor();
+
+  if (rev_mode == false && isMoveValid(move, color) == false) {
     throw IllegalMoveException(figure, move.new_field);
   }
 
@@ -142,10 +168,34 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
     }
   }
 
-  Figure::Color color = figure->getColor();
+  bool moved_at_least_once = figure->movedAtLeastOnce();
+
+  // Handle pawn promotion
+  std::unique_ptr<Figure> promoted_pawn;
+  if (move.pawn_promotion != Figure::PAWN) {
+    assert(figure->getType() == Figure::PAWN);
+    const Pawn* pawn = static_cast<const Pawn*>(figure);
+    addFigure(move.pawn_promotion, move.new_field, pawn->getColor());
+    promoted_pawn = std::move(removeFigure(move.old_field));
+    if (rev_mode == false) {
+      for (auto drawer : drawers_) {
+        drawer->onFigureRemoved(move.old_field);
+      }
+    }
+    figure = nullptr;
+  }
+
+  if (rev_mode == true) {
+    ReversibleMove reversible_move(move,
+                                   std::move(beaten_figure),
+                                   std::move(promoted_pawn),
+                                   en_passant_pawn_,
+                                   moved_at_least_once);
+    reversible_moves_.push_back(std::move(reversible_move));
+  }
 
   // Handle en passant
-  if (figure->getType() == Figure::PAWN && abs(move.new_field.number - move.old_field.number) == 2) {
+  if (Figure::Move::isEnPassant(this, move.old_field, move.new_field) == true) {
     en_passant_pawn_ = static_cast<const Pawn*>(figure);
   } else {
     en_passant_pawn_ = nullptr;
@@ -158,33 +208,20 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
     Field old_rook_position(old_l, move.old_field.number);
     Field::Letter new_l = move.castling == Figure::Move::Castling::KING_SIDE ? Field::F : Field::D;
     Field new_rook_position(new_l, move.old_field.number);
-    moveFigure(old_rook_position, new_rook_position);
-  }
-
-  // Handle pawn promotion
-  if (move.pawn_promotion != Figure::PAWN) {
-    assert(figure->getType() == Figure::PAWN);
-    const Pawn* pawn = static_cast<const Pawn*>(figure);
-    addFigure(move.pawn_promotion, move.new_field, pawn->getColor());
-    removeFigure(move.old_field);
-    if (rev_mode == false) {
-      for (auto drawer : drawers_) {
-        drawer->onFigureRemoved(move.old_field);
-      }
-    }
-    figure = nullptr;
+    moveFigure(old_rook_position, new_rook_position, true);
   }
 
   if (figure != nullptr) {
-    figure->move(move);
+    figure->setPosition(move.new_field);
+    figure->setMovedAtLeastOnce(true);
     fields_[move.new_field.letter][move.new_field.number] = figure;
   }
   fields_[move.old_field.letter][move.old_field.number] = nullptr;
 
-  // Update fields is_check and is_mate
   if (rev_mode == false) {
     move.is_check = isKingChecked(!color);
     move.is_mate = isKingCheckmated(!color);
+  
     for (auto drawer : drawers_) {
       drawer->onFigureMoved(move);
     }
@@ -196,11 +233,6 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
     if (status != GameStatus::NONE) {
       onGameFinished(status);
     }
-  }
-
-  if (rev_mode == true) {
-    ReversibleMove reversible_move(move, std::move(beaten_figure));
-    reversible_moves_.push_back(std::move(reversible_move));
   }
 
   return status;
@@ -230,15 +262,20 @@ bool Board::isKingCheckmated(Figure::Color color) {
   if (king == nullptr || isKingChecked(color) == false) {
     return false;
   }
-  auto moves = king->calculatePossibleMoves();
+
   bool is_mate = true;
-  for (const auto& move: moves) {
-    auto wrapper = makeReversibleMove(move);
-    is_mate = isKingChecked(color);
-    if (is_mate == false) {
-      break;
+  auto figures = getFigures(color);
+  for (const auto* figure: figures) {
+    auto moves = figure->calculatePossibleMoves();
+    for (const auto& move: moves) {
+      auto wrapper = makeReversibleMove(move);
+      if (isKingChecked(color) == false) {
+        is_mate = false;
+        break;
+      }
     }
   }
+  
   return is_mate;
 }
 
@@ -247,25 +284,38 @@ bool Board::isKingStalemated(Figure::Color color) {
   if (king == nullptr || isKingChecked(color) == true) {
     return false;
   }
-  auto moves = king->calculatePossibleMoves();
+
   bool is_stalemate = true;
-  for (const auto& move: moves) {
-    auto wrapper = makeReversibleMove(move);
-    is_stalemate = isKingChecked(color);
-    if (is_stalemate == false) {
-      break;
+  auto figures = getFigures(color);
+  for (const auto* figure: figures) {
+    auto moves = figure->calculatePossibleMoves();
+    for (const auto& move: moves) {
+      auto wrapper = makeReversibleMove(move);
+      if (isKingChecked(color) == false) {
+        is_stalemate = false;
+        break;
+      }
     }
   }
+
   return is_stalemate;
 }
 
 Board::GameStatus Board::getGameStatus(Figure::Color color) {
+  const King* king = getKing(Figure::WHITE);
+  if (king == nullptr) {
+    throw BadBoardStatusException(this);
+  }
+  king = getKing(Figure::BLACK);
+  if (king == nullptr) {
+    throw BadBoardStatusException(this);
+  }
   Board::GameStatus status = isCheckMate();
   if (status == GameStatus::WHITE_WON ||
       status == GameStatus::BLACK_WON) {
     return status;
   }
-  if (isStaleMate(color) || isDraw()) {
+  if (isKingStalemated(color) || isDraw()) {
     return GameStatus::DRAW;
   }
   if (isKingChecked(!color)) {
@@ -276,16 +326,8 @@ Board::GameStatus Board::getGameStatus(Figure::Color color) {
 }
 
 Board::GameStatus Board::isCheckMate() {
-  const King* king = getKing(Figure::WHITE);
-  if (king == nullptr) {
-    throw BadBoardStatusException(this);
-  }
   if (isKingCheckmated(Figure::WHITE)) {
     return GameStatus::BLACK_WON;
-  }
-  king = getKing(Figure::BLACK);
-  if (king == nullptr) {
-    throw BadBoardStatusException(this);
   }
   if (isKingCheckmated(Figure::BLACK)) {
     return GameStatus::WHITE_WON;
@@ -293,24 +335,19 @@ Board::GameStatus Board::isCheckMate() {
   return GameStatus::NONE;
 }
 
-bool Board::isStaleMate(Figure::Color color) {
-  const King* king = getKing(color);
-  if (king == nullptr) {
-    throw BadBoardStatusException(this);
-  }
-  return isKingStalemated(color);
-}
-
 bool Board::isDraw() const {
-  std::vector<const Figure*> white_figures = getFigures(Figure::WHITE);
-  std::vector<const Figure*> black_figures = getFigures(Figure::BLACK);
-  assert(white_figures.size() > 0);
-  if (white_figures.size() > 1 || black_figures.size() > 1) {
+  const King* king = getKing(Figure::WHITE);
+  if (king == nullptr) {
     return false;
   }
-  if (white_figures[0]->getType() != Figure::KING ||
-      black_figures[0]->getType() != Figure::KING) {
-    throw BadBoardStatusException(this);
+  king = getKing(Figure::BLACK);
+  if (king == nullptr) {
+    return false;
+  }
+  std::vector<const Figure*> white_figures = getFigures(Figure::WHITE);
+  std::vector<const Figure*> black_figures = getFigures(Figure::BLACK);
+  if (white_figures.size() > 1 || black_figures.size() > 1) {
+    return false;
   }
   return true;
 }
@@ -319,6 +356,10 @@ Board::GameStatus Board::makeMove(Field old_field, Field new_field, Figure::Type
   Figure* figure = fields_[old_field.letter][old_field.number];
   if (figure == nullptr) {
     throw NoFigureException(old_field);
+  }
+
+  if (isMoveValid(old_field, new_field) == false) {
+    throw IllegalMoveException(figure, new_field);
   }
 
   Figure::Move::Castling castling = Figure::Move::isCastling(this, old_field, new_field);
@@ -340,37 +381,22 @@ Board::GameStatus Board::makeMove(Field old_field, Field new_field, Figure::Type
   return makeMove(move, rev_mode);
 }
 
-bool Board::isMoveValid(Field old_field, Field new_field) {
-
-}
-
 bool Board::isMoveValid(Figure::Move& move, Figure::Color color) {
-  if (move.castling == Figure::Move::Castling::KING_SIDE) {
+  if (move.castling != Figure::Move::Castling::NONE) {
+    if (isKingChecked(color) == true) {
+      return false;
+    }
     const Field::Number number = color == Figure::WHITE ? Field::ONE : Field::EIGHT;
-    if (isKingChecked(color) == true) {
-      return false;
-    }
-    Figure::Move m(move.old_field,
-                   Field(static_cast<Field::Letter>(move.old_field.letter + 1), number),
-                   Figure::Move::Castling::NONE);
-    auto wrapper = makeReversibleMove(m);
-    if (isKingChecked(color) == true) {
-      return false;
-    }
-  } else if (move.castling == Figure::Move::Castling::QUEEN_SIDE) {
-    const Field::Number number = color == Figure::WHITE ? Field::ONE : Field::EIGHT;
-    if (isKingChecked(color) == true) {
-      return false;
-    }
-    Figure::Move m(move.old_field,
-                   Field(static_cast<Field::Letter>(move.old_field.letter - 1), number),
-                   Figure::Move::Castling::NONE);
-    auto wrapper = makeReversibleMove(m);
-    if (isKingChecked(color) == true) {
+    const int offset = move.castling == Figure::Move::Castling::KING_SIDE ? 1 : -1;
+    const Field new_field(static_cast<Field::Letter>(move.old_field.letter + offset), number);
+    moveFigure(move.old_field, new_field, true);
+    bool is_king_checked = isKingChecked(color);
+    moveFigure(new_field, move.old_field, false);
+    if (is_king_checked == true) {
       return false;
     }
   }
-
+  
   auto wrapper = makeReversibleMove(move);
   if (isKingChecked(color) == true) {
     return false;
@@ -382,7 +408,7 @@ bool Board::isMoveValid(Figure::Move& move, Figure::Color color) {
   if (isKingCheckmated(!color)) {
     move.is_mate = true;
   }
-  return false;
+  return true;
 }
 
 std::vector<Figure::Move> Board::calculateMovesForFigure(const Figure* figure) {
@@ -390,7 +416,7 @@ std::vector<Figure::Move> Board::calculateMovesForFigure(const Figure* figure) {
   moves.erase(std::remove_if(moves.begin(), moves.end(),
       [this, figure](auto& move) -> bool {
         return isMoveValid(move, figure->getColor()) == false;
-      }));
+      }), moves.end());
   return moves;
 }
 
@@ -424,12 +450,16 @@ void Board::undoLastReversibleMove() {
   assert(reversible_moves_.empty() == false);
   ReversibleMove reversible_move = std::move(reversible_moves_.back());
   reversible_moves_.pop_back();
-  const Figure* figure = getFigure(reversible_move.new_field);
-  if (reversible_move.promotion_move == true) {
-    addFigure(Figure::PAWN, reversible_move.old_field, figure->getColor());
+  Figure* promoted_pawn = reversible_move.promoted_pawn.get();
+  if (promoted_pawn != nullptr) {
+    figures_.push_back(std::move(reversible_move.promoted_pawn));
+    Field old_position = promoted_pawn->getPosition();
+    fields_[old_position.letter][old_position.number] = promoted_pawn;
     removeFigure(reversible_move.new_field);
   } else {
-    moveFigure(reversible_move.new_field, reversible_move.old_field);
+    moveFigure(reversible_move.new_field, 
+               reversible_move.old_field,
+               reversible_move.moved_at_least_once);
   }
   Figure* bitten_figure = reversible_move.bitten_figure.get();
   if (bitten_figure != nullptr) {
@@ -440,11 +470,12 @@ void Board::undoLastReversibleMove() {
   if (reversible_move.castling_move == true) {
     Field::Number line = reversible_move.old_field.number;
     if (reversible_move.new_field.letter == Field::G) {
-      moveFigure(Field(Field::F, line), Field(Field::H, line));
+      moveFigure(Field(Field::F, line), Field(Field::H, line), false);
     } else {
-      moveFigure(Field(Field::D, line), Field(Field::A, line));
+      moveFigure(Field(Field::D, line), Field(Field::A, line), false);
     }
   }
+  en_passant_pawn_ = reversible_move.en_passant_pawn;
 }
 
 void Board::undoAllReversibleMoves() {

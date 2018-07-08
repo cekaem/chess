@@ -50,27 +50,33 @@ class Board {
   };
 
   struct ReversibleMove {
-    ReversibleMove(Figure::Move& move, std::unique_ptr<Figure> bf)
+    ReversibleMove(Figure::Move& move, std::unique_ptr<Figure> bf, std::unique_ptr<Figure> pp, const Pawn* epp, bool moved)
       : old_field(move.old_field),
         new_field(move.new_field),
         bitten_figure(std::move(bf)),
-        promotion_move(move.pawn_promotion != Figure::PAWN),
-        castling_move(move.castling != Figure::Move::Castling::NONE) {
+        en_passant_pawn(epp),
+        promoted_pawn(std::move(pp)),
+        castling_move(move.castling != Figure::Move::Castling::NONE),
+        moved_at_least_once(moved) {
     }
 
     ReversibleMove(ReversibleMove&& other)
       : old_field(other.old_field),
         new_field(other.new_field),
         bitten_figure(std::move(other.bitten_figure)),
-        promotion_move(other.promotion_move),
-        castling_move(other.castling_move) {
+        en_passant_pawn(other.en_passant_pawn),
+        promoted_pawn(std::move(other.promoted_pawn)),
+        castling_move(other.castling_move),
+        moved_at_least_once(other.moved_at_least_once) {
     }
 
     Field old_field;
     Field new_field;
     std::unique_ptr<Figure> bitten_figure;
-    bool promotion_move{false};
+    const Pawn* en_passant_pawn{nullptr};
+    std::unique_ptr<Figure> promoted_pawn;
     bool castling_move{false};
+    bool moved_at_least_once{false};
   };
 
   class ReversibleMoveWrapper {
@@ -96,7 +102,6 @@ class Board {
   GameStatus makeMove(Field old_field, Field new_field, Figure::Type promotion = Figure::PAWN, bool rev_mode = false);
   GameStatus makeMove(Figure::Move move, bool rev_mode = false);
   ReversibleMoveWrapper makeReversibleMove(Figure::Move move);
-  void moveFigure(Field old_field, Field new_field);
   const Figure* getFigure(Field field) const noexcept;
   const std::vector<std::unique_ptr<Figure>>& getFigures() const noexcept { return figures_; }
   std::vector<const Figure*> getFigures(Figure::Color color) const noexcept;
@@ -125,11 +130,11 @@ class Board {
   Board(Board&& other) = delete;
 
   GameStatus isCheckMate();
-  bool isStaleMate(Figure::Color color);
   bool isDraw() const;
   void onGameFinished(GameStatus status) noexcept;
   void handleCastling(Figure::Move& move);
   bool isMoveValid(Figure::Move& move, Figure::Color color);
+  void moveFigure(Field old_field, Field new_field, bool moved);
 
   const Pawn* en_passant_pawn_{nullptr};
   std::vector<std::unique_ptr<Figure>> figures_;

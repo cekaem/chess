@@ -32,6 +32,7 @@ class Figure {
 
     static Castling isCastling(const Board* board, Field old_field, Field new_field);
     static bool isPromotion(const Board* board, Field old_field, Field new_field);
+    static bool isEnPassant(const Board* board, Field old_field, Field new_field);
 
     Move() {}
 
@@ -54,14 +55,13 @@ class Figure {
 
   Color getColor() const { return color_; }
   Field getPosition() const { return field_; }
+  void setPosition(const Field& field) { field_ = field; }
   virtual int getValue() const { return value_; }
   bool movedAtLeastOnce() const { return moved_at_least_once_; }
-  void lookForKingUnveils(bool look) const { look_for_king_unveils_ = look; }
-  bool looksForKingUnveils() const { return look_for_king_unveils_; }
+  void setMovedAtLeastOnce(bool moved) { moved_at_least_once_ = moved; }
 
   virtual std::vector<Move> calculatePossibleMoves() const = 0;
   virtual Type getType() const = 0;
-  void move(Figure::Move move);
 
   bool operator==(const Figure& other) const;
   bool operator!=(const Figure& other) const;
@@ -76,7 +76,6 @@ class Figure {
   const Color color_;
   const int value_;
   bool moved_at_least_once_{false};
-  mutable bool look_for_king_unveils_{true};
 };
 
 std::ostream& operator<<(std::ostream& ostr, const Figure::Move& move);

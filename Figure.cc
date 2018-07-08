@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdlib>
 
 #include "Board.h"
 
@@ -174,6 +175,14 @@ bool Figure::Move::isPromotion(const Board* board, Field old_field, Field new_fi
   return old_field.number == old_number && new_field.number == new_number;
 }
 
+bool Figure::Move::isEnPassant(const Board* board, Field old_field, Field new_field) {
+  const Figure* figure = board->getFigure(old_field);
+  if (figure == nullptr || figure->getType() != Figure::PAWN) {
+    return false;
+  }
+  return abs(new_field.number - old_field.number) == 2;
+}
+
 bool Figure::Move::operator==(const Figure::Move& other) const {
   return old_field == other.old_field &&
          new_field == other.new_field &&
@@ -231,11 +240,6 @@ std::unique_ptr<Figure> FiguresFactory::createFigure(
 
 Figure::Figure(Board& board, Field field, Color color, int value) noexcept
   : board_(board), field_(field), color_(color), value_(value) {
-}
-
-void Figure::move(Figure::Move move) {
-  field_ = move.new_field;
-  moved_at_least_once_ = true;
 }
 
 bool Figure::operator==(const Figure& other) const {
@@ -410,9 +414,7 @@ std::vector<Figure::Move> King::calculatePossibleMoves() const {
   for (auto move : possible_moves) {
     addMove(board_, result, this, move.first, move.second);
   }
-  if (looksForKingUnveils()) {
-    addPossibleCastlings(result);
-  }
+  addPossibleCastlings(result);
 
   return result;
 }
