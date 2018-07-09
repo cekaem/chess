@@ -11,12 +11,10 @@
 
 class Engine {
  public:
-  Engine(Board& board, unsigned search_depth, std::ostream& debug_stream);
+  Engine(Board& board, unsigned search_depth, unsigned max_number_of_threads, std::ostream& debug_stream);
   Figure::Move makeMove(Figure::Color color);
 
  private:
-  static const int SearchDepth = 5;
-
     struct Move {
       Move() {}
       Move(int v, int m, bool d) : value(v), moves_to_mate(m), is_draw(d) {}
@@ -32,6 +30,7 @@ class Engine {
 
   Board& board_;
   unsigned search_depth_{1u};
+  unsigned max_number_of_threads_{1u};
   std::ostream& debug_stream_;
   int moves_count_{0};
 };

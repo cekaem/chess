@@ -13,8 +13,8 @@ namespace {
 static const int BorderValue = 1000;
 }  // unnamed namespace
 
-Engine::Engine(Board& board, unsigned search_depth, std::ostream& debug_stream)
-  : board_(board), search_depth_(search_depth), debug_stream_(debug_stream) {
+Engine::Engine(Board& board, unsigned search_depth, unsigned max_number_of_threads, std::ostream& debug_stream)
+  : board_(board), search_depth_(search_depth), max_number_of_threads_(max_number_of_threads), debug_stream_(debug_stream) {
   srand(static_cast<unsigned int>(time(nullptr)));
 }
 
