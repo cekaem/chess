@@ -71,7 +71,7 @@ TEST_PROCEDURE(test1) {
   }
   {
     Board board;
-    Engine engine(board, 3, null_stream);
+    Engine engine(board, 1, null_stream);
     board.addFigure(Figure::KING, Field("b8"), Figure::BLACK);
     board.addFigure(Figure::KING, Field("d8"), Figure::WHITE);
     board.addFigure(Figure::PAWN, Field("b5"), Figure::WHITE);
@@ -104,15 +104,37 @@ TEST_PROCEDURE(test2) {
 // Checks if engine promotes to Queen when it has chance
 TEST_PROCEDURE(test3) {
   TEST_START
+  Board board;
+  Engine engine(board, 3, null_stream);
+  board.addFigure(Figure::KING, Field("a6"), Figure::WHITE);
+  board.addFigure(Figure::KING, Field("d4"), Figure::BLACK);
+  board.addFigure(Figure::PAWN, Field("h7"), Figure::WHITE);
+  auto move = engine.makeMove(Figure::WHITE);
+  VERIFY_TRUE(MovesEqual(move, "h7-h8", Figure::QUEEN));
+  TEST_END
+}
+
+// Checks if engine detects mate in two.
+TEST_PROCEDURE(test4) {
+  TEST_START
   {
     Board board;
     Engine engine(board, 3, null_stream);
-    board.addFigure(Figure::KING, Field("a6"), Figure::WHITE);
-    board.addFigure(Figure::KING, Field("d4"), Figure::BLACK);
-    board.addFigure(Figure::PAWN, Field("h7"), Figure::WHITE);
-    auto move = engine.makeMove(Figure::WHITE);
-    VERIFY_TRUE(MovesEqual(move, "h7-h8", Figure::QUEEN));
-  }
+    board.addFigure(Figure::KING, Field("h1"), Figure::WHITE);
+    board.addFigure(Figure::KING, Field("b5"), Figure::BLACK);
+    board.addFigure(Figure::BISHOP, Field("b6"), Figure::BLACK);
+    board.addFigure(Figure::QUEEN, Field("d4"), Figure::BLACK);
+    board.addFigure(Figure::KNIGHT, Field("d3"), Figure::BLACK);
+    board.addFigure(Figure::ROOK, Field("e1"), Figure::WHITE);
+    board.addFigure(Figure::PAWN, Field("g2"), Figure::WHITE);
+    board.addFigure(Figure::PAWN, Field("h2"), Figure::WHITE);
+    auto move = engine.makeMove(Figure::BLACK);
+    VERIFY_TRUE(MovesEqual(move, "d4-g1"));
+    move = engine.makeMove(Figure::WHITE);
+    VERIFY_TRUE(MovesEqual(move, "e1-g1"));
+    move = engine.makeMove(Figure::BLACK);
+    VERIFY_TRUE(MovesEqual(move, "d3-f2"));
+  }  
   TEST_END
 }
   
@@ -124,6 +146,7 @@ int main() {
     TEST("Engine detects mate in one", test1);
     TEST("Engine grabs free material", test2);
     TEST("Engine promotes pawns when it has chance", test3);
+    TEST("Engine detects mate in two", test4);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;

@@ -428,6 +428,21 @@ TEST_PROCEDURE(test7) {
     board.addFigure(Figure::ROOK, Field("e8"), Figure::BLACK);
     VERIFY_TRUE(board.isKingCheckmated(Figure::WHITE));
   }
+  {
+    Board board;
+    board.addFigure(Figure::KING, Field("b8"), Figure::BLACK);
+    board.addFigure(Figure::KING, Field("d8"), Figure::WHITE);
+    const Figure* pawn = board.addFigure(Figure::PAWN, Field("b5"), Figure::WHITE);
+    board.addFigure(Figure::ROOK, Field("b1"), Figure::WHITE);
+    board.addFigure(Figure::BISHOP, Field("e3"), Figure::WHITE);
+    board.addFigure(Figure::BISHOP, Field("e4"), Figure::WHITE);
+    board.addFigure(Figure::PAWN, Field("a7"), Figure::BLACK);
+    board.makeMove(Field("a7"), Field("a5"));
+    auto moves = board.calculateMovesForFigure(pawn);
+    VERIFY_CONTAINS(moves, createMove(pawn, Field::A, Field::SIX, true, true, true));
+    board.makeMove(Field("b5"), Field("a6"));
+    VERIFY_TRUE(board.isKingCheckmated(Figure::BLACK));
+  }
   TEST_END
 }
 

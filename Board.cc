@@ -39,6 +39,10 @@ Board::Board(const Board& other) noexcept {
   for (const auto& figure : figures) {
     addFigure(figure->getType(), figure->getPosition(), figure->getColor());
   }
+
+  if (other.en_passant_pawn_ != nullptr) {
+    en_passant_pawn_ = static_cast<const Pawn*>(getFigure(other.en_passant_pawn_->getPosition()));
+  }
 }
 
 bool Board::isMoveValid(Field old_field, Field new_field) {
@@ -152,10 +156,6 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
   }
 
   Figure::Color color = figure->getColor();
-
-  if (rev_mode == false && isMoveValid(move, color) == false) {
-    throw IllegalMoveException(figure, move.new_field);
-  }
 
   std::unique_ptr<Figure> beaten_figure;
   if (fields_[move.new_field.letter][move.new_field.number] != nullptr) {

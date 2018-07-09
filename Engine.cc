@@ -59,15 +59,31 @@ Figure::Move Engine::makeMove(Figure::Color color) {
   Figure::Move my_move;
   if (moves_to_mate != BorderValue) {
     my_move = mating_move;
+    debug_stream_ << "Found mate in " << (moves_to_mate / 2 + 1) << std::endl;
   } else {
-    // Collect all moves with the best value and choose one (random choice).
+    // Collect all moves with the best value.
     std::vector<Figure::Move> the_best_moves;
     for (auto& move: moves_pairs) {
       if (move.second.value == the_best_value) {
         the_best_moves.push_back(move.first);
       }
     }
-    my_move = the_best_moves[generateRandomValue(the_best_moves.size() - 1)];
+    // Check which moves from the ones with the best value is the best in one move.
+    std::vector<Figure::Move> the_best_direct_moves;
+    int the_best_direct_move_value = -BorderValue;
+    for (auto& move: the_best_moves) {
+      auto wrapper = board_.makeReversibleMove(move);
+      auto m = evaluateBoardForLastNode(board_, !color, false);
+      if (m.value > the_best_direct_move_value) {
+        the_best_direct_moves.clear();
+        the_best_direct_move_value = m.value;
+      }
+      if (m.value >= the_best_direct_move_value) {
+        the_best_direct_moves.push_back(move);
+      }
+    }
+    // Choose randomly move from the best direct moves.
+    my_move = the_best_direct_moves[generateRandomValue(the_best_direct_moves.size() - 1)];
   }
 
   debug_stream_ << "My move (" << moves_count_ << "): " << my_move.old_field << "-" << my_move.new_field << std::endl;
@@ -102,7 +118,7 @@ Engine::Move Engine::evaluateBoard(
     bool my_move,
     int depths_remaining) const {
   Board::GameStatus status = board.getGameStatus(color);
-  if (status != Board::GameStatus::NONE) {
+  if (status != Board::GameStatus::NONE || depths_remaining == 0) {
     return evaluateBoardForLastNode(board, color, my_move);
   }
 
@@ -115,11 +131,7 @@ Engine::Move Engine::evaluateBoard(
       // debug_stream_ << "Evaluating move: " << move.old_field << "-" << move.new_field << std::endl;
       auto wrapper = board.makeReversibleMove(move);
       Engine::Move engine_move;
-      if (depths_remaining == 0) {
-        engine_move = evaluateBoardForLastNode(board, !color, !my_move);
-      } else {
-        engine_move = evaluateBoard(board, !color, !my_move, depths_remaining - 1);
-      }
+      engine_move = evaluateBoard(board, !color, !my_move, depths_remaining - 1);
       engine_moves.push_back(engine_move);
     }
   }
@@ -132,7 +144,7 @@ Engine::Move Engine::evaluateBoard(
   }
 
   int the_smallest_value = 0;
-  int the_smallest_positive_value = 0;
+  int the_smallest_positive_value = BorderValue;
   int the_biggest_value = 0;
   int the_biggest_negative_value = 0;
   bool zero_exists = false;
@@ -165,7 +177,7 @@ Engine::Move Engine::evaluateBoard(
 
   int moves_to_mate = BorderValue;
   if (my_move == true) {
-    if (the_smallest_positive_value > 0) {
+    if (the_smallest_positive_value < BorderValue) {
       moves_to_mate = the_smallest_positive_value + 1;
     } else if (zero_exists == true) {
       moves_to_mate = 0;
