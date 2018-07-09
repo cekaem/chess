@@ -117,6 +117,7 @@ int main() {
   bool human_plays_white = false;
   bool human_plays_black = false;
   int engine_strength = 0;
+  int number_of_threads = 0;
 
   std::cout << "Human plays white?" << std::endl;
   std::cout << "> ";
@@ -127,6 +128,9 @@ int main() {
   std::cout << "Engine's search depth?" << std::endl;
   std::cout << "> ";
   std::cin >> engine_strength;
+  std::cout << "Number of threads?" << std::endl;
+  std::cout << "> ";
+  std::cin >> number_of_threads;
 
   Board board;
   board.setStandardBoard();
@@ -134,7 +138,7 @@ int main() {
   PgnCreator pgn_creator(std::cout);
   board.addBoardDrawer(&drawer);
   board.addBoardDrawer(&pgn_creator);
-  Engine engine(board, engine_strength, std::cerr);
+  Engine engine(board, engine_strength, number_of_threads, std::cerr);
   
   Board::GameStatus status = Board::GameStatus::NONE;
   while (status == Board::GameStatus::NONE) {

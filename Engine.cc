@@ -1,9 +1,12 @@
 #include "Engine.h"
 
 #include <cassert>
+#include <condition_variable>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <mutex>
+#include <thread>
 #include <utility>
 
 #include "Board.h"
@@ -28,25 +31,30 @@ Figure::Move Engine::makeMove(Figure::Color color) {
     throw Board::BadBoardStatusException(&board_);
   }
 
-  std::vector<std::pair<Figure::Move, Move>> moves_pairs;
   Board copy = board_;
-  std::vector<const Figure*> figures = copy.getFigures(color);
+  std::vector<const Figure*> figures = board_.getFigures(color);
   for (const Figure* figure: figures) {
     std::vector<Figure::Move> moves = copy.calculateMovesForFigure(figure);
     for (Figure::Move& move: moves) {
-      auto wrapper = copy.makeReversibleMove(move);
-      // debug_stream_ << "Evaluating move: " << move.old_field << "-" << move.new_field << std::endl;
-      Engine::Move engine_move = evaluateBoard(copy, !color, false, search_depth_ - 1);
-      moves_pairs.push_back(std::make_pair(move, engine_move));
+      std::unique_lock<std::mutex> ul(number_of_threads_working_mutex_);
+      number_of_threads_working_cv_.wait(
+          ul, [this] { return number_of_threads_working_ < max_number_of_threads_; });
+      std::thread t(&Engine::evaluateBoardMain, this, move, !color, false, search_depth_ - 1);
+      t.detach();
+      ++number_of_threads_working_;
     }
   }
+
+  // Wait for all threads to finish moves evaluation
+  std::unique_lock<std::mutex> ul(number_of_threads_working_mutex_);
+  number_of_threads_working_cv_.wait(ul, [this] { return number_of_threads_working_ == 0; });
 
   // TODO: implement delaying certain mate
   // Iterate through all moves and look for mate and for best value.
   int moves_to_mate = BorderValue;
   int the_best_value = -BorderValue;
   Figure::Move mating_move;
-  for (auto& move: moves_pairs) {
+  for (auto& move: evaluated_moves_) {
     if (move.second.moves_to_mate > 0 && move.second.moves_to_mate < moves_to_mate) {
       moves_to_mate = move.second.moves_to_mate;
       mating_move = move.first;
@@ -63,7 +71,7 @@ Figure::Move Engine::makeMove(Figure::Color color) {
   } else {
     // Collect all moves with the best value.
     std::vector<Figure::Move> the_best_moves;
-    for (auto& move: moves_pairs) {
+    for (auto& move: evaluated_moves_) {
       if (move.second.value == the_best_value) {
         the_best_moves.push_back(move.first);
       }
@@ -89,6 +97,7 @@ Figure::Move Engine::makeMove(Figure::Color color) {
   debug_stream_ << "My move (" << moves_count_ << "): " << my_move.old_field << "-" << my_move.new_field << std::endl;
   board_.makeMove(my_move);
   ++moves_count_;
+  evaluated_moves_.clear();
   return my_move;
 }
 
@@ -128,7 +137,6 @@ Engine::Move Engine::evaluateBoard(
   for (const Figure* figure: figures) {
     std::vector<Figure::Move> moves = board.calculateMovesForFigure(figure);
     for (Figure::Move& move: moves) {
-      // debug_stream_ << "Evaluating move: " << move.old_field << "-" << move.new_field << std::endl;
       auto wrapper = board.makeReversibleMove(move);
       Engine::Move engine_move;
       engine_move = evaluateBoard(board, !color, !my_move, depths_remaining - 1);
@@ -198,4 +206,21 @@ Engine::Move Engine::evaluateBoard(
 
   assert(value != BorderValue && value != -BorderValue && moves_to_mate != BorderValue);
   return Move(value, moves_to_mate, false);
+}
+
+void Engine::evaluateBoardMain(
+    Figure::Move move,
+    Figure::Color color,
+    bool my_move,
+    int depths_remaining) {
+  Board copy = board_;
+  copy.makeMove(move);
+  Move engine_move = evaluateBoard(copy, color, my_move, depths_remaining);
+  evaluated_moves_mutex_.lock();
+  evaluated_moves_.push_back(std::make_pair(move, engine_move));
+  evaluated_moves_mutex_.unlock();
+  number_of_threads_working_mutex_.lock();
+  --number_of_threads_working_;
+  number_of_threads_working_mutex_.unlock();
+  number_of_threads_working_cv_.notify_one();
 }
