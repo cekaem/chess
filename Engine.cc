@@ -39,7 +39,7 @@ Figure::Move Engine::makeMove(Figure::Color color) {
       std::unique_lock<std::mutex> ul(number_of_threads_working_mutex_);
       number_of_threads_working_cv_.wait(
           ul, [this] { return number_of_threads_working_ < max_number_of_threads_; });
-      std::thread t(&Engine::evaluateBoardMain, this, move, !color, false, search_depth_ - 1);
+      std::thread t(&Engine::evaluateBoardMain, this, move);
       t.detach();
       ++number_of_threads_working_;
     }
@@ -209,13 +209,11 @@ Engine::Move Engine::evaluateBoard(
 }
 
 void Engine::evaluateBoardMain(
-    Figure::Move move,
-    Figure::Color color,
-    bool my_move,
-    int depths_remaining) {
+    Figure::Move move) {
   Board copy = board_;
+  Figure::Color color = copy.getFigure(move.old_field)->getColor();
   copy.makeMove(move);
-  Move engine_move = evaluateBoard(copy, color, my_move, depths_remaining);
+  Move engine_move = evaluateBoard(copy, !color, false, search_depth_ - 1);
   evaluated_moves_mutex_.lock();
   evaluated_moves_.push_back(std::make_pair(move, engine_move));
   evaluated_moves_mutex_.unlock();

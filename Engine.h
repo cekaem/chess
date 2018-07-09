@@ -17,15 +17,15 @@ class Engine {
   Figure::Move makeMove(Figure::Color color);
 
  private:
-    struct Move {
-      Move() {}
-      Move(int v, int m, bool d) : value(v), moves_to_mate(m), is_draw(d) {}
-      int value{0};
-      int moves_to_mate{0};
-      bool is_draw{false};
+  struct Move {
+    Move() {}
+    Move(int v, int m, bool d) : value(v), moves_to_mate(m), is_draw(d) {}
+    int value{0};
+    int moves_to_mate{0};
+    bool is_draw{false};
   };
 
-  void evaluateBoardMain(Figure::Move move, Figure::Color color, bool my_move, int depths_remaining);
+  void evaluateBoardMain(Figure::Move move);
   Move evaluateBoardForLastNode(Board& board, Figure::Color color, bool my_move) const;
   Move evaluateBoard(Board& board, Figure::Color color, bool my_move, int depths_remaining) const;
 
