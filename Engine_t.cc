@@ -137,6 +137,26 @@ TEST_PROCEDURE(test4) {
   }  
   TEST_END
 }
+
+// Checks if Engine detects proper move to avoid mate in one.
+TEST_PROCEDURE(test5) {
+  TEST_START
+  {
+    Board board;
+    Engine engine(board, 3, 4, null_stream);
+    board.addFigure(Figure::KING, Field("b4"), Figure::WHITE);
+    board.addFigure(Figure::QUEEN, Field("d5"), Figure::WHITE);
+    board.addFigure(Figure::KING, Field("g8"), Figure::BLACK);
+    board.addFigure(Figure::PAWN, Field("f7"), Figure::BLACK);
+    board.addFigure(Figure::PAWN, Field("g7"), Figure::BLACK);
+    board.addFigure(Figure::PAWN, Field("h7"), Figure::BLACK);
+    board.addFigure(Figure::BISHOP, Field("g6"), Figure::BLACK);
+    auto move = engine.makeMove(Figure::BLACK);
+    VERIFY_TRUE(MovesEqual(move, "h7-h6"));
+  }
+  TEST_END
+}
+
   
 } // unnamed namespace
 
@@ -147,6 +167,7 @@ int main() {
     TEST("Engine grabs free material", test2);
     TEST("Engine promotes pawns when it has chance", test3);
     TEST("Engine detects mate in two", test4);
+    TEST("Engine detects proper move to avoid mate in one", test5);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;

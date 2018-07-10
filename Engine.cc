@@ -42,6 +42,7 @@ Figure::Move Engine::makeMove(Figure::Color color) {
       std::thread t(&Engine::evaluateBoardMain, this, move);
       t.detach();
       ++number_of_threads_working_;
+      debug_stream_ << "Number of working threads: " << number_of_threads_working_ << std::endl;
     }
   }
 
@@ -219,6 +220,7 @@ void Engine::evaluateBoardMain(
   evaluated_moves_mutex_.unlock();
   number_of_threads_working_mutex_.lock();
   --number_of_threads_working_;
+  debug_stream_ << "Number of working threads: " << number_of_threads_working_ << std::endl;
   number_of_threads_working_mutex_.unlock();
   number_of_threads_working_cv_.notify_one();
 }
