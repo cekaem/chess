@@ -125,6 +125,7 @@ TEST_PROCEDURE(test4) {
     board.addFigure(Figure::BISHOP, Field("b6"), Figure::BLACK);
     board.addFigure(Figure::QUEEN, Field("d4"), Figure::BLACK);
     board.addFigure(Figure::KNIGHT, Field("d3"), Figure::BLACK);
+    board.addFigure(Figure::ROOK, Field("a1"), Figure::WHITE);
     board.addFigure(Figure::ROOK, Field("e1"), Figure::WHITE);
     board.addFigure(Figure::PAWN, Field("g2"), Figure::WHITE);
     board.addFigure(Figure::PAWN, Field("h2"), Figure::WHITE);
@@ -143,7 +144,7 @@ TEST_PROCEDURE(test5) {
   TEST_START
   {
     Board board;
-    Engine engine(board, 3, 4, null_stream);
+    Engine engine(board, 3, 4, std::cerr);
     board.addFigure(Figure::KING, Field("b4"), Figure::WHITE);
     board.addFigure(Figure::QUEEN, Field("d5"), Figure::WHITE);
     board.addFigure(Figure::KING, Field("g8"), Figure::BLACK);
@@ -157,7 +158,6 @@ TEST_PROCEDURE(test5) {
   TEST_END
 }
 
-  
 } // unnamed namespace
 
 

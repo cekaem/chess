@@ -25,6 +25,36 @@ int Engine::generateRandomValue(int max) const {
   return rand() % (max + 1);
 }
 
+Engine::BorderValues Engine::findBorderValues(const std::vector<Engine::Move>& moves) const {
+  BorderValues result;
+
+  for (auto& move: moves) {
+    if (move.value > result.the_biggest_value) {
+      result.the_biggest_value = move.value;
+    }
+    if (move.value < result.the_smallest_value) {
+      result.the_smallest_value = move.value;
+    }
+    if (move.moves_to_mate == 0) {
+      result.zero_mate_value_exists = true;
+      continue;
+    }
+    if (move.moves_to_mate > 0 && move.moves_to_mate < result.the_smallest_positive_mate_value) {
+      result.the_smallest_positive_mate_value = move.moves_to_mate;
+    }
+    if (move.moves_to_mate < result.the_smallest_mate_value) {
+      result.the_smallest_mate_value = move.moves_to_mate;
+    }
+    if (move.moves_to_mate < 0 && move.moves_to_mate > result.the_biggest_negative_mate_value) {
+      result.the_biggest_negative_mate_value = move.moves_to_mate;
+    }
+    if (move.moves_to_mate > result.the_biggest_mate_value) {
+      result.the_biggest_mate_value = move.moves_to_mate;
+    }
+  }
+  return result;
+}
+
 Figure::Move Engine::makeMove(Figure::Color color) {
   Board::GameStatus status = board_.getGameStatus(color);
   if (status != Board::GameStatus::NONE) {
@@ -50,37 +80,62 @@ Figure::Move Engine::makeMove(Figure::Color color) {
   std::unique_lock<std::mutex> ul(number_of_threads_working_mutex_);
   number_of_threads_working_cv_.wait(ul, [this] { return number_of_threads_working_ == 0; });
 
-  // TODO: implement delaying certain mate
   // Iterate through all moves and look for mate and for best value.
-  int moves_to_mate = BorderValue;
-  int the_best_value = -BorderValue;
-  Figure::Move mating_move;
+  // Also look for possible opponent's mate.
+  std::vector<Move> engine_moves;
   for (auto& move: evaluated_moves_) {
-    if (move.second.moves_to_mate > 0 && move.second.moves_to_mate < moves_to_mate) {
-      moves_to_mate = move.second.moves_to_mate;
-      mating_move = move.first;
+    engine_moves.push_back(move.second);
+  }
+  auto border_values = findBorderValues(engine_moves);
+  int moves_to_mate = 0;
+  int the_best_value = border_values.the_biggest_value;
+  /*
+  if (border_values.the_smallest_mate_value < 0) {
+    debug_stream_ << "AAA: " << border_values.the_smallest_mate_value << std::endl;
+    if (border_values.the_smallest_positive_mate_value == BorderValue ||
+        -border_values.the_smallest_mate_value > border_values.the_smallest_positive_mate_value) {
+      moves_to_mate = border_values.the_smallest_positive_mate_value;
+    } else if (border_values.zero_mate_value_exists == false) {
+      moves_to_mate = border_values.the_smallest_mate_value;
+      assert(moves_to_mate < 0);
+      debug_stream_ << "Found opponent's mate in " << -(moves_to_mate / 2 + 1) << std::endl;
     }
-    if (move.second.value > the_best_value) {
-      the_best_value = move.second.value;
-    }
+  } else if (border_values.the_biggest_mate_value > 0) {
+    moves_to_mate = border_values.the_smallest_positive_mate_value;
+    debug_stream_ << "Found mate in " << (moves_to_mate / 2 + 1) << std::endl;
+  } else {
+    assert(border_values.zero_mate_value_exists == true);
+  }
+  */
+  if (border_values.the_smallest_positive_mate_value != BorderValue) {
+    moves_to_mate = border_values.the_smallest_positive_mate_value;
+  } else if (border_values.zero_mate_value_exists == true) {
+    moves_to_mate = 0;
+  } else {
+    moves_to_mate = border_values.the_smallest_mate_value;
+    assert(moves_to_mate != BorderValue);
   }
 
   Figure::Move my_move;
-  if (moves_to_mate != BorderValue) {
-    my_move = mating_move;
-    debug_stream_ << "Found mate in " << (moves_to_mate / 2 + 1) << std::endl;
-  } else {
-    // Collect all moves with the best value.
-    std::vector<Figure::Move> the_best_moves;
-    for (auto& move: evaluated_moves_) {
-      if (move.second.value == the_best_value) {
+  // Collect all best moves.
+  std::vector<Figure::Move> the_best_moves;
+  for (auto& move: evaluated_moves_) {
+    if (moves_to_mate != 0) {
+      if (move.second.moves_to_mate == moves_to_mate) {
         the_best_moves.push_back(move.first);
       }
+    } else if (move.second.value == the_best_value) {
+      the_best_moves.push_back(move.first);
     }
-    // Check which moves from the ones with the best value is the best in one move.
-    std::vector<Figure::Move> the_best_direct_moves;
-    int the_best_direct_move_value = -BorderValue;
-    for (auto& move: the_best_moves) {
+  }
+
+  // Check which moves from the ones with the best value is the best in one move.
+  std::vector<Figure::Move> the_best_direct_moves;
+  int the_best_direct_move_value = -BorderValue;
+  for (auto& move: the_best_moves) {
+    if (moves_to_mate != 0) {
+      the_best_direct_moves.push_back(move);
+    } else {
       auto wrapper = board_.makeReversibleMove(move);
       auto m = evaluateBoardForLastNode(board_, !color, false);
       if (m.value > the_best_direct_move_value) {
@@ -91,9 +146,10 @@ Figure::Move Engine::makeMove(Figure::Color color) {
         the_best_direct_moves.push_back(move);
       }
     }
-    // Choose randomly move from the best direct moves.
-    my_move = the_best_direct_moves[generateRandomValue(the_best_direct_moves.size() - 1)];
   }
+  assert(the_best_direct_moves.size() > 0);
+  // Choose randomly move from the best direct moves.
+  my_move = the_best_direct_moves[generateRandomValue(the_best_direct_moves.size() - 1)];
 
   debug_stream_ << "My move (" << moves_count_ << "): " << my_move.old_field << "-" << my_move.new_field << std::endl;
   board_.makeMove(my_move);
@@ -146,62 +202,30 @@ Engine::Move Engine::evaluateBoard(
   }
 
   int value = 0;
-  if (my_move) {
-    value = -BorderValue;
+  auto border_values = findBorderValues(engine_moves);
+  if (my_move == true) {
+    value = border_values.the_biggest_value;
   } else {
-    value = BorderValue;
+    value = border_values.the_smallest_value;
   }
-
-  int the_smallest_value = 0;
-  int the_smallest_positive_value = BorderValue;
-  int the_biggest_value = 0;
-  int the_biggest_negative_value = 0;
-  bool zero_exists = false;
-
-  for (auto& move: engine_moves) {
-    if ((my_move == true && move.value >= value) ||
-        (my_move == false && move.value <= value)) {
-      value = move.value;
-    }
-
-    if (move.moves_to_mate == 0) {
-      zero_exists = true;
-      continue;
-    }
-
-    if (my_move == true) {
-      if (move.moves_to_mate > 0 && move.moves_to_mate < the_smallest_positive_value) {
-        the_smallest_positive_value = move.moves_to_mate;
-      } else if (move.moves_to_mate < 0 && move.moves_to_mate < the_smallest_value) {
-        the_smallest_value = move.moves_to_mate;
-      }
-    } else {
-      if (move.moves_to_mate < 0 && move.moves_to_mate > the_biggest_negative_value) {
-        the_biggest_negative_value = move.moves_to_mate;
-      } else if (move.moves_to_mate > the_biggest_value) {
-        the_biggest_value = move.moves_to_mate;
-      }
-    }
-  }
-
   int moves_to_mate = BorderValue;
   if (my_move == true) {
-    if (the_smallest_positive_value < BorderValue) {
-      moves_to_mate = the_smallest_positive_value + 1;
-    } else if (zero_exists == true) {
+    if (border_values.the_smallest_positive_mate_value < BorderValue) {
+      moves_to_mate = border_values.the_smallest_positive_mate_value + 1;
+    } else if (border_values.zero_mate_value_exists == true) {
       moves_to_mate = 0;
     } else {
-      assert(the_smallest_value < 0);
-      moves_to_mate = the_smallest_value - 1;
+      assert(border_values.the_smallest_mate_value < 0);
+      moves_to_mate = border_values.the_smallest_mate_value - 1;
     }
   } else {
-    if (the_biggest_negative_value < 0) {
-      moves_to_mate = the_biggest_negative_value;
-    } else if (zero_exists == true) {
+    if (border_values.the_biggest_negative_mate_value > -BorderValue) {
+      moves_to_mate = border_values.the_biggest_negative_mate_value - 1;
+    } else if (border_values.zero_mate_value_exists == true) {
       moves_to_mate = 0;
     } else {
-      assert(the_biggest_value > 0);
-      moves_to_mate = the_biggest_value + 1;
+      assert(border_values.the_biggest_mate_value > 0);
+      moves_to_mate = border_values.the_biggest_mate_value + 1;
     }
   }
 

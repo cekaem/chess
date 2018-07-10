@@ -17,6 +17,8 @@ class Engine {
   Figure::Move makeMove(Figure::Color color);
 
  private:
+  static const int BorderValue = 1000;
+
   struct Move {
     Move() {}
     Move(int v, int m, bool d) : value(v), moves_to_mate(m), is_draw(d) {}
@@ -24,6 +26,18 @@ class Engine {
     int moves_to_mate{0};
     bool is_draw{false};
   };
+
+  struct BorderValues {
+    int the_smallest_value{BorderValue};
+    int the_biggest_value{-BorderValue};
+    int the_smallest_mate_value{BorderValue};
+    int the_biggest_mate_value{-BorderValue};
+    int the_smallest_positive_mate_value{BorderValue};
+    int the_biggest_negative_mate_value{-BorderValue};
+    bool zero_mate_value_exists{false};
+  };
+
+  BorderValues findBorderValues(const std::vector<Move>& moves) const;
 
   void evaluateBoardMain(Figure::Move move);
   Move evaluateBoardForLastNode(Board& board, Figure::Color color, bool my_move) const;
