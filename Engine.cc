@@ -29,10 +29,10 @@ Engine::BorderValues Engine::findBorderValues(const std::vector<Engine::Move>& m
   BorderValues result;
 
   for (auto& move: moves) {
-    if (move.value > result.the_biggest_value) {
+    if (move.moves_to_mate == 0 && move.value > result.the_biggest_value) {
       result.the_biggest_value = move.value;
     }
-    if (move.value < result.the_smallest_value) {
+    if (move.moves_to_mate == 0 && move.value < result.the_smallest_value) {
       result.the_smallest_value = move.value;
     }
     if (move.moves_to_mate == 0) {
@@ -89,32 +89,16 @@ Figure::Move Engine::makeMove(Figure::Color color) {
   auto border_values = findBorderValues(engine_moves);
   int moves_to_mate = 0;
   int the_best_value = border_values.the_biggest_value;
-  /*
-  if (border_values.the_smallest_mate_value < 0) {
-    debug_stream_ << "AAA: " << border_values.the_smallest_mate_value << std::endl;
-    if (border_values.the_smallest_positive_mate_value == BorderValue ||
-        -border_values.the_smallest_mate_value > border_values.the_smallest_positive_mate_value) {
-      moves_to_mate = border_values.the_smallest_positive_mate_value;
-    } else if (border_values.zero_mate_value_exists == false) {
-      moves_to_mate = border_values.the_smallest_mate_value;
-      assert(moves_to_mate < 0);
-      debug_stream_ << "Found opponent's mate in " << -(moves_to_mate / 2 + 1) << std::endl;
-    }
-  } else if (border_values.the_biggest_mate_value > 0) {
-    moves_to_mate = border_values.the_smallest_positive_mate_value;
-    debug_stream_ << "Found mate in " << (moves_to_mate / 2 + 1) << std::endl;
-  } else {
-    assert(border_values.zero_mate_value_exists == true);
-  }
-  */
   if (border_values.the_smallest_positive_mate_value != BorderValue) {
     moves_to_mate = border_values.the_smallest_positive_mate_value;
+    debug_stream_ << "Found mate in " << (moves_to_mate / 2 + 1) << std::endl;
   } else if (border_values.zero_mate_value_exists == true) {
     moves_to_mate = 0;
   } else {
     moves_to_mate = border_values.the_smallest_mate_value;
-    assert(moves_to_mate != BorderValue);
+    debug_stream_ << "Found opponent's mate in " << -(moves_to_mate / 2 + 1) << std::endl;
   }
+  assert(moves_to_mate != BorderValue);
 
   Figure::Move my_move;
   // Collect all best moves.
@@ -124,7 +108,7 @@ Figure::Move Engine::makeMove(Figure::Color color) {
       if (move.second.moves_to_mate == moves_to_mate) {
         the_best_moves.push_back(move.first);
       }
-    } else if (move.second.value == the_best_value) {
+    } else if (move.second.moves_to_mate == 0 && move.second.value == the_best_value) {
       the_best_moves.push_back(move.first);
     }
   }
@@ -173,6 +157,7 @@ Engine::Move Engine::evaluateBoardForLastNode(Board& board, Figure::Color color,
   int moves_to_mate = 0;
   if (status == Board::GameStatus::WHITE_WON || status == Board::GameStatus::BLACK_WON) {
     moves_to_mate = my_move ? -1 : 1;
+    debug_stream_ << "Found mating move: " << moves_to_mate << std::endl;
   }
 
   return Move(value, moves_to_mate, status == Board::GameStatus::DRAW);
@@ -229,7 +214,7 @@ Engine::Move Engine::evaluateBoard(
     }
   }
 
-  assert(value != BorderValue && value != -BorderValue && moves_to_mate != BorderValue);
+  assert((value != BorderValue && value != -BorderValue) || moves_to_mate != BorderValue);
   return Move(value, moves_to_mate, false);
 }
 
