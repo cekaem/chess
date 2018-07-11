@@ -12,12 +12,16 @@
 #include "Board.h"
 #include "Figure.h"
 
-namespace {
-static const int BorderValue = 1000;
-}  // unnamed namespace
 
-Engine::Engine(Board& board, unsigned search_depth, unsigned max_number_of_threads, std::ostream& debug_stream)
-  : board_(board), search_depth_(search_depth), max_number_of_threads_(max_number_of_threads), debug_stream_(debug_stream) {
+Engine::Engine(
+    Board& board,
+    unsigned search_depth,
+    unsigned max_number_of_threads,
+    std::ostream& ostr)
+  : board_(board),
+    search_depth_(search_depth),
+    max_number_of_threads_(max_number_of_threads),
+    debug_stream_(ostr) {
   srand(static_cast<unsigned int>(time(nullptr)));
 }
 
@@ -72,7 +76,7 @@ Figure::Move Engine::makeMove(Figure::Color color) {
       std::thread t(&Engine::evaluateBoardMain, this, move);
       t.detach();
       ++number_of_threads_working_;
-      debug_stream_ << "Number of working threads: " << number_of_threads_working_ << std::endl;
+      debug_stream_ << Log::lock << "Number of working threads: " << number_of_threads_working_ << Log::endl;
     }
   }
 
@@ -91,12 +95,12 @@ Figure::Move Engine::makeMove(Figure::Color color) {
   int the_best_value = border_values.the_biggest_value;
   if (border_values.the_smallest_positive_mate_value != BorderValue) {
     moves_to_mate = border_values.the_smallest_positive_mate_value;
-    debug_stream_ << "Found mate in " << (moves_to_mate / 2 + 1) << std::endl;
+    debug_stream_ << Log::lock << "Found mate in " << (moves_to_mate / 2 + 1) << Log::endl;
   } else if (border_values.zero_mate_value_exists == true) {
     moves_to_mate = 0;
   } else {
     moves_to_mate = border_values.the_smallest_mate_value;
-    debug_stream_ << "Found opponent's mate in " << -(moves_to_mate / 2 + 1) << std::endl;
+    debug_stream_ << Log::lock << "Found opponent's mate in " << -(moves_to_mate / 2 - 1) << Log::endl;
   }
   assert(moves_to_mate != BorderValue);
 
@@ -137,7 +141,8 @@ Figure::Move Engine::makeMove(Figure::Color color) {
   // Choose randomly move from the best direct moves.
   my_move = the_best_direct_moves[generateRandomValue(the_best_direct_moves.size() - 1)];
 
-  debug_stream_ << "My move (" << moves_count_ << "): " << my_move.old_field << "-" << my_move.new_field << std::endl;
+  debug_stream_ << Log::lock << "My move (" << moves_count_ << "): ";
+  debug_stream_ << my_move.old_field << "-" << my_move.new_field << Log::endl;
   board_.makeMove(my_move);
   ++moves_count_;
   evaluated_moves_.clear();
@@ -163,8 +168,8 @@ Engine::Move Engine::evaluateBoardForLastNode(
   int moves_to_mate = 0;
   if (status == Board::GameStatus::WHITE_WON || status == Board::GameStatus::BLACK_WON) {
     moves_to_mate = my_move ? -1 : 1;
-    if (all_moves.empty() != false) {
-      debug_stream_ << "Found mate: " << all_moves << std::endl;
+    if (all_moves.empty() == false) {
+      debug_stream_ << Log::lock << "Found mate: " << all_moves << Log::endl;
     }
   }
 
@@ -242,7 +247,7 @@ void Engine::evaluateBoardMain(
   evaluated_moves_mutex_.unlock();
   number_of_threads_working_mutex_.lock();
   --number_of_threads_working_;
-  debug_stream_ << "Number of working threads: " << number_of_threads_working_ << std::endl;
+  debug_stream_ << Log::lock << "Number of working threads: " << number_of_threads_working_ << Log::endl;
   number_of_threads_working_mutex_.unlock();
   number_of_threads_working_cv_.notify_one();
 }

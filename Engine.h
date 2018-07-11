@@ -37,6 +37,43 @@ class Engine {
     bool zero_mate_value_exists{false};
   };
 
+  class Log {
+   public:
+    using LogManipulator = Log&(*)(Log&);
+
+    Log(std::ostream& ostr) : ostr_(ostr) {}
+
+    template<typename T>
+    Log& operator<<(const T& t) {
+      ostr_ << t;
+      return *this;
+    }
+
+    Log& operator<<(LogManipulator manip) {
+      return manip(*this);
+    }
+
+    static Log& endl(Log& l) {
+      l.ostr_ << std::endl;
+      l.mutex_.unlock();
+      return l;
+    }
+
+    static Log& lock(Log& l) {
+      l.mutex_.lock();
+      return l;
+    }
+
+    static Log& unlock(Log& l) {
+      l.mutex_.unlock();
+      return l;
+    }
+
+   private:
+    std::ostream& ostr_;
+    std::mutex mutex_;
+  };
+
   BorderValues findBorderValues(const std::vector<Move>& moves) const;
 
   void evaluateBoardMain(Figure::Move move);
@@ -53,7 +90,7 @@ class Engine {
   unsigned number_of_threads_working_{0u};
   std::mutex number_of_threads_working_mutex_;
   std::condition_variable number_of_threads_working_cv_;
-  std::ostream& debug_stream_;
+  mutable Log debug_stream_;
   int moves_count_{0};
 };
 
