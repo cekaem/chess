@@ -150,7 +150,7 @@ int main() {
       status = board.getGameStatus(Figure::BLACK);
     }
     if (status == Board::GameStatus::NONE) {
-      if (human_plays_white == true) {
+      if (human_plays_black == true) {
         std::pair<Field, Field> human_move = getHumanMove(board);;
         status = board.makeMove(human_move.first, human_move.second);
       } else {

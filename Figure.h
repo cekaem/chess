@@ -79,6 +79,7 @@ class Figure {
 };
 
 std::ostream& operator<<(std::ostream& ostr, const Figure::Move& move);
+std::ostream& operator<<(std::ostream& ostr, const std::vector<Figure::Move>& moves);
 
 inline Figure::Color operator!(Figure::Color color) {
   return (color == Figure::WHITE) ? Figure::BLACK : Figure::WHITE;

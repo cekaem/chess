@@ -194,19 +194,14 @@ bool Figure::Move::operator==(const Figure::Move& other) const {
 }
 
 std::ostream& operator<<(std::ostream& ostr, const Figure::Move& move) {
-  ostr << move.old_field << "-" << move.new_field << "(" << move.is_check << ", " << move.is_mate << ", ";
-  switch (move.castling) {
-    case Figure::Move::Castling::NONE:
-      ostr << "NONE";
-      break;
-    case Figure::Move::Castling::QUEEN_SIDE:
-      ostr << "Castling::QUEEN_SIDE";
-      break;
-    case Figure::Move::Castling::KING_SIDE:
-      ostr << "Castling::KING_SIDE";
-      break;
+  ostr << move.old_field << "-" << move.new_field;
+  return ostr;
+}
+
+std::ostream& operator<<(std::ostream& ostr, const std::vector<Figure::Move>& moves) {
+  for (const auto& move: moves) {
+    ostr << move << " ";
   }
-  ostr << ", " << move.figure_beaten << ", " << move.pawn_promotion << ")";
   return ostr;
 }
 

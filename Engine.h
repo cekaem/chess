@@ -40,8 +40,8 @@ class Engine {
   BorderValues findBorderValues(const std::vector<Move>& moves) const;
 
   void evaluateBoardMain(Figure::Move move);
-  Move evaluateBoardForLastNode(Board& board, Figure::Color color, bool my_move) const;
-  Move evaluateBoard(Board& board, Figure::Color color, bool my_move, int depths_remaining) const;
+  Move evaluateBoardForLastNode(Board& board, Figure::Color color, bool my_move, std::vector<Figure::Move>& moves) const;
+  Move evaluateBoard(Board& board, Figure::Color color, bool my_move, int depths_remaining, std::vector<Figure::Move>& moves) const;
 
   int generateRandomValue(int max) const;
 
