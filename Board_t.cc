@@ -321,8 +321,45 @@ TEST_PROCEDURE(test14) {
     board.addFigure(Figure::ROOK, Field("f2"), Figure::WHITE);
     board.addFigure(Figure::ROOK, Field("a1"), Figure::WHITE);
     board.addFigure(Figure::KING, Field("e1"), Figure::WHITE);
+    std::string fen = board.createFEN(Figure::BLACK);
+    VERIFY_STRINGS_EQUAL(fen.c_str(), "4k2r/Br5p/2q5/6P1/3n4/8/5R2/R3K3 b KQkq - 0 0");
+    board.makeMove(Field("h7"), Field("h5"));
+    fen = board.createFEN(Figure::WHITE);
+    VERIFY_STRINGS_EQUAL(fen.c_str(), "4k2r/Br6/2q5/6Pp/3n4/8/5R2/R3K3 w KQkq h6 0 0");
+  }
+  {
+    Board board;
+    board.setStandardBoard();
     std::string fen = board.createFEN(Figure::WHITE);
-    VERIFY_EQUALS(fen.c_str(), "4k2r/Br5p/2q5/6P1/3n4/8/5R2/R3K3 w KQkq - 0 0");
+    VERIFY_STRINGS_EQUAL(fen.c_str(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0");
+  }
+  {
+    Board board;
+    board.addFigure(Figure::KING, Field("e8"), Figure::BLACK);
+    board.addFigure(Figure::KING, Field("e1"), Figure::WHITE);
+    board.addFigure(Figure::ROOK, Field("a8"), Figure::BLACK);
+    board.addFigure(Figure::ROOK, Field("h8"), Figure::BLACK);
+    board.addFigure(Figure::ROOK, Field("a1"), Figure::WHITE);
+    board.addFigure(Figure::ROOK, Field("h1"), Figure::WHITE);
+    std::string fen = board.createFEN(Figure::WHITE);
+    VERIFY_STRINGS_EQUAL(fen.c_str(), "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 0");
+    board.makeMove(Field("e8"), Field("f8"));
+    fen = board.createFEN(Figure::WHITE);
+    VERIFY_STRINGS_EQUAL(fen.c_str(), "r4k1r/8/8/8/8/8/8/R3K2R w KQ - 0 0");
+    board.makeMove(Field("a1"), Field("a2"));
+    board.makeMove(Field("a2"), Field("a1"));
+    fen = board.createFEN(Figure::WHITE);
+    VERIFY_STRINGS_EQUAL(fen.c_str(), "r4k1r/8/8/8/8/8/8/R3K2R w K - 0 0");
+  }
+  TEST_END
+}
+
+// Checks if Board::setBoardFromFEN works correctly
+TEST_PROCEDURE(test15) {
+  TEST_START
+  {
+    Board board;
+    VERIFY_TRUE(board.setBoardFromFEN("r4k1r/8/8/8/8/8/8/R3K2R w Kq - 10 5"));
   }
   TEST_END
 }
@@ -345,6 +382,7 @@ int main() {
     TEST("Board::isMoveValid works correctly", test12);
     TEST("Board::undoLastReversibleMove works correctly", test13);
     TEST("Board::createFEN works correctly", test14);
+    TEST("Board::setBoardFromFEN works correctly", test15);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;

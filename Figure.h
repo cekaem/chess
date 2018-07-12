@@ -101,7 +101,7 @@ class Knight : public Figure {
     : Figure(board, field, color, KNIGHT_VALUE) {}
   std::vector<Move> calculatePossibleMoves() const override;
   Type getType() const override { return KNIGHT; }
-  char getFENNotation() const override { return getColor() == Figure::WHITE ? 'K' : 'k'; }
+  char getFENNotation() const override { return getColor() == Figure::WHITE ? 'N' : 'n'; }
 };
 
 class Bishop : public Figure {

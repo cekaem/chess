@@ -6,6 +6,16 @@
 
 int Board::number_of_copies_ = 0;
 
+namespace {
+
+bool str_2_uint(const std::string& str, unsigned& result) {
+  std::stringstream ss(str);
+  ss >> result;
+  return ss.fail() == false && ss.bad() == false;
+}
+
+}  // unnamed namespace
+
 std::ostream& operator<<(std::ostream& ostr, Board::GameStatus status) {
   ostr << static_cast<int>(status);
   return ostr;
@@ -341,10 +351,9 @@ bool Board::isKingStalemated(Figure::Color color) {
 std::string Board::createFEN(Figure::Color side_to_move) const {
   std::stringstream fen;
 
-  // Figures
-  for (int i = 0; i < static_cast<int>(BoardSize); ++i) {
+  for (int j = BoardSize - 1; j >= 0; --j) {
     int number_of_empty_fields = 0;
-    for (int j = BoardSize - 1; j >= 0; --j) {
+    for (int i = 0; i < static_cast<int>(BoardSize); ++i) {
       const Figure* figure = fields_[i][j];
       if (figure == nullptr) {
         ++number_of_empty_fields;
@@ -359,7 +368,7 @@ std::string Board::createFEN(Figure::Color side_to_move) const {
     if (number_of_empty_fields != 0) {
       fen << number_of_empty_fields;
     }
-    if (i != 0) {
+    if (j != 0) {
       fen << '/';
     }
   }
@@ -400,6 +409,214 @@ std::string Board::createFEN(Figure::Color side_to_move) const {
   fen << "0 0";
 
   return fen.str();
+}
+
+bool Board::setBoardFromFEN(const std::string& fen) {
+  clearBoard();
+  std::string::size_type space_position = fen.find(' ');
+  if (space_position == std::string::npos) {
+    return false;
+  }
+  std::string fields = fen.substr(0, space_position);
+  std::string rest_fen = fen.substr(space_position);
+  if (rest_fen.size() < 10) {
+    // 10 is the minimal valid length of the rest of the fen " w - - 0 0"
+    return false;
+  }
+  if (rest_fen[0] != ' ' || rest_fen[2] != ' ') {
+    return false;
+  }
+  for (int i = BoardSize - 1; i >= 0; --i) {
+    std::string partial_fen;
+    if (i > 0) {
+      std::string::size_type slash_position = fields.find('/');
+      if (slash_position == std::string::npos) {
+        return false;
+      }
+      partial_fen = fields.substr(0, slash_position);
+      fields = fields.substr(slash_position + 1);
+    } else {
+      partial_fen = fields;
+    }
+    if (addFiguresForOneLineFromFen(partial_fen, i) == false) {
+      return false;
+    }
+  }
+  
+  const char side_to_move = rest_fen[1];
+  if (side_to_move != 'w' && side_to_move != 'b') {
+    return false;
+  }
+
+  rest_fen = rest_fen.substr(3);
+  space_position = rest_fen.find(' ');
+  if (space_position == std::string::npos) {
+    return false;
+  }
+  std::string castlings = rest_fen.substr(0, space_position);
+  if (setCastlingsFromFen(castlings) == false) {
+    return false;
+  }
+  rest_fen = rest_fen.substr(space_position);
+  if (rest_fen.size() < 6 || rest_fen[0] != ' ') {  // 6 == length(" - 0 0")
+    return false;
+  }
+  rest_fen = rest_fen.substr(1);
+  space_position = rest_fen.find(' ');
+  if (space_position == std::string::npos) {
+    return false;
+  }
+  std::string en_passant_file = rest_fen.substr(0, space_position);
+  if (setEnPassantFileFromFen(en_passant_file, side_to_move == 'w') == false) {
+    return false;
+  }
+  rest_fen = rest_fen.substr(space_position);
+  if (rest_fen.size() < 4 || rest_fen[0] != ' ') {  // 4 == length(" 0 0")
+    return false;
+  }
+  rest_fen = rest_fen.substr(1);
+  space_position = rest_fen.find(' ');
+  if (space_position == std::string::npos) {
+    return false;
+  }
+  std::string halfmove_clock_str = rest_fen.substr(0, space_position);
+  if (str_2_uint(halfmove_clock_str, halfmove_clock_) == false) {
+    return false;
+  }
+  rest_fen = rest_fen.substr(space_position);
+  if (rest_fen.size() < 2 || rest_fen[0] != ' ') {  // 2 == length(" 0")
+    return false;
+  }
+  std::string fullmove_number_str = rest_fen.substr(1);
+  if (str_2_uint(fullmove_number_str, fullmove_number_) == false) {
+    return false;
+  }
+
+  return true;
+}
+
+bool Board::setEnPassantFileFromFen(const std::string& fen, bool white_to_move) {
+  if (fen.size() == 1) {
+    return fen[0] == '-';
+  }
+  if (Field::isFieldValid(fen) == false) {
+    return false;
+  }
+  Field field(fen.c_str());
+  if ((white_to_move == true && field.number != Field::SIX) ||
+      (white_to_move == false && field.number != Field::THREE)) {
+    return false;
+  }
+  en_passant_file_ = field.letter;
+  return true;
+}
+
+bool Board::setCastlingsFromFen(const std::string& fen) {
+  if (fen.empty() == true || fen.size() > 4) {
+    return false;
+  }
+  for (const char c: fen) {
+    switch (c) {
+      case 'K':
+        castlings_[static_cast<size_t>(Figure::Move::Castling::K)] = true;
+        break;
+      case 'k':
+        castlings_[static_cast<size_t>(Figure::Move::Castling::k)] = true;
+        break;
+      case 'Q':
+        castlings_[static_cast<size_t>(Figure::Move::Castling::Q)] = true;
+        break;
+      case 'q':
+        castlings_[static_cast<size_t>(Figure::Move::Castling::q)] = true;
+        break;
+      case '-': 
+        if (fen.size() != 1) {
+          return false;
+        }
+        break;
+      default:
+        return false;
+    }
+  }
+  return true;
+}
+
+bool Board::addFigure(const char fen_char, Field field) {
+  Figure::Type type;
+  Figure::Color color;
+  switch (fen_char) {
+    case 'p':
+      type = Figure::PAWN;
+      color = Figure::BLACK;
+      break;
+    case 'P':
+      type = Figure::PAWN;
+      color = Figure::WHITE;
+      break;
+    case 'n':
+      type = Figure::KNIGHT;
+      color = Figure::BLACK;
+      break;
+    case 'N':
+      type = Figure::KNIGHT;
+      color = Figure::WHITE;
+      break;
+    case 'b':
+      type = Figure::BISHOP;
+      color = Figure::BLACK;
+      break;
+    case 'B':
+      type = Figure::BISHOP;
+      color = Figure::WHITE;
+      break;
+    case 'r':
+      type = Figure::ROOK;
+      color = Figure::BLACK;
+      break;
+    case 'R':
+      type = Figure::ROOK;
+      color = Figure::WHITE;
+      break;
+    case 'q':
+      type = Figure::QUEEN;
+      color = Figure::BLACK;
+      break;
+    case 'Q':
+      type = Figure::QUEEN;
+      color = Figure::WHITE;
+      break;
+    case 'k':
+      type = Figure::KING;
+      color = Figure::BLACK;
+      break;
+    case 'K':
+      type = Figure::KING;
+      color = Figure::WHITE;
+      break;
+    default:
+      return false;
+  }
+  addFigure(type, field, color);
+  return true;
+}
+
+bool Board::addFiguresForOneLineFromFen(const std::string& fen, size_t line) {
+  size_t current_file = 0;
+  for (const char c: fen) {
+    if (current_file >= BoardSize) {
+      return false;
+    }
+    if (c >= '1' && c <= '8') {
+      current_file += c - '1';
+    } else {
+      if (addFigure(c, Field(static_cast<Field::Letter>(current_file),
+                             static_cast<Field::Number>(line))) == false) {
+        return false;
+      }
+      ++current_file;
+    }
+  }
+  return true;
 }
 
 Board::GameStatus Board::getGameStatus(Figure::Color color) {
@@ -597,6 +814,26 @@ void Board::undoAllReversibleMoves() {
   }
 }
 
+void Board::clearBoard() {
+  for (size_t i = 0; i < BoardSize; ++i) {
+    for (size_t j = 0; j < BoardSize; ++j) {
+      if (fields_[i][j] != nullptr) {
+        Field field(static_cast<Field::Letter>(i), static_cast<Field::Number>(j));
+        removeFigure(field);
+        for (auto drawer : drawers_) {
+          drawer->onFigureRemoved(field);
+        }
+      }
+    }
+  }
+  castlings_[static_cast<size_t>(Figure::Move::Castling::Q)] = true;
+  castlings_[static_cast<size_t>(Figure::Move::Castling::K)] = true;
+  castlings_[static_cast<size_t>(Figure::Move::Castling::q)] = true;
+  castlings_[static_cast<size_t>(Figure::Move::Castling::k)] = true;
+  en_passant_file_ = Field::NONE;
+  reversible_moves_.clear();
+}
+
 void Board::setStandardBoard() {
   addFigure(Figure::PAWN, Field(Field::A, Field::TWO), Figure::WHITE);
   addFigure(Figure::PAWN, Field(Field::B, Field::TWO), Figure::WHITE);
@@ -637,6 +874,7 @@ void Board::setStandardBoard() {
   castlings_[static_cast<size_t>(Figure::Move::Castling::q)] = true;
   castlings_[static_cast<size_t>(Figure::Move::Castling::k)] = true;
   en_passant_file_ = Field::NONE;
+  reversible_moves_.clear();
 }
 
 void Board::onGameFinished(Board::GameStatus status) noexcept {

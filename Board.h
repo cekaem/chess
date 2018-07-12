@@ -101,7 +101,7 @@ class Board {
   Board(const Board& other) noexcept;
 
   bool isMoveValid(Field old_field, Field new_field);
-
+  bool addFigure(const char fen_char, Field field);
   const Figure* addFigure(Figure::Type type, Field field, Figure::Color color);
   std::unique_ptr<Figure> removeFigure(Field field);
   GameStatus makeMove(Field old_field, Field new_field, Figure::Type promotion = Figure::PAWN, bool rev_mode = false);
@@ -113,6 +113,7 @@ class Board {
   const auto& getFields() const noexcept { return fields_; }
   Field::Letter getEnPassantFile() const noexcept { return en_passant_file_; }
   const King* getKing(Figure::Color color) const noexcept;
+  void clearBoard();
   void setStandardBoard();
   GameStatus getGameStatus(Figure::Color color);
   void addBoardDrawer(BoardDrawer* drawer) noexcept;
@@ -123,6 +124,7 @@ class Board {
   bool isKingStalemated(Figure::Color color);
 
   std::string createFEN(Figure::Color side_to_move) const;
+  bool setBoardFromFEN(const std::string& fen);
 
   bool operator==(const Board& other) const noexcept;
   bool operator!=(const Board& other) const noexcept;
@@ -143,6 +145,9 @@ class Board {
   bool canCastle(Figure::Move::Castling castling) const;
   void moveFigure(Field old_field, Field new_field);
   void updateCastlings(const Figure::Move& move);
+  bool addFiguresForOneLineFromFen(const std::string& fen, size_t line);
+  bool setCastlingsFromFen(const std::string& fen);
+  bool setEnPassantFileFromFen(const std::string& fen, bool white_to_move);
 
   Field::Letter en_passant_file_{Field::Letter::NONE};
   std::vector<std::unique_ptr<Figure>> figures_;
@@ -150,6 +155,8 @@ class Board {
   std::array<std::array<Figure*, BoardSize>, BoardSize> fields_;
   std::vector<ReversibleMove> reversible_moves_;
   std::array<bool, static_cast<int>(Figure::Move::Castling::LAST)> castlings_{true, true, true, true};
+  unsigned halfmove_clock_{0};
+  unsigned fullmove_number_{0};
 };
 
 class BoardDrawer {
