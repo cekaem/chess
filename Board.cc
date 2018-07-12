@@ -403,10 +403,7 @@ std::string Board::createFEN(Figure::Color side_to_move) const {
     fen << static_cast<char>(en_passant_file_ + 'a');
     fen << (side_to_move == Figure::WHITE ? 6 : 3);
   }
-  fen << ' ';
-
-  // TODO: fill fields 'halfmove clock' and 'fullmove number' when it's possible
-  fen << "0 0";
+  fen << ' ' << halfmove_clock_ << ' ' << fullmove_number_;
 
   return fen.str();
 }
@@ -515,6 +512,10 @@ bool Board::setCastlingsFromFen(const std::string& fen) {
   if (fen.empty() == true || fen.size() > 4) {
     return false;
   }
+  castlings_[static_cast<size_t>(Figure::Move::Castling::K)] = false;
+  castlings_[static_cast<size_t>(Figure::Move::Castling::k)] = false;
+  castlings_[static_cast<size_t>(Figure::Move::Castling::Q)] = false;
+  castlings_[static_cast<size_t>(Figure::Move::Castling::q)] = false;
   for (const char c: fen) {
     switch (c) {
       case 'K':
@@ -607,7 +608,7 @@ bool Board::addFiguresForOneLineFromFen(const std::string& fen, size_t line) {
       return false;
     }
     if (c >= '1' && c <= '8') {
-      current_file += c - '1';
+      current_file += c - '0';
     } else {
       if (addFigure(c, Field(static_cast<Field::Letter>(current_file),
                              static_cast<Field::Number>(line))) == false) {
@@ -763,6 +764,26 @@ std::vector<const Figure*> Board::getFigures(Figure::Color color) const noexcept
     }
   }
   return figures;
+}
+
+std::string Board::getFENForCastlings() const noexcept {
+  std::string fen;
+  if (castlings_[static_cast<size_t>(Figure::Move::Castling::K)] == true) {
+    fen.push_back('K');
+  }
+  if (castlings_[static_cast<size_t>(Figure::Move::Castling::Q)] == true) {
+    fen.push_back('Q');
+  }
+  if (castlings_[static_cast<size_t>(Figure::Move::Castling::k)] == true) {
+    fen.push_back('k');
+  }
+  if (castlings_[static_cast<size_t>(Figure::Move::Castling::q)] == true) {
+    fen.push_back('q');
+  }
+  if (fen.size() == 0) {
+    fen.push_back('-');
+  }
+  return fen;
 }
 
 const King* Board::getKing(Figure::Color color) const noexcept {

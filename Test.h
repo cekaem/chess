@@ -120,6 +120,17 @@ void VerifyIsNull(const T* ptr1, int line) {
 }
 
 template <typename T>
+void VerifyIsNotNull(const T* ptr1, int line) {
+  if (ptr1 == nullptr) {
+    Test::error_line_ = line;
+    std::stringstream ss;
+    ss << "Pointer is null.";
+    Test::SetErrorMessage(ss.str());
+    throw Test::TestFailedException();
+  }
+}
+
+template <typename T>
 void VerifyContains(const std::vector<std::unique_ptr<T>>& vec, const T* value, int line) {
   auto iter = std::find_if(vec.begin(), vec.end(),
       [value](const auto& iter) -> bool {
@@ -166,6 +177,7 @@ void VerifyDoesNotContain(const std::vector<T>& vec, const T& value, int line) {
 #define VERIFY_CONTAINS(container, value) VerifyContains(container, value, __LINE__)
 #define VERIFY_DOES_NOT_CONTAIN(container, value) VerifyDoesNotContain(container, value, __LINE__)
 #define VERIFY_IS_NULL(ptr) VerifyIsNull(ptr, __LINE__)
+#define VERIFY_IS_NOT_NULL(ptr) VerifyIsNotNull(ptr, __LINE__)
 #define VERIFY_IS_ZERO(expr) VERIFY_IS_EQUAL(expr, 0)
 #define SET_TEST_FAILED() Test::current_test_status_ = Test::TEST_FAILED;
 

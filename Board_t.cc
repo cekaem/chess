@@ -12,6 +12,13 @@
 
 namespace {
 
+void VerifyFigure(const Board& board, const char* field, Figure::Type type, Figure::Color color) {
+  const Figure* figure = board.getFigure(Field(field));
+  VERIFY_IS_NOT_NULL(figure);
+  VERIFY_EQUALS(figure->getType(), type);
+  VERIFY_EQUALS(figure->getColor(), color);
+}
+
 class BoardDrawerMock : public BoardDrawer {
  public:
   MOCK_CLASS(BoardDrawerMock)
@@ -359,7 +366,24 @@ TEST_PROCEDURE(test15) {
   TEST_START
   {
     Board board;
-    VERIFY_TRUE(board.setBoardFromFEN("r4k1r/8/8/8/8/8/8/R3K2R w Kq - 10 5"));
+    std::string fen("7r/5pp1/2b5/7k/6n1/5B2/Q3K3/4R2q b Qkq c3 3 7");
+    VERIFY_TRUE(board.setBoardFromFEN(fen));
+    VERIFY_EQUALS(board.createFEN(Figure::BLACK), fen);
+    VerifyFigure(board, "a2", Figure::QUEEN, Figure::WHITE);
+    VerifyFigure(board, "e1", Figure::ROOK, Figure::WHITE);
+    VerifyFigure(board, "f7", Figure::PAWN, Figure::BLACK);
+    VerifyFigure(board, "f3", Figure::BISHOP, Figure::WHITE);
+    VerifyFigure(board, "g7", Figure::PAWN, Figure::BLACK);
+    VerifyFigure(board, "g4", Figure::KNIGHT, Figure::BLACK);
+    VerifyFigure(board, "h1", Figure::QUEEN, Figure::BLACK);
+    VerifyFigure(board, "h5", Figure::KING, Figure::BLACK);
+    VerifyFigure(board, "h8", Figure::ROOK, Figure::BLACK);
+    VerifyFigure(board, "c6", Figure::BISHOP, Figure::BLACK);
+    VerifyFigure(board, "e2", Figure::KING, Figure::WHITE);
+    VERIFY_EQUALS(board.getEnPassantFile(), Field::C);
+    VERIFY_STRINGS_EQUAL(board.getFENForCastlings().c_str(), "Qkq");
+    VERIFY_EQUALS(board.getHalfMoveClock(), 3u);
+    VERIFY_EQUALS(board.getFullMoveNumber(), 7u);
   }
   TEST_END
 }

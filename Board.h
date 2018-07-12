@@ -112,6 +112,9 @@ class Board {
   std::vector<const Figure*> getFigures(Figure::Color color) const noexcept;
   const auto& getFields() const noexcept { return fields_; }
   Field::Letter getEnPassantFile() const noexcept { return en_passant_file_; }
+  std::string getFENForCastlings() const noexcept;
+  unsigned getHalfMoveClock() const noexcept { return halfmove_clock_; }
+  unsigned getFullMoveNumber() const noexcept { return fullmove_number_; }
   const King* getKing(Figure::Color color) const noexcept;
   void clearBoard();
   void setStandardBoard();
