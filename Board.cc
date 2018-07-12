@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <sstream>
 
 int Board::number_of_copies_ = 0;
 
@@ -337,6 +338,70 @@ bool Board::isKingStalemated(Figure::Color color) {
   return is_stalemate;
 }
 
+std::string Board::createFEN(Figure::Color side_to_move) const {
+  std::stringstream fen;
+
+  // Figures
+  for (int i = 0; i < static_cast<int>(BoardSize); ++i) {
+    int number_of_empty_fields = 0;
+    for (int j = BoardSize - 1; j >= 0; --j) {
+      const Figure* figure = fields_[i][j];
+      if (figure == nullptr) {
+        ++number_of_empty_fields;
+      } else {
+        if (number_of_empty_fields != 0) {
+          fen << number_of_empty_fields;
+          number_of_empty_fields = 0;
+        }
+        fen << figure->getFENNotation();
+      }
+    }
+    if (number_of_empty_fields != 0) {
+      fen << number_of_empty_fields;
+    }
+    if (i != 0) {
+      fen << '/';
+    }
+  }
+  fen << ' ';
+
+  fen << (side_to_move == Figure::WHITE ? 'w' : 'b');
+  fen << ' ';
+
+  std::stringstream castlings;
+  if (castlings_[static_cast<size_t>(Figure::Move::Castling::K)] == true) {
+    castlings << 'K';
+  }
+  if (castlings_[static_cast<size_t>(Figure::Move::Castling::Q)] == true) {
+    castlings << 'Q';
+  }
+  if (castlings_[static_cast<size_t>(Figure::Move::Castling::k)] == true) {
+    castlings << 'k';
+  }
+  if (castlings_[static_cast<size_t>(Figure::Move::Castling::q)] == true) {
+    castlings << 'q';
+  }
+  if (castlings.str().empty() == true) {
+    fen << '-';
+  } else {
+    fen << castlings.str();
+  }
+  fen << ' ';
+
+  if (en_passant_file_ == Field::NONE) {
+    fen << '-';
+  } else {
+    fen << static_cast<char>(en_passant_file_ + 'a');
+    fen << (side_to_move == Figure::WHITE ? 6 : 3);
+  }
+  fen << ' ';
+
+  // TODO: fill fields 'halfmove clock' and 'fullmove number' when it's possible
+  fen << "0 0";
+
+  return fen.str();
+}
+
 Board::GameStatus Board::getGameStatus(Figure::Color color) {
   const King* king = getKing(Figure::WHITE);
   if (king == nullptr) {
@@ -566,6 +631,12 @@ void Board::setStandardBoard() {
   addFigure(Figure::BISHOP, Field(Field::F, Field::EIGHT), Figure::BLACK);
   addFigure(Figure::QUEEN, Field(Field::D, Field::EIGHT), Figure::BLACK);
   addFigure(Figure::KING, Field(Field::E, Field::EIGHT), Figure::BLACK);
+
+  castlings_[static_cast<size_t>(Figure::Move::Castling::Q)] = true;
+  castlings_[static_cast<size_t>(Figure::Move::Castling::K)] = true;
+  castlings_[static_cast<size_t>(Figure::Move::Castling::q)] = true;
+  castlings_[static_cast<size_t>(Figure::Move::Castling::k)] = true;
+  en_passant_file_ = Field::NONE;
 }
 
 void Board::onGameFinished(Board::GameStatus status) noexcept {

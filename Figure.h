@@ -56,10 +56,11 @@ class Figure {
   Color getColor() const { return color_; }
   Field getPosition() const { return field_; }
   void setPosition(const Field& field) { field_ = field; }
-  virtual int getValue() const { return value_; }
+  int getValue() const { return value_; }
 
   virtual std::vector<Move> calculatePossibleMoves() const = 0;
   virtual Type getType() const = 0;
+  virtual char getFENNotation() const = 0;
 
   bool operator==(const Figure& other) const;
   bool operator!=(const Figure& other) const;
@@ -88,6 +89,7 @@ class Pawn : public Figure {
     : Figure(board, field, color, PAWN_VALUE) {}
   std::vector<Move> calculatePossibleMoves() const override;
   Type getType() const override { return PAWN; }
+  char getFENNotation() const override { return getColor() == Figure::WHITE ? 'P' : 'p'; }
 
  private:
   bool canPromote() const;
@@ -99,6 +101,7 @@ class Knight : public Figure {
     : Figure(board, field, color, KNIGHT_VALUE) {}
   std::vector<Move> calculatePossibleMoves() const override;
   Type getType() const override { return KNIGHT; }
+  char getFENNotation() const override { return getColor() == Figure::WHITE ? 'K' : 'k'; }
 };
 
 class Bishop : public Figure {
@@ -107,6 +110,7 @@ class Bishop : public Figure {
     : Figure(board, field, color, BISHOP_VALUE) {}
   std::vector<Move> calculatePossibleMoves() const override;
   Type getType() const override { return BISHOP; }
+  char getFENNotation() const override { return getColor() == Figure::WHITE ? 'B' : 'b'; }
 };
 
 class Rook : public Figure {
@@ -115,6 +119,7 @@ class Rook : public Figure {
     : Figure(board, field, color, ROOK_VALUE) {}
   std::vector<Move> calculatePossibleMoves() const override;
   Type getType() const override { return ROOK; }
+  char getFENNotation() const override { return getColor() == Figure::WHITE ? 'R' : 'r'; }
 };
 
 class Queen : public Figure {
@@ -123,6 +128,7 @@ class Queen : public Figure {
     : Figure(board, field, color, QUEEN_VALUE) {}
   std::vector<Move> calculatePossibleMoves() const override;
   Type getType() const override { return QUEEN; }
+  char getFENNotation() const override { return getColor() == Figure::WHITE ? 'Q' : 'q'; }
 };
 
 class King : public Figure {
@@ -132,6 +138,7 @@ class King : public Figure {
   std::vector<Move> calculatePossibleMoves() const override;
   Type getType() const override { return KING; }
   bool canCastle(bool king_side) const;
+  char getFENNotation() const override { return getColor() == Figure::WHITE ? 'K' : 'k'; }
 
  private:
   void addPossibleCastlings(std::vector<Move>& moves) const;

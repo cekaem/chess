@@ -305,6 +305,28 @@ TEST_PROCEDURE(test13) {
   TEST_END
 }
 
+// Checks if Board::createFEN works correctly.
+TEST_PROCEDURE(test14) {
+  TEST_START
+  {
+    Board board;
+    board.addFigure(Figure::KING, Field("e8"), Figure::BLACK);
+    board.addFigure(Figure::ROOK, Field("h8"), Figure::BLACK);
+    board.addFigure(Figure::ROOK, Field("b7"), Figure::BLACK);
+    board.addFigure(Figure::PAWN, Field("h7"), Figure::BLACK);
+    board.addFigure(Figure::PAWN, Field("g5"), Figure::WHITE);
+    board.addFigure(Figure::QUEEN, Field("c6"), Figure::BLACK);
+    board.addFigure(Figure::BISHOP, Field("a7"), Figure::WHITE);
+    board.addFigure(Figure::KNIGHT, Field("d4"), Figure::BLACK);
+    board.addFigure(Figure::ROOK, Field("f2"), Figure::WHITE);
+    board.addFigure(Figure::ROOK, Field("a1"), Figure::WHITE);
+    board.addFigure(Figure::KING, Field("e1"), Figure::WHITE);
+    std::string fen = board.createFEN(Figure::WHITE);
+    VERIFY_EQUALS(fen.c_str(), "4k2r/Br5p/2q5/6P1/3n4/8/5R2/R3K3 w KQkq - 0 0");
+  }
+  TEST_END
+}
+
 } // unnamed namespace
 
 
@@ -322,6 +344,7 @@ int main() {
     TEST("BoardDrawer::onGameFinished is called correctly", test11);
     TEST("Board::isMoveValid works correctly", test12);
     TEST("Board::undoLastReversibleMove works correctly", test13);
+    TEST("Board::createFEN works correctly", test14);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;

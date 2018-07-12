@@ -122,6 +122,8 @@ class Board {
   bool isKingCheckmated(Figure::Color color);
   bool isKingStalemated(Figure::Color color);
 
+  std::string createFEN(Figure::Color side_to_move) const;
+
   bool operator==(const Board& other) const noexcept;
   bool operator!=(const Board& other) const noexcept;
 
