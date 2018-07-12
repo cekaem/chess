@@ -12,6 +12,7 @@
 #include "Board.h"
 #include "Figure.h"
 
+using logging::Log;
 
 Engine::Engine(
     Board& board,

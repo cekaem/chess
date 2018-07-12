@@ -26,7 +26,7 @@ $(BIN_DIR)/game: $(OBJ_DIR)/Game.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/Figure.o $(OBJ
 $(OBJ_DIR)/Game.o: Game.cc Engine.h Board.h Figure.h Field.h PgnCreator.h
 	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/Game.o Game.cc
 
-$(OBJ_DIR)/Engine.o: Engine.cc Engine.h Board.h Figure.h Field.h
+$(OBJ_DIR)/Engine.o: Engine.cc Engine.h Board.h Figure.h Field.h Log.h
 	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/Engine.o Engine.cc
 
 $(OBJ_DIR)/Board_t.o: Board_t.cc Board.h Test.h Mock.h Figure.h Field.h
