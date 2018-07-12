@@ -40,7 +40,7 @@ void PgnCreator::onFigureMoved(Figure::Move move) {
       ss_ << "B";
       break;
     case Figure::KNIGHT:
-      ss_ << "K";
+      ss_ << "N";
       break;
     case Figure::ROOK:
       ss_ << "R";
