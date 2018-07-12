@@ -32,7 +32,7 @@ $(OBJ_DIR)/Engine.o: Engine.cc Engine.h Board.h Figure.h Field.h Log.h
 $(OBJ_DIR)/Board_t.o: Board_t.cc Board.h Test.h Mock.h Figure.h Field.h
 	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/Board_t.o Board_t.cc
 
-$(OBJ_DIR)/Board.o: Board.cc Board.h Field.h
+$(OBJ_DIR)/Board.o: Board.cc Board.h Field.h Figure.h
 	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/Board.o Board.cc
 
 $(OBJ_DIR)/Figure_t.o: Figure_t.cc Figure.h Test.h Mock.h Board.h Field.h

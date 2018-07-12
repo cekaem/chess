@@ -130,7 +130,7 @@ std::unique_ptr<Figure> Board::removeFigure(Field field) {
   return result;
 }
 
-void Board::moveFigure(Field old_field, Field new_field, bool moved) {
+void Board::moveFigure(Field old_field, Field new_field) {
   Figure* figure = fields_[old_field.letter][old_field.number];
   if (figure == nullptr) {
     throw NoFigureException(old_field);
@@ -141,7 +141,45 @@ void Board::moveFigure(Field old_field, Field new_field, bool moved) {
   fields_[new_field.letter][new_field.number] = figure;
   fields_[old_field.letter][old_field.number] = nullptr;
   figure->setPosition(new_field);
-  figure->setMovedAtLeastOnce(moved);
+}
+
+void Board::updateCastlings(const Figure::Move& move) {
+  Field::Letter letter = move.old_field.letter;
+  Field::Number number = move.old_field.number;
+  if (number != Field::ONE && number != Field::EIGHT) {
+    return;
+  }
+  switch (letter) {
+    case Field::A: {
+      if (number == Field::ONE) {
+        castlings_[static_cast<size_t>(Figure::Move::Castling::Q)] = false;
+      } else {
+        castlings_[static_cast<size_t>(Figure::Move::Castling::q)] = false;
+      }
+      break;
+    }
+    case Field::H: {
+      if (number == Field::ONE) {
+        castlings_[static_cast<size_t>(Figure::Move::Castling::K)] = false;
+      } else {
+        castlings_[static_cast<size_t>(Figure::Move::Castling::k)] = false;
+      }
+      break;
+    }
+    case Field::E: {
+      if (number == Field::ONE) {
+        castlings_[static_cast<size_t>(Figure::Move::Castling::K)] = false;
+        castlings_[static_cast<size_t>(Figure::Move::Castling::Q)] = false;
+      } else {
+        castlings_[static_cast<size_t>(Figure::Move::Castling::k)] = false;
+        castlings_[static_cast<size_t>(Figure::Move::Castling::q)] = false;
+      }
+      break;
+    }
+    default: {
+      break;
+    }
+  }
 }
 
 Board::ReversibleMoveWrapper Board::makeReversibleMove(Figure::Move move) {
@@ -168,8 +206,6 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
     }
   }
 
-  bool moved_at_least_once = figure->movedAtLeastOnce();
-
   // Handle pawn promotion
   std::unique_ptr<Figure> promoted_pawn;
   if (move.pawn_promotion != Figure::PAWN) {
@@ -190,7 +226,7 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
                                    std::move(beaten_figure),
                                    std::move(promoted_pawn),
                                    en_passant_pawn_,
-                                   moved_at_least_once);
+                                   castlings_);
     reversible_moves_.push_back(std::move(reversible_move));
   }
 
@@ -202,18 +238,20 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
   }
 
   // Handle castling
-  if (move.castling != Figure::Move::Castling::NONE) {
+  if (move.castling != Figure::Move::Castling::LAST) {
     assert(figure->getType() == Figure::KING);
-    Field::Letter old_l = move.castling == Figure::Move::Castling::KING_SIDE ? Field::H : Field::A;
+    Field::Letter old_l = move.castling == Figure::Move::Castling::K || move.castling == Figure::Move::Castling::k ? Field::H : Field::A;
     Field old_rook_position(old_l, move.old_field.number);
-    Field::Letter new_l = move.castling == Figure::Move::Castling::KING_SIDE ? Field::F : Field::D;
+    Field::Letter new_l = move.castling == Figure::Move::Castling::K || move.castling == Figure::Move::Castling::k ? Field::F : Field::D;
     Field new_rook_position(new_l, move.old_field.number);
-    moveFigure(old_rook_position, new_rook_position, true);
+    moveFigure(old_rook_position, new_rook_position);
   }
+
+  updateCastlings(move);
+
 
   if (figure != nullptr) {
     figure->setPosition(move.new_field);
-    figure->setMovedAtLeastOnce(true);
     fields_[move.new_field.letter][move.new_field.number] = figure;
   }
   fields_[move.old_field.letter][move.old_field.number] = nullptr;
@@ -352,6 +390,16 @@ bool Board::isDraw() const {
   return true;
 }
 
+bool Board::canCastle(Figure::Move::Castling castling) const {
+  assert(castling < Figure::Move::Castling::LAST);
+  if(castlings_[static_cast<size_t>(castling)] == false) {
+    return false;
+  }
+  Figure::Color color = (castling == Figure::Move::Castling::Q || castling == Figure::Move::Castling::K) ? Figure::WHITE : Figure::BLACK;
+  const King* king = getKing(color);
+  return king->canCastle(castling == Figure::Move::Castling::K || castling == Figure::Move::Castling::k);
+}
+
 Board::GameStatus Board::makeMove(Field old_field, Field new_field, Figure::Type promotion, bool rev_mode) {
   Figure* figure = fields_[old_field.letter][old_field.number];
   if (figure == nullptr) {
@@ -363,12 +411,12 @@ Board::GameStatus Board::makeMove(Field old_field, Field new_field, Figure::Type
   }
 
   Figure::Move::Castling castling = Figure::Move::isCastling(this, old_field, new_field);
-  if (castling != Figure::Move::Castling::NONE) {
+  if (castling != Figure::Move::Castling::LAST) {
     if (figure->getType() != Figure::KING) {
       throw IllegalMoveException(figure, new_field);
     }
     const King* king = static_cast<const King*>(figure);
-    if (king->canCastle(castling) == false) {
+    if (king->canCastle(castling == Figure::Move::Castling::K || castling == Figure::Move::Castling::k) == false) {
       throw IllegalMoveException(figure, new_field);
     }
   }
@@ -382,16 +430,19 @@ Board::GameStatus Board::makeMove(Field old_field, Field new_field, Figure::Type
 }
 
 bool Board::isMoveValid(Figure::Move& move, Figure::Color color) {
-  if (move.castling != Figure::Move::Castling::NONE) {
+  if (move.castling != Figure::Move::Castling::LAST) {
+    if (castlings_[static_cast<size_t>(move.castling)] == false) {
+      return false;
+    }
     if (isKingChecked(color) == true) {
       return false;
     }
     const Field::Number number = color == Figure::WHITE ? Field::ONE : Field::EIGHT;
-    const int offset = move.castling == Figure::Move::Castling::KING_SIDE ? 1 : -1;
+    const int offset = move.castling == Figure::Move::Castling::K || move.castling == Figure::Move::Castling::k ? 1 : -1;
     const Field new_field(static_cast<Field::Letter>(move.old_field.letter + offset), number);
-    moveFigure(move.old_field, new_field, true);
+    moveFigure(move.old_field, new_field);
     bool is_king_checked = isKingChecked(color);
-    moveFigure(new_field, move.old_field, false);
+    moveFigure(new_field, move.old_field);
     if (is_king_checked == true) {
       return false;
     }
@@ -457,9 +508,7 @@ void Board::undoLastReversibleMove() {
     fields_[old_position.letter][old_position.number] = promoted_pawn;
     removeFigure(reversible_move.new_field);
   } else {
-    moveFigure(reversible_move.new_field, 
-               reversible_move.old_field,
-               reversible_move.moved_at_least_once);
+    moveFigure(reversible_move.new_field, reversible_move.old_field);
   }
   Figure* bitten_figure = reversible_move.bitten_figure.get();
   if (bitten_figure != nullptr) {
@@ -470,12 +519,13 @@ void Board::undoLastReversibleMove() {
   if (reversible_move.castling_move == true) {
     Field::Number line = reversible_move.old_field.number;
     if (reversible_move.new_field.letter == Field::G) {
-      moveFigure(Field(Field::F, line), Field(Field::H, line), false);
+      moveFigure(Field(Field::F, line), Field(Field::H, line));
     } else {
-      moveFigure(Field(Field::D, line), Field(Field::A, line), false);
+      moveFigure(Field(Field::D, line), Field(Field::A, line));
     }
   }
   en_passant_pawn_ = reversible_move.en_passant_pawn;
+  castlings_ = reversible_move.castlings;
 }
 
 void Board::undoAllReversibleMoves() {

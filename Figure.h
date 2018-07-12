@@ -23,7 +23,7 @@ class Figure {
   enum Color {WHITE, BLACK};
 
   struct Move {
-    enum class Castling {NONE, QUEEN_SIDE, KING_SIDE};
+    enum class Castling {K, Q, k, q, LAST};
 
     Move(Field ofield, Field nfield, bool check, bool mate,
          Castling cast, bool beaten, Type promo) :
@@ -48,7 +48,7 @@ class Figure {
     Field new_field;
     bool is_check{false};
     bool is_mate{false};
-    Castling castling{Castling::NONE};
+    Castling castling{Castling::LAST};
     bool figure_beaten{false};
     Type pawn_promotion{PAWN};
   };
@@ -57,8 +57,6 @@ class Figure {
   Field getPosition() const { return field_; }
   void setPosition(const Field& field) { field_ = field; }
   virtual int getValue() const { return value_; }
-  bool movedAtLeastOnce() const { return moved_at_least_once_; }
-  void setMovedAtLeastOnce(bool moved) { moved_at_least_once_ = moved; }
 
   virtual std::vector<Move> calculatePossibleMoves() const = 0;
   virtual Type getType() const = 0;
@@ -75,7 +73,6 @@ class Figure {
  private:
   const Color color_;
   const int value_;
-  bool moved_at_least_once_{false};
 };
 
 std::ostream& operator<<(std::ostream& ostr, const Figure::Move& move);
@@ -134,7 +131,7 @@ class King : public Figure {
     : Figure(board, field, color, KING_VALUE) {}
   std::vector<Move> calculatePossibleMoves() const override;
   Type getType() const override { return KING; }
-  bool canCastle(Figure::Move::Castling castling) const;
+  bool canCastle(bool king_side) const;
 
  private:
   void addPossibleCastlings(std::vector<Move>& moves) const;

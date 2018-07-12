@@ -50,14 +50,19 @@ class Board {
   };
 
   struct ReversibleMove {
-    ReversibleMove(Figure::Move& move, std::unique_ptr<Figure> bf, std::unique_ptr<Figure> pp, const Pawn* epp, bool moved)
+    ReversibleMove(
+        Figure::Move& move,
+        std::unique_ptr<Figure> bf,
+        std::unique_ptr<Figure> pp,
+        const Pawn* epp,
+        std::array<bool, static_cast<int>(Figure::Move::Castling::LAST)>& cast)
       : old_field(move.old_field),
         new_field(move.new_field),
         bitten_figure(std::move(bf)),
         en_passant_pawn(epp),
         promoted_pawn(std::move(pp)),
-        castling_move(move.castling != Figure::Move::Castling::NONE),
-        moved_at_least_once(moved) {
+        castling_move(move.castling != Figure::Move::Castling::LAST),
+        castlings(cast) {
     }
 
     ReversibleMove(ReversibleMove&& other)
@@ -67,7 +72,7 @@ class Board {
         en_passant_pawn(other.en_passant_pawn),
         promoted_pawn(std::move(other.promoted_pawn)),
         castling_move(other.castling_move),
-        moved_at_least_once(other.moved_at_least_once) {
+        castlings(other.castlings) {
     }
 
     Field old_field;
@@ -76,7 +81,7 @@ class Board {
     const Pawn* en_passant_pawn{nullptr};
     std::unique_ptr<Figure> promoted_pawn;
     bool castling_move{false};
-    bool moved_at_least_once{false};
+    std::array<bool, static_cast<int>(Figure::Move::Castling::LAST)> castlings{true, true, true, true};
   };
 
   class ReversibleMoveWrapper {
@@ -132,15 +137,17 @@ class Board {
   GameStatus isCheckMate();
   bool isDraw() const;
   void onGameFinished(GameStatus status) noexcept;
-  void handleCastling(Figure::Move& move);
   bool isMoveValid(Figure::Move& move, Figure::Color color);
-  void moveFigure(Field old_field, Field new_field, bool moved);
+  bool canCastle(Figure::Move::Castling castling) const;
+  void moveFigure(Field old_field, Field new_field);
+  void updateCastlings(const Figure::Move& move);
 
   const Pawn* en_passant_pawn_{nullptr};
   std::vector<std::unique_ptr<Figure>> figures_;
   std::vector<BoardDrawer*> drawers_;
   std::array<std::array<Figure*, BoardSize>, BoardSize> fields_;
   std::vector<ReversibleMove> reversible_moves_;
+  std::array<bool, static_cast<int>(Figure::Move::Castling::LAST)> castlings_{true, true, true, true};
 };
 
 class BoardDrawer {

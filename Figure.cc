@@ -19,7 +19,7 @@ void addMove(const Board& board,
       Field(static_cast<Field::Letter>(new_l), static_cast<Field::Number>(new_n)),
       false,  // it will be updated later
       false,  // it will be updated later
-      Figure::Move::Castling::NONE,
+      Figure::Move::Castling::LAST,
       board.getFigure(Field(static_cast<Field::Letter>(new_l), static_cast<Field::Number>(new_n))) != nullptr,
       promo);
   moves.push_back(move);
@@ -150,19 +150,20 @@ void calculateMovesForRook(std::vector<Figure::Move>& moves, const Board& board,
 Figure::Move::Castling Figure::Move::isCastling(const Board* board, Field old_field, Field new_field) {
   const Figure* figure = board->getFigure(old_field);
   if (figure == nullptr || figure->getType() != Figure::KING) {
-    return Figure::Move::Castling::NONE;
+    return Figure::Move::Castling::LAST;
   }
-  Field::Number number = figure->getColor() == Figure::WHITE ? Field::ONE : Field::EIGHT;
+  Color color = figure->getColor();
+  Field::Number number = color == Figure::WHITE ? Field::ONE : Field::EIGHT;
   if (old_field != Field(Field::E, number)) {
-    return Figure::Move::Castling::NONE;
+    return Figure::Move::Castling::LAST;
   }
   if (new_field == Field(Field::G, number)) {
-    return Figure::Move::Castling::KING_SIDE;
+    return color == Figure::WHITE ? Castling::K : Castling::k;
   }
   if (new_field == Field(Field::C, number)) {
-    return Figure::Move::Castling::QUEEN_SIDE;
+    return color == Figure::WHITE ? Castling::Q : Castling::q;
   }
-  return Figure::Move::Castling::NONE;
+  return Castling::LAST;
 }
 
 bool Figure::Move::isPromotion(const Board* board, Field old_field, Field new_field) {
@@ -414,29 +415,25 @@ std::vector<Figure::Move> King::calculatePossibleMoves() const {
   return result;
 }
 
-bool King::canCastle(Figure::Move::Castling castling) const {
-  if (movedAtLeastOnce()) {
-    return false;
-  }
-  const Field::Number number = getColor() == Figure::WHITE ? Field::ONE : Field::EIGHT;
+bool King::canCastle(bool king_side) const {
+  const Color color = getColor();
+  const Field::Number number = color == Figure::WHITE ? Field::ONE : Field::EIGHT;
   // Check if king is in the right position
   if (getPosition() != Field(Field::E, number)) {
     return false;
   }
 
-  if (castling == Figure::Move::Castling::KING_SIDE) {
+  if (king_side == true) {
     const Figure* figure = board_.getFigure(Field(Field::H, number));
     if (figure && figure->getType() == Figure::ROOK && figure->getColor() == getColor() &&
-        figure->movedAtLeastOnce() == false && board_.getFigure(Field(Field::F, number)) == nullptr &&
+        board_.getFigure(Field(Field::F, number)) == nullptr &&
         board_.getFigure(Field(Field::G, number)) == nullptr) {
       return true;
     }
-  }
-
-  if (castling == Figure::Move::Castling::QUEEN_SIDE) {
+  } else {
     const Figure* figure = board_.getFigure(Field(Field::A, number));
     if (figure && figure->getType() == Figure::ROOK && figure->getColor() == getColor() &&
-        figure->movedAtLeastOnce() == false && board_.getFigure(Field(Field::D, number)) == nullptr &&
+        board_.getFigure(Field(Field::D, number)) == nullptr &&
         board_.getFigure(Field(Field::C, number)) == nullptr &&
         board_.getFigure(Field(Field::B, number)) == nullptr) {
       return true;
@@ -446,17 +443,18 @@ bool King::canCastle(Figure::Move::Castling castling) const {
 }
 
 void King::addPossibleCastlings(std::vector<Move>& moves) const {
-  const Field::Number number = getColor() == Figure::WHITE ? Field::ONE : Field::EIGHT;
+  const Color color = getColor();
+  const Field::Number number = color == Figure::WHITE ? Field::ONE : Field::EIGHT;
 
-  if (canCastle(Figure::Move::Castling::KING_SIDE) == true) {
+  if (canCastle(true) == true) {
     moves.push_back(Figure::Move(Field(Field::E, number),
                                  Field(Field::G, number),
-                                 Figure::Move::Castling::KING_SIDE));
+                                 color == Figure::WHITE ? Figure::Move::Castling::K : Figure::Move::Castling::k));
   }
 
-  if (canCastle(Figure::Move::Castling::QUEEN_SIDE) == true) {
-        moves.push_back(Figure::Move(Field(Field::E, number),
-                                     Field(Field::C, number),
-                                     Figure::Move::Castling::QUEEN_SIDE));
+  if (canCastle(false) == true) {
+    moves.push_back(Figure::Move(Field(Field::E, number),
+                                 Field(Field::C, number),
+                                 color == Figure::WHITE ? Figure::Move::Castling::Q : Figure::Move::Castling::q));
   }
 }

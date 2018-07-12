@@ -191,9 +191,9 @@ TEST_PROCEDURE(test10) {
   EXPECT_CALL(drawer, onFigureAdded(Figure::BISHOP, Figure::WHITE, Field("e5")));
   EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::WHITE, Field("c2")));
   EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::BLACK, Field("a8")));
-  EXPECT_CALL(drawer, onFigureMoved(Figure::Move(Field("d4"), Field("e4"), true, false, Figure::Move::Castling::NONE, false, Figure::PAWN)));
-  EXPECT_CALL(drawer, onFigureMoved(Figure::Move(Field("c2"), Field("c3"), false, false, Figure::Move::Castling::NONE, false, Figure::PAWN)));
-  EXPECT_CALL(drawer, onFigureMoved(Figure::Move(Field("e4"), Field("e5"), true, false, Figure::Move::Castling::NONE, true, Figure::PAWN)));
+  EXPECT_CALL(drawer, onFigureMoved(Figure::Move(Field("d4"), Field("e4"), true, false, Figure::Move::Castling::LAST, false, Figure::PAWN)));
+  EXPECT_CALL(drawer, onFigureMoved(Figure::Move(Field("c2"), Field("c3"), false, false, Figure::Move::Castling::LAST, false, Figure::PAWN)));
+  EXPECT_CALL(drawer, onFigureMoved(Figure::Move(Field("e4"), Field("e5"), true, false, Figure::Move::Castling::LAST, true, Figure::PAWN)));
   EXPECT_CALL(drawer, onFigureRemoved(Field("e5")));  // bishop beaten by queen
   board.addFigure(Figure::BISHOP, Field("e5"), Figure::WHITE);
   board.addFigure(Figure::QUEEN, Field("d4"), Figure::BLACK);
@@ -216,7 +216,7 @@ TEST_PROCEDURE(test11) {
     EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::BLACK, Field("a2")));
     EXPECT_CALL(drawer, onFigureAdded(Figure::QUEEN, Figure::BLACK, Field("e3")));
     EXPECT_CALL(drawer, onFigureMoved(
-          Figure::Move(Field("d3"), Field("e3"), false, false, Figure::Move::Castling::NONE, true, Figure::PAWN)));
+          Figure::Move(Field("d3"), Field("e3"), false, false, Figure::Move::Castling::LAST, true, Figure::PAWN)));
     EXPECT_CALL(drawer, onFigureRemoved(Field("e3")));
     EXPECT_CALL(drawer, onGameFinished(Board::GameStatus::DRAW));
 
@@ -233,7 +233,7 @@ TEST_PROCEDURE(test11) {
     EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::BLACK, Field("c7")));
     EXPECT_CALL(drawer, onFigureAdded(Figure::QUEEN, Figure::BLACK, Field("c5")));
     EXPECT_CALL(drawer, onFigureMoved(
-          Figure::Move(Field("c5"), Field("a5"), true, true, Figure::Move::Castling::NONE, false, Figure::PAWN)));
+          Figure::Move(Field("c5"), Field("a5"), true, true, Figure::Move::Castling::LAST, false, Figure::PAWN)));
     EXPECT_CALL(drawer, onGameFinished(Board::GameStatus::BLACK_WON));
 
     board.addFigure(Figure::KING, Field("a8"), Figure::WHITE);
@@ -249,7 +249,7 @@ TEST_PROCEDURE(test11) {
     EXPECT_CALL(drawer, onFigureAdded(Figure::KING, Figure::BLACK, Field("c7")));
     EXPECT_CALL(drawer, onFigureAdded(Figure::QUEEN, Figure::BLACK, Field("c5")));
     EXPECT_CALL(drawer, onFigureMoved(
-          Figure::Move(Field("c5"), Field("b6"), false, false, Figure::Move::Castling::NONE, false, Figure::PAWN)));
+          Figure::Move(Field("c5"), Field("b6"), false, false, Figure::Move::Castling::LAST, false, Figure::PAWN)));
     EXPECT_CALL(drawer, onGameFinished(Board::GameStatus::DRAW));
 
     board.addFigure(Figure::KING, Field("a8"), Figure::WHITE);
