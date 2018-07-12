@@ -307,14 +307,14 @@ std::vector<Figure::Move> Pawn::calculatePossibleMoves() const {
   }
 
   // Check for "en passant"
-  const Pawn* en_passant = board_.getEnPassantPawn();
-  if (en_passant != nullptr) {
+  Field::Letter en_passant_file = board_.getEnPassantFile();
+  if (en_passant_file != Field::NONE) {
     if ((getColor() == WHITE && field_.number == Field::FIVE) ||
         (getColor() == BLACK && field_.number == Field::FOUR)) {
-      if (field_.letter != Field::A && fields[field_.letter - 1][field_.number] == en_passant) {
+      if (field_.letter != Field::A && field_.letter - 1 == en_passant_file) {
         addMove(board_, result, this, current_l - 1, current_n + offset);
         result[result.size() - 1].figure_beaten = true;
-      } else if (field_.letter != Field::H && fields[field_.letter + 1][field_.number] == en_passant) {
+      } else if (field_.letter != Field::H && field_.letter + 1 == en_passant_file) {
         addMove(board_, result, this, current_l + 1, current_n + offset);
         result[result.size() - 1].figure_beaten = true;
       }

@@ -6,7 +6,7 @@
 
 struct Field {
  public:
-  enum Letter {A, B, C, D, E, F, G, H};
+  enum Letter {A, B, C, D, E, F, G, H, NONE};
   enum Number { ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT};
 
   struct WrongFieldException : std::exception {

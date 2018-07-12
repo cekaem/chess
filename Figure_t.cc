@@ -61,25 +61,25 @@ TEST_PROCEDURE(test1) {
   }
   {
     Board board;
-    VERIFY_IS_NULL(board.getEnPassantPawn());
+    VERIFY_EQUALS(board.getEnPassantFile(), Field::NONE);
     board.addFigure(Figure::KING, Field(Field::A, Field::TWO), Figure::WHITE);
     board.addFigure(Figure::KING, Field(Field::A, Field::FOUR), Figure::BLACK);
     const Figure* pawn1 = board.addFigure(Figure::PAWN, Field(Field::H, Field::TWO), Figure::WHITE);
     const Figure* pawn2 = board.addFigure(Figure::PAWN, Field(Field::G, Field::FOUR), Figure::BLACK);
     const Figure* pawn3 = board.addFigure(Figure::PAWN, Field(Field::C, Field::FIVE), Figure::WHITE);
     const Figure* pawn4 = board.addFigure(Figure::PAWN, Field(Field::D, Field::SEVEN), Figure::BLACK);
-    VERIFY_IS_NULL(board.getEnPassantPawn());
+    VERIFY_EQUALS(board.getEnPassantFile(), Field::NONE);
     auto moves = pawn2->calculatePossibleMoves();
     VERIFY_CONTAINS(moves, createMove(pawn2, Field::G, Field::THREE));
     VERIFY_EQUALS(moves.size(), 1lu);
     board.makeMove(Field(Field::H, Field::TWO), Field(Field::H, Field::FOUR));
-    VERIFY_EQUALS(board.getEnPassantPawn(), static_cast<const Pawn*>(pawn1));
+    VERIFY_EQUALS(board.getEnPassantFile(), Field::H);
     moves = pawn2->calculatePossibleMoves();
     VERIFY_CONTAINS(moves, createMove(pawn2, Field::G, Field::THREE));
     VERIFY_CONTAINS(moves, createMove(pawn2, Field::H, Field::THREE, pawn1));
     VERIFY_EQUALS(moves.size(), 2lu);
     board.makeMove(Field(Field::D, Field::SEVEN), Field(Field::D, Field::FIVE));
-    VERIFY_EQUALS(board.getEnPassantPawn(), static_cast<const Pawn*>(pawn4));
+    VERIFY_EQUALS(board.getEnPassantFile(), Field::D);
     moves = pawn2->calculatePossibleMoves();
     VERIFY_CONTAINS(moves, createMove(pawn2, Field::G, Field::THREE));
     VERIFY_EQUALS(moves.size(), 1lu);

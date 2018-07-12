@@ -40,9 +40,7 @@ Board::Board(const Board& other) noexcept {
     addFigure(figure->getType(), figure->getPosition(), figure->getColor());
   }
 
-  if (other.en_passant_pawn_ != nullptr) {
-    en_passant_pawn_ = static_cast<const Pawn*>(getFigure(other.en_passant_pawn_->getPosition()));
-  }
+  en_passant_file_ = other.en_passant_file_;
 }
 
 bool Board::isMoveValid(Field old_field, Field new_field) {
@@ -225,16 +223,16 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
     ReversibleMove reversible_move(move,
                                    std::move(beaten_figure),
                                    std::move(promoted_pawn),
-                                   en_passant_pawn_,
+                                   en_passant_file_,
                                    castlings_);
     reversible_moves_.push_back(std::move(reversible_move));
   }
 
   // Handle en passant
   if (Figure::Move::isEnPassant(this, move.old_field, move.new_field) == true) {
-    en_passant_pawn_ = static_cast<const Pawn*>(figure);
+    en_passant_file_ = move.old_field.letter;
   } else {
-    en_passant_pawn_ = nullptr;
+    en_passant_file_ = Field::Letter::NONE;
   }
 
   // Handle castling
@@ -524,7 +522,7 @@ void Board::undoLastReversibleMove() {
       moveFigure(Field(Field::D, line), Field(Field::A, line));
     }
   }
-  en_passant_pawn_ = reversible_move.en_passant_pawn;
+  en_passant_file_ = reversible_move.en_passant_file;
   castlings_ = reversible_move.castlings;
 }
 

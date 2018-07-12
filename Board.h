@@ -54,12 +54,12 @@ class Board {
         Figure::Move& move,
         std::unique_ptr<Figure> bf,
         std::unique_ptr<Figure> pp,
-        const Pawn* epp,
+        Field::Letter epf,
         std::array<bool, static_cast<int>(Figure::Move::Castling::LAST)>& cast)
       : old_field(move.old_field),
         new_field(move.new_field),
         bitten_figure(std::move(bf)),
-        en_passant_pawn(epp),
+        en_passant_file(epf),
         promoted_pawn(std::move(pp)),
         castling_move(move.castling != Figure::Move::Castling::LAST),
         castlings(cast) {
@@ -69,7 +69,7 @@ class Board {
       : old_field(other.old_field),
         new_field(other.new_field),
         bitten_figure(std::move(other.bitten_figure)),
-        en_passant_pawn(other.en_passant_pawn),
+        en_passant_file(other.en_passant_file),
         promoted_pawn(std::move(other.promoted_pawn)),
         castling_move(other.castling_move),
         castlings(other.castlings) {
@@ -78,7 +78,7 @@ class Board {
     Field old_field;
     Field new_field;
     std::unique_ptr<Figure> bitten_figure;
-    const Pawn* en_passant_pawn{nullptr};
+    Field::Letter en_passant_file{Field::Letter::NONE};
     std::unique_ptr<Figure> promoted_pawn;
     bool castling_move{false};
     std::array<bool, static_cast<int>(Figure::Move::Castling::LAST)> castlings{true, true, true, true};
@@ -111,7 +111,7 @@ class Board {
   const std::vector<std::unique_ptr<Figure>>& getFigures() const noexcept { return figures_; }
   std::vector<const Figure*> getFigures(Figure::Color color) const noexcept;
   const auto& getFields() const noexcept { return fields_; }
-  const Pawn* getEnPassantPawn() const noexcept { return en_passant_pawn_; }
+  Field::Letter getEnPassantFile() const noexcept { return en_passant_file_; }
   const King* getKing(Figure::Color color) const noexcept;
   void setStandardBoard();
   GameStatus getGameStatus(Figure::Color color);
@@ -142,7 +142,7 @@ class Board {
   void moveFigure(Field old_field, Field new_field);
   void updateCastlings(const Figure::Move& move);
 
-  const Pawn* en_passant_pawn_{nullptr};
+  Field::Letter en_passant_file_{Field::Letter::NONE};
   std::vector<std::unique_ptr<Figure>> figures_;
   std::vector<BoardDrawer*> drawers_;
   std::array<std::array<Figure*, BoardSize>, BoardSize> fields_;
