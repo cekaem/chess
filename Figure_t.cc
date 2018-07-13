@@ -459,6 +459,12 @@ TEST_PROCEDURE(test7) {
     board.makeMove(Field("b5"), Field("a6"));
     VERIFY_TRUE(board.isKingCheckmated(Figure::BLACK));
   }
+  {
+    Board board;
+    VERIFY_TRUE(board.setBoardFromFEN("r5n1/2k2p2/1p2p1p1/p2p4/P2N2p1/BP1bP3/3P1P2/R3K2r w - - 0 27"));
+    VERIFY_EQUALS(board.getGameStatus(Figure::WHITE), Board::GameStatus::BLACK_WON);
+    VERIFY_TRUE(board.isKingCheckmated(Figure::WHITE));
+  }
   TEST_END
 }
 

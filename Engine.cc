@@ -216,7 +216,7 @@ Engine::Move Engine::evaluateBoard(
     } else if (border_values.zero_mate_value_exists == true) {
       moves_to_mate = 0;
     } else {
-      BoardAssert(board_, color, border_values.the_smallest_mate_value < 0);
+      BoardAssert(board, color, border_values.the_smallest_mate_value < 0);
       moves_to_mate = border_values.the_smallest_mate_value - 1;
     }
   } else {
@@ -225,12 +225,12 @@ Engine::Move Engine::evaluateBoard(
     } else if (border_values.zero_mate_value_exists == true) {
       moves_to_mate = 0;
     } else {
-      BoardAssert(board_, color, border_values.the_biggest_mate_value > 0);
+      BoardAssert(board, color, border_values.the_biggest_mate_value > 0);
       moves_to_mate = border_values.the_biggest_mate_value + 1;
     }
   }
 
-  BoardAssert(board_, color, (value != BorderValue && value != -BorderValue) || moves_to_mate != BorderValue);
+  BoardAssert(board, color, (value != BorderValue && value != -BorderValue) || moves_to_mate != BorderValue);
   return Move(value, moves_to_mate, false);
 }
 

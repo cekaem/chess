@@ -50,7 +50,10 @@ Board::Board(const Board& other) noexcept {
     addFigure(figure->getType(), figure->getPosition(), figure->getColor());
   }
 
+  castlings_ = other.castlings_;
   en_passant_file_ = other.en_passant_file_;
+  halfmove_clock_ = other.halfmove_clock_;
+  fullmove_number_ = other.fullmove_number_;
 }
 
 bool Board::isMoveValid(Field old_field, Field new_field) {
@@ -98,7 +101,8 @@ bool Board::operator==(const Board& other) const noexcept {
       }
     }
   }
-  return true;
+  return en_passant_file_ == other.en_passant_file_ && castlings_ == other.castlings_ &&
+         halfmove_clock_ == other.halfmove_clock_ && fullmove_number_ == other.fullmove_number_;
 }
 
 bool Board::operator!=(const Board& other) const noexcept {
@@ -361,6 +365,9 @@ bool Board::isKingCheckmated(Figure::Color color) {
   for (const auto* figure: figures) {
     auto moves = figure->calculatePossibleMoves();
     for (const auto& move: moves) {
+      if (move.castling != Figure::Move::Castling::LAST) {
+        continue;  // You can't castle when you're in check
+      }
       auto wrapper = makeReversibleMove(move);
       if (isKingChecked(color) == false) {
         is_mate = false;
@@ -905,6 +912,7 @@ void Board::clearBoard() {
 }
 
 void Board::setStandardBoard() {
+  clearBoard();
   addFigure(Figure::PAWN, Field(Field::A, Field::TWO), Figure::WHITE);
   addFigure(Figure::PAWN, Field(Field::B, Field::TWO), Figure::WHITE);
   addFigure(Figure::PAWN, Field(Field::C, Field::TWO), Figure::WHITE);

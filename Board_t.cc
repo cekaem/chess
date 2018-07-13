@@ -163,35 +163,33 @@ TEST_PROCEDURE(test8) {
   TEST_START
   Board board1;
   Board board2;
-  VERIFY(board1 == board2);
-  Field field1(Field::A, Field::TWO);
-  Field field2(Field::E, Field::SEVEN);
-  Field field3(Field::E, Field::SIX);
-  board1.addFigure(Figure::PAWN, field1, Figure::BLACK);
-  VERIFY(board1 != board2);
-  board1.addFigure(Figure::ROOK, field2, Figure::WHITE);
-  board2.addFigure(Figure::PAWN, field1, Figure::BLACK);
-  board2.addFigure(Figure::ROOK, field3, Figure::WHITE);
-  VERIFY(board1 != board2);
-  board2.removeFigure(field3);
-  board2.addFigure(Figure::KING, field2, Figure::BLACK);
-  VERIFY(board1 != board2);
-  board2.removeFigure(field2);
-  board2.addFigure(Figure::ROOK, field2, Figure::WHITE);
-  VERIFY_EQUALS(board1, board2);
+  VERIFY_TRUE(board1 == board2);
+  VERIFY_TRUE(board1.setBoardFromFEN("b7/3rr2P/1K6/6qk/2Q1R3/pN6/1p3PP1/7N b Q d3 0 24"));
+  VERIFY_TRUE(board1 != board2);
+  VERIFY_TRUE(board2.setBoardFromFEN("B7/3rr2P/1K6/6qk/2Q1R3/pN6/1p3PP1/7N b Q d3 0 24"));
+  VERIFY_TRUE(board1 != board2);
+  VERIFY_TRUE(board2.setBoardFromFEN("b7/3rr2P/1K6/6qk/2Q1R3/pN6/1p3PP1/7N b - d3 0 24"));
+  VERIFY_TRUE(board1 != board2);
+  VERIFY_TRUE(board2.setBoardFromFEN("b7/3rr2P/1K6/6qk/2Q1R3/pN6/1p3PP1/7N b kq d3 0 24"));
+  VERIFY_TRUE(board1 != board2);
+  VERIFY_TRUE(board2.setBoardFromFEN("b7/3rr2P/1K6/6qk/2Q1R3/pN6/1p3PP1/7N b Q - 0 24"));
+  VERIFY_TRUE(board1 != board2);
+  VERIFY_TRUE(board2.setBoardFromFEN("b7/3rr2P/1K6/6qk/2Q1R3/pN6/1p3PP1/7N b Q e3 0 24"));
+  VERIFY_TRUE(board1 != board2);
+  VERIFY_TRUE(board2.setBoardFromFEN("b7/3rr2P/1K6/6qk/2Q1R3/pN6/1p3PP1/7N b Q d3 1 24"));
+  VERIFY_TRUE(board1 != board2);
+  VERIFY_TRUE(board2.setBoardFromFEN("b7/3rr2P/1K6/6qk/2Q1R3/pN6/1p3PP1/7N b Q d3 0 5"));
+  VERIFY_TRUE(board1 != board2);
+  VERIFY_TRUE(board2.setBoardFromFEN("b7/3rr2P/1K6/6qk/2Q1R3/pN6/1p3PP1/7N b Q d3 0 24"));
+  VERIFY_TRUE(board1 == board2);
   TEST_END
 }
 
-// Checks if Board's copy constructor and Board::restoreFiguresPositions work correctly
+// Checks if Board's copy constructor work correctly
 TEST_PROCEDURE(test9) {
   TEST_START
   Board board1;
-  Field field1(Field::D, Field::FOUR);
-  Field field2(Field::B, Field::ONE);
-  Field field3(Field::H, Field::SIX);
-  board1.addFigure(Figure::KNIGHT, field1, Figure::WHITE);
-  board1.addFigure(Figure::KNIGHT, field2, Figure::BLACK);
-  board1.addFigure(Figure::QUEEN, field3, Figure::WHITE);
+  VERIFY_TRUE(board1.setBoardFromFEN("r5n1/2k2p2/1p2p1p1/p2p4/P2N2p1/BP1bP3/3P1P2/R3K2r b KQ c3 0 32"));
   Board board2 = board1;
   VERIFY_EQUALS(board1, board2);
   TEST_END
