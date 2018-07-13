@@ -32,7 +32,7 @@ class Figure {
 
     static Castling isCastling(const Board* board, Field old_field, Field new_field);
     static bool isPromotion(const Board* board, Field old_field, Field new_field);
-    static bool isEnPassant(const Board* board, Field old_field, Field new_field);
+    static bool isTwoSquaresPawnMove(const Board* board, Field old_field, Field new_field);
 
     Move() {}
 

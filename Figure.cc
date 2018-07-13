@@ -176,7 +176,7 @@ bool Figure::Move::isPromotion(const Board* board, Field old_field, Field new_fi
   return old_field.number == old_number && new_field.number == new_number;
 }
 
-bool Figure::Move::isEnPassant(const Board* board, Field old_field, Field new_field) {
+bool Figure::Move::isTwoSquaresPawnMove(const Board* board, Field old_field, Field new_field) {
   const Figure* figure = board->getFigure(old_field);
   if (figure == nullptr || figure->getType() != Figure::PAWN) {
     return false;

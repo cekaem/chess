@@ -215,6 +215,18 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
     }
   }
 
+  // Handle en passant capture
+  if (isEnPassantCapture(move) == true) {
+    Field bitten_pawn_field;
+    bitten_pawn_field.letter = en_passant_file_;
+    if (color == Figure::WHITE) {
+      bitten_pawn_field.number = Field::FIVE;
+    } else {
+      bitten_pawn_field.number = Field::FOUR;
+    }
+    beaten_figure = std::move(removeFigure(bitten_pawn_field));
+  }
+
   // Handle pawn promotion
   std::unique_ptr<Figure> promoted_pawn;
   if (move.pawn_promotion != Figure::PAWN) {
@@ -236,12 +248,17 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
                                    std::move(promoted_pawn),
                                    en_passant_file_,
                                    castlings_,
-                                   halfmove_clock_);
+                                   halfmove_clock_,
+                                   fullmove_number_);
     reversible_moves_.push_back(std::move(reversible_move));
   }
 
-  // Handle en passant
-  if (Figure::Move::isEnPassant(this, move.old_field, move.new_field) == true) {
+  if (color == Figure::BLACK) {
+    ++fullmove_number_;
+  }
+
+  // Update en_passant_file_
+  if (Figure::Move::isTwoSquaresPawnMove(this, move.old_field, move.new_field) == true) {
     en_passant_file_ = move.old_field.letter;
   } else {
     en_passant_file_ = Field::Letter::NONE;
@@ -293,6 +310,26 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
   }
 
   return status;
+}
+
+bool Board::isEnPassantCapture(const Figure::Move& move) const {
+  const Figure* figure = getFigure(move.old_field);
+  if (figure == nullptr || figure->getType() != Figure::PAWN) {
+    return false;
+  }
+  if (move.new_field.letter != en_passant_file_) {
+    return false;
+  }
+  if (figure->getColor() == Figure::WHITE) {
+    if (move.new_field.number != Field::SIX) {
+      return false;
+    }
+  } else {
+    if (move.new_field.number != Field::THREE) {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool Board::isKingChecked(Figure::Color color) {
@@ -839,6 +876,7 @@ void Board::undoLastReversibleMove() {
   en_passant_file_ = reversible_move.en_passant_file;
   castlings_ = reversible_move.castlings;
   halfmove_clock_ = reversible_move.halfmove_clock;
+  fullmove_number_ = reversible_move.fullmove_number;
 }
 
 void Board::undoAllReversibleMoves() {

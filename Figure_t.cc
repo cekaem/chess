@@ -105,6 +105,22 @@ TEST_PROCEDURE(test1) {
     VERIFY_CONTAINS(moves, createMove(pawn, Field::G, Field::EIGHT, false, false, false, Figure::BISHOP));
     VERIFY_EQUALS(moves.size(), 8lu);
   }
+  {
+    Board board;
+    VERIFY_TRUE(board.setBoardFromFEN("8/4k2p/8/6P1/8/5K2/8/8 b - - 0 0"));
+    board.makeMove(Field("h7"), Field("h5"));
+    board.makeMove(Field("g5"), Field("h6"));
+    VERIFY_IS_NULL(board.getFigure(Field("h5")));
+  }
+  {
+    Board board;
+    VERIFY_TRUE(board.setBoardFromFEN("8/4k2p/8/6P1/6K1/8/8/8 b - - 0 0"));
+    board.makeMove(Field("h7"), Field("h5"));
+    VERIFY_EQUALS(board.getEnPassantFile(), Field::H);
+    const Figure* pawn = board.getFigure(Field("g5"));
+    auto moves = board.calculateMovesForFigure(pawn);
+    VERIFY_CONTAINS(moves, createMove(pawn, Field::H, Field::SIX, true));
+  }
   TEST_END
 }
 

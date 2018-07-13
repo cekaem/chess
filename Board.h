@@ -56,7 +56,8 @@ class Board {
         std::unique_ptr<Figure> pp,
         Field::Letter epf,
         std::array<bool, static_cast<int>(Figure::Move::Castling::LAST)>& cast,
-        unsigned hc)
+        unsigned hc,
+        unsigned fm)
       : old_field(move.old_field),
         new_field(move.new_field),
         bitten_figure(std::move(bf)),
@@ -64,7 +65,8 @@ class Board {
         promoted_pawn(std::move(pp)),
         castling_move(move.castling != Figure::Move::Castling::LAST),
         castlings(cast),
-        halfmove_clock(hc) {
+        halfmove_clock(hc),
+        fullmove_number(fm) {
     }
 
     ReversibleMove(ReversibleMove&& other)
@@ -75,7 +77,8 @@ class Board {
         promoted_pawn(std::move(other.promoted_pawn)),
         castling_move(other.castling_move),
         castlings(other.castlings),
-        halfmove_clock(other.halfmove_clock) {
+        halfmove_clock(other.halfmove_clock),
+        fullmove_number(other.fullmove_number) {
     }
 
     Field old_field;
@@ -85,7 +88,8 @@ class Board {
     std::unique_ptr<Figure> promoted_pawn;
     bool castling_move{false};
     std::array<bool, static_cast<int>(Figure::Move::Castling::LAST)> castlings{true, true, true, true};
-    unsigned halfmove_clock;
+    unsigned halfmove_clock{0};
+    unsigned fullmove_number{0};
   };
 
   class ReversibleMoveWrapper {
@@ -149,6 +153,7 @@ class Board {
   bool isDraw() const;
   void onGameFinished(GameStatus status) noexcept;
   bool isMoveValid(Figure::Move& move, Figure::Color color);
+  bool isEnPassantCapture(const Figure::Move& move) const;
   bool canCastle(Figure::Move::Castling castling) const;
   void moveFigure(Field old_field, Field new_field);
   void updateCastlings(const Figure::Move& move);

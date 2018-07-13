@@ -341,7 +341,7 @@ TEST_PROCEDURE(test14) {
     VERIFY_STRINGS_EQUAL(fen.c_str(), "4k2r/Br5p/2q5/6P1/3n4/8/5R2/R3K3 b KQkq - 0 0");
     board.makeMove(Field("h7"), Field("h5"));
     fen = board.createFEN(Figure::WHITE);
-    VERIFY_STRINGS_EQUAL(fen.c_str(), "4k2r/Br6/2q5/6Pp/3n4/8/5R2/R3K3 w KQkq h6 0 0");
+    VERIFY_STRINGS_EQUAL(fen.c_str(), "4k2r/Br6/2q5/6Pp/3n4/8/5R2/R3K3 w KQkq h6 0 1");
   }
   {
     Board board;
@@ -361,11 +361,11 @@ TEST_PROCEDURE(test14) {
     VERIFY_STRINGS_EQUAL(fen.c_str(), "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 0");
     board.makeMove(Field("e8"), Field("f8"));
     fen = board.createFEN(Figure::WHITE);
-    VERIFY_STRINGS_EQUAL(fen.c_str(), "r4k1r/8/8/8/8/8/8/R3K2R w KQ - 0 0");
+    VERIFY_STRINGS_EQUAL(fen.c_str(), "r4k1r/8/8/8/8/8/8/R3K2R w KQ - 0 1");
     board.makeMove(Field("a1"), Field("a2"));
     board.makeMove(Field("a2"), Field("a1"));
     fen = board.createFEN(Figure::WHITE);
-    VERIFY_STRINGS_EQUAL(fen.c_str(), "r4k1r/8/8/8/8/8/8/R3K2R w K - 1 0");
+    VERIFY_STRINGS_EQUAL(fen.c_str(), "r4k1r/8/8/8/8/8/8/R3K2R w K - 1 1");
   }
   TEST_END
 }
@@ -470,6 +470,28 @@ TEST_PROCEDURE(test18) {
   TEST_END
 }
 
+// Checks if Board correctly counts full moves.
+TEST_PROCEDURE(test19) {
+  TEST_START
+  Board board;
+  VERIFY_TRUE(board.setBoardFromFEN("8/4k2p/4r3/6P1/8/4R1K1/8/8 w KQkq - 0 34"));
+  VERIFY_EQUALS(board.getFullMoveNumber(), 34u);
+  board.makeMove(Field("e3"), Field("e6"));
+  VERIFY_EQUALS(board.getFullMoveNumber(), 34u);
+  board.makeMove(Field("e7"), Field("e6"));
+  VERIFY_EQUALS(board.getFullMoveNumber(), 35u);
+  board.makeMove(Field("g3"), Field("g4"));
+  VERIFY_EQUALS(board.getFullMoveNumber(), 35u);
+  board.makeMove(Field("h7"), Field("h5"));
+  VERIFY_EQUALS(board.getFullMoveNumber(), 36u);
+  board.makeMove(Field("g5"), Field("h6"));
+  VERIFY_EQUALS(board.getFullMoveNumber(), 36u);
+  board.makeMove(Field("e6"), Field("f7"));
+  VERIFY_EQUALS(board.getFullMoveNumber(), 37u);
+  VERIFY_STRINGS_EQUAL(board.createFEN(Figure::WHITE).c_str(), "8/5k2/7P/8/6K1/8/8/8 w KQkq - 0 37");
+  TEST_END
+}
+
 } // unnamed namespace
 
 
@@ -492,6 +514,7 @@ int main() {
     TEST("Board::setBoardFromFEN detects invalid fen string", test16);
     TEST("Board properly counts half moves", test17);
     TEST("Board correctly draws game after 50 consecutive half moves", test18);
+    TEST("Board correctly counts full moves", test19);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;
