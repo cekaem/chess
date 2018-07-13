@@ -1,7 +1,6 @@
 #include "Board.h"
 
 #include <algorithm>
-#include <cassert>
 #include <sstream>
 
 int Board::number_of_copies_ = 0;
@@ -132,7 +131,7 @@ std::unique_ptr<Figure> Board::removeFigure(Field field) {
           return iter.get() == figure;
         });
 
-  assert(iter != figures_.end());
+  BoardAssert(*this, figure->getColor(), iter != figures_.end());
   std::unique_ptr<Figure> result = std::move(*iter);
   figures_.erase(iter);
 
@@ -230,7 +229,7 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
   // Handle pawn promotion
   std::unique_ptr<Figure> promoted_pawn;
   if (move.pawn_promotion != Figure::PAWN) {
-    assert(figure->getType() == Figure::PAWN);
+    BoardAssert(*this, figure->getColor(), figure->getType() == Figure::PAWN);
     const Pawn* pawn = static_cast<const Pawn*>(figure);
     addFigure(move.pawn_promotion, move.new_field, pawn->getColor());
     promoted_pawn = std::move(removeFigure(move.old_field));
@@ -266,7 +265,7 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
 
   // Handle castling
   if (move.castling != Figure::Move::Castling::LAST) {
-    assert(figure->getType() == Figure::KING);
+    BoardAssert(*this, figure->getColor(), figure->getType() == Figure::KING);
     Field::Letter old_l = move.castling == Figure::Move::Castling::K || move.castling == Figure::Move::Castling::k ? Field::H : Field::A;
     Field old_rook_position(old_l, move.old_field.number);
     Field::Letter new_l = move.castling == Figure::Move::Castling::K || move.castling == Figure::Move::Castling::k ? Field::F : Field::D;
@@ -720,7 +719,7 @@ bool Board::isDraw() const {
 }
 
 bool Board::canCastle(Figure::Move::Castling castling) const {
-  assert(castling < Figure::Move::Castling::LAST);
+  BoardAssert(*this, Figure::WHITE, castling < Figure::Move::Castling::LAST);
   if(castlings_[static_cast<size_t>(castling)] == false) {
     return false;
   }
@@ -847,7 +846,7 @@ const King* Board::getKing(Figure::Color color) const noexcept {
 }
 
 void Board::undoLastReversibleMove() {
-  assert(reversible_moves_.empty() == false);
+  BoardAssert(*this, Figure::WHITE, reversible_moves_.empty() == false);
   ReversibleMove reversible_move = std::move(reversible_moves_.back());
   reversible_moves_.pop_back();
   Figure* promoted_pawn = reversible_move.promoted_pawn.get();

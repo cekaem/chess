@@ -1,6 +1,5 @@
 #include "Engine.h"
 
-#include <cassert>
 #include <condition_variable>
 #include <cstdlib>
 #include <ctime>
@@ -103,7 +102,7 @@ Figure::Move Engine::makeMove(Figure::Color color) {
     moves_to_mate = border_values.the_smallest_mate_value;
     debug_stream_ << Log::lock << "Found opponent's mate in " << -(moves_to_mate / 2 - 1) << Log::endl;
   }
-  assert(moves_to_mate != BorderValue);
+  BoardAssert(board_, color, moves_to_mate != BorderValue);
 
   Figure::Move my_move;
   // Collect all best moves.
@@ -138,7 +137,7 @@ Figure::Move Engine::makeMove(Figure::Color color) {
       }
     }
   }
-  assert(the_best_direct_moves.size() > 0);
+  BoardAssert(board_, color, the_best_direct_moves.size() > 0);
   // Choose randomly move from the best direct moves.
   my_move = the_best_direct_moves[generateRandomValue(the_best_direct_moves.size() - 1)];
 
@@ -217,7 +216,7 @@ Engine::Move Engine::evaluateBoard(
     } else if (border_values.zero_mate_value_exists == true) {
       moves_to_mate = 0;
     } else {
-      assert(border_values.the_smallest_mate_value < 0);
+      BoardAssert(board_, color, border_values.the_smallest_mate_value < 0);
       moves_to_mate = border_values.the_smallest_mate_value - 1;
     }
   } else {
@@ -226,12 +225,12 @@ Engine::Move Engine::evaluateBoard(
     } else if (border_values.zero_mate_value_exists == true) {
       moves_to_mate = 0;
     } else {
-      assert(border_values.the_biggest_mate_value > 0);
+      BoardAssert(board_, color, border_values.the_biggest_mate_value > 0);
       moves_to_mate = border_values.the_biggest_mate_value + 1;
     }
   }
 
-  assert((value != BorderValue && value != -BorderValue) || moves_to_mate != BorderValue);
+  BoardAssert(board_, color, (value != BorderValue && value != -BorderValue) || moves_to_mate != BorderValue);
   return Move(value, moves_to_mate, false);
 }
 

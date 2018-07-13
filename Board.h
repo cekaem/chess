@@ -13,15 +13,15 @@
 #include "Figure.h"
 
 
-#ifdef _DEBUG_
+#ifdef _ASSERTS_ON_
 #define BoardAssert(_board_, _side_, _condition_)\
   if ((_condition_) == false) {\
-    std::cerr << _board_->createFEN(_side_) << std::endl;\
+    std::cerr << (_board_).createFEN(_side_) << std::endl;\
     assert(_condition_);\
   }
 #else
 #define NOOP
-#define BoardAssert(_board_, _condition_) NOOP
+#define BoardAssert(_board_, _side_, _condition_) NOOP
 #endif  // _DEBUG_
  
 
