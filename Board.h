@@ -2,6 +2,7 @@
 #define BOARD_H
 
 #include <array>
+#include <cassert>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -10,6 +11,19 @@
 
 #include "Field.h"
 #include "Figure.h"
+
+
+#ifdef _DEBUG_
+#define BoardAssert(_board_, _side_, _condition_)\
+  if ((_condition_) == false) {\
+    std::cerr << _board_->createFEN(_side_) << std::endl;\
+    assert(_condition_);\
+  }
+#else
+#define NOOP
+#define BoardAssert(_board_, _condition_) NOOP
+#endif  // _DEBUG_
+ 
 
 class BoardDrawer;
 
