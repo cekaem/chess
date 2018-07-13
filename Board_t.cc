@@ -388,6 +388,26 @@ TEST_PROCEDURE(test15) {
   TEST_END
 }
 
+// Checks if "Board::setBoardFromFEN detects invalid fen string.
+TEST_PROCEDURE(test16) {
+  TEST_START
+  {
+    Board board;
+    VERIFY_FALSE(board.setBoardFromFEN(""));
+    VERIFY_FALSE(board.setBoardFromFEN("invalid_fen"));
+    VERIFY_FALSE(board.setBoardFromFEN("7r/5pp1/2b5/7k/6n1/5B2/Q3K3/4R2q"));
+    VERIFY_FALSE(board.setBoardFromFEN("7r/5dp1/2b5/7k/6n1/5B2/Q3K3/4R2q b Qkq c3 3 7"));
+    VERIFY_FALSE(board.setBoardFromFEN("7r/5pp1/2b5/7k/6n1/5B2/Q3K3/4R2q b Qg c3 3 7"));
+    VERIFY_FALSE(board.setBoardFromFEN("7r/5pp1/2b5/7k/6n1/5B2/Q3K3/4R2q b Qkq c4 3 7"));
+    VERIFY_FALSE(board.setBoardFromFEN("7r/5pp1/2b5/7k/6n1/5B2/Q3K3/4R2q w Qkq c3 3 7"));
+    VERIFY_FALSE(board.setBoardFromFEN("7r/5pp1/2b5/7k/6n1/5B2/Q3K3/4R2q b Qkq c6 3 7"));
+    VERIFY_FALSE(board.setBoardFromFEN("7r/5pp1/2b5/7k/6n1/5B2/Q3K3/4R2q g Qkq c3 3 7"));
+    VERIFY_FALSE(board.setBoardFromFEN("7r/5pp1/2b5/7k/6n1/5B2/Q3K3/4R2q b Qkq c3"));
+    VERIFY_FALSE(board.setBoardFromFEN("7r/5pp1/2b5/7k/6n1/5B2/Q3K3/4R2q b Qkq c3 3 nan"));
+  }
+  TEST_END
+}
+
 } // unnamed namespace
 
 
@@ -407,6 +427,7 @@ int main() {
     TEST("Board::undoLastReversibleMove works correctly", test13);
     TEST("Board::createFEN works correctly", test14);
     TEST("Board::setBoardFromFEN works correctly", test15);
+    TEST("Board::setBoardFromFEN detects invalid fen string", test16);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;
