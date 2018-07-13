@@ -55,14 +55,16 @@ class Board {
         std::unique_ptr<Figure> bf,
         std::unique_ptr<Figure> pp,
         Field::Letter epf,
-        std::array<bool, static_cast<int>(Figure::Move::Castling::LAST)>& cast)
+        std::array<bool, static_cast<int>(Figure::Move::Castling::LAST)>& cast,
+        unsigned hc)
       : old_field(move.old_field),
         new_field(move.new_field),
         bitten_figure(std::move(bf)),
         en_passant_file(epf),
         promoted_pawn(std::move(pp)),
         castling_move(move.castling != Figure::Move::Castling::LAST),
-        castlings(cast) {
+        castlings(cast),
+        halfmove_clock(hc) {
     }
 
     ReversibleMove(ReversibleMove&& other)
@@ -72,7 +74,8 @@ class Board {
         en_passant_file(other.en_passant_file),
         promoted_pawn(std::move(other.promoted_pawn)),
         castling_move(other.castling_move),
-        castlings(other.castlings) {
+        castlings(other.castlings),
+        halfmove_clock(other.halfmove_clock) {
     }
 
     Field old_field;
@@ -82,6 +85,7 @@ class Board {
     std::unique_ptr<Figure> promoted_pawn;
     bool castling_move{false};
     std::array<bool, static_cast<int>(Figure::Move::Castling::LAST)> castlings{true, true, true, true};
+    unsigned halfmove_clock;
   };
 
   class ReversibleMoveWrapper {
@@ -113,7 +117,7 @@ class Board {
   const auto& getFields() const noexcept { return fields_; }
   Field::Letter getEnPassantFile() const noexcept { return en_passant_file_; }
   std::string getFENForCastlings() const noexcept;
-  unsigned getHalfMoveClock() const noexcept { return halfmove_clock_; }
+  unsigned getHalfMoveClock() const noexcept { return halfmove_clock_ / 2; }
   unsigned getFullMoveNumber() const noexcept { return fullmove_number_; }
   const King* getKing(Figure::Color color) const noexcept;
   void clearBoard();

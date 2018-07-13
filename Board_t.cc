@@ -28,6 +28,15 @@ class BoardDrawerMock : public BoardDrawer {
   MOCK_METHOD1(onGameFinished, void(Board::GameStatus));
 };
 
+class BoardDrawerOnlyGameFinishedMock : public BoardDrawer {
+ public:
+  MOCK_CLASS(BoardDrawerOnlyGameFinishedMock)
+  void onFigureAdded(Figure::Type, Figure::Color, Field) override {}
+  void onFigureRemoved(Field) override {}
+  void onFigureMoved(Figure::Move) override {}
+  MOCK_METHOD1(onGameFinished, void(Board::GameStatus));
+};
+
 // Checks if Field::WrongFieldException is properly thrown from Field::Field
 TEST_PROCEDURE(test1) {
   TEST_START
@@ -356,7 +365,7 @@ TEST_PROCEDURE(test14) {
     board.makeMove(Field("a1"), Field("a2"));
     board.makeMove(Field("a2"), Field("a1"));
     fen = board.createFEN(Figure::WHITE);
-    VERIFY_STRINGS_EQUAL(fen.c_str(), "r4k1r/8/8/8/8/8/8/R3K2R w K - 0 0");
+    VERIFY_STRINGS_EQUAL(fen.c_str(), "r4k1r/8/8/8/8/8/8/R3K2R w K - 1 0");
   }
   TEST_END
 }
@@ -408,6 +417,59 @@ TEST_PROCEDURE(test16) {
   TEST_END
 }
 
+// Checks if Board properly counts half moves.
+TEST_PROCEDURE(test17) {
+  TEST_START
+  Board board;
+  VERIFY_EQUALS(board.getHalfMoveClock(), 0u);
+  VERIFY_TRUE(board.setBoardFromFEN("r7/3k3p/4q1P1/8/8/1R1K2PP/5N2/8 w KQkq - 0 0"));
+  VERIFY_EQUALS(board.getHalfMoveClock(), 0u);
+  board.makeMove(Field("d3"), Field("c3"));
+  VERIFY_EQUALS(board.getHalfMoveClock(), 0u);
+  board.makeMove(Field("d7"), Field("c7"));
+  VERIFY_EQUALS(board.getHalfMoveClock(), 1u);
+  board.makeMove(Field("c3"), Field("d3"));
+  VERIFY_EQUALS(board.getHalfMoveClock(), 1u);
+  board.makeMove(Field("c7"), Field("d7"));
+  VERIFY_EQUALS(board.getHalfMoveClock(), 2u);
+  board.makeMove(Field("f2"), Field("e4"));
+  VERIFY_EQUALS(board.getHalfMoveClock(), 2u);
+  board.makeMove(Field("e6"), Field("b3"));
+  VERIFY_EQUALS(board.getHalfMoveClock(), 0u);
+  board.makeMove(Field("e4"), Field("c3"));
+  VERIFY_EQUALS(board.getHalfMoveClock(), 0u);
+  board.makeMove(Field("a8"), Field("a7"));
+  VERIFY_EQUALS(board.getHalfMoveClock(), 1u);
+  board.makeMove(Field("g3"), Field("g4"));
+  VERIFY_EQUALS(board.getHalfMoveClock(), 0u);
+  TEST_END
+}
+
+// Checks if Board correctly draws game after 50 consecutive half moves.
+TEST_PROCEDURE(test18) {
+  TEST_START
+  Board board;
+  BoardDrawerOnlyGameFinishedMock drawer;
+  board.addBoardDrawer(&drawer);
+  EXPECT_CALL(drawer, onGameFinished(Board::GameStatus::DRAW));
+  VERIFY_TRUE(board.setBoardFromFEN("8/4k3/5q2/8/8/P7/4K3/8 w - - 0 0"));
+  for (size_t i = 0; i < 24; ++i) {
+    board.makeMove(Field("e2"), Field("e3"));
+    board.makeMove(Field("f6"), Field("f7"));
+    board.makeMove(Field("e3"), Field("e2"));
+    board.makeMove(Field("f7"), Field("f6"));
+  }
+  VERIFY_EQUALS(board.getHalfMoveClock(), 48u);
+  board.makeMove(Field("e2"), Field("e3"));
+  board.makeMove(Field("f6"), Field("f7"));
+  VERIFY_EQUALS(board.getHalfMoveClock(), 49u);
+  board.makeMove(Field("e3"), Field("e2"));
+  VERIFY_EQUALS(board.getHalfMoveClock(), 49u);
+  board.makeMove(Field("f7"), Field("f6"));
+  VERIFY_EQUALS(board.getHalfMoveClock(), 50u);
+  TEST_END
+}
+
 } // unnamed namespace
 
 
@@ -428,6 +490,8 @@ int main() {
     TEST("Board::createFEN works correctly", test14);
     TEST("Board::setBoardFromFEN works correctly", test15);
     TEST("Board::setBoardFromFEN detects invalid fen string", test16);
+    TEST("Board properly counts half moves", test17);
+    TEST("Board correctly draws game after 50 consecutive half moves", test18);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;

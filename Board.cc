@@ -235,7 +235,8 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
                                    std::move(beaten_figure),
                                    std::move(promoted_pawn),
                                    en_passant_file_,
-                                   castlings_);
+                                   castlings_,
+                                   halfmove_clock_);
     reversible_moves_.push_back(std::move(reversible_move));
   }
 
@@ -280,6 +281,15 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
     if (status != GameStatus::NONE) {
       onGameFinished(status);
     }
+  }
+
+  if (figure != nullptr && figure->getType() != Figure::PAWN && move.figure_beaten == false) {
+    ++halfmove_clock_;
+    if (halfmove_clock_ >= 100 && rev_mode == false) {
+      onGameFinished(GameStatus::DRAW);
+    }
+  } else {
+    halfmove_clock_ = 0;
   }
 
   return status;
@@ -403,7 +413,7 @@ std::string Board::createFEN(Figure::Color side_to_move) const {
     fen << static_cast<char>(en_passant_file_ + 'a');
     fen << (side_to_move == Figure::WHITE ? 6 : 3);
   }
-  fen << ' ' << halfmove_clock_ << ' ' << fullmove_number_;
+  fen << ' ' << (halfmove_clock_ / 2) << ' ' << fullmove_number_;
 
   return fen.str();
 }
@@ -480,6 +490,7 @@ bool Board::setBoardFromFEN(const std::string& fen) {
   if (str_2_uint(halfmove_clock_str, halfmove_clock_) == false) {
     return false;
   }
+  halfmove_clock_ *= 2;
   rest_fen = rest_fen.substr(space_position);
   if (rest_fen.size() < 2 || rest_fen[0] != ' ') {  // 2 == length(" 0")
     return false;
@@ -827,6 +838,7 @@ void Board::undoLastReversibleMove() {
   }
   en_passant_file_ = reversible_move.en_passant_file;
   castlings_ = reversible_move.castlings;
+  halfmove_clock_ = reversible_move.halfmove_clock;
 }
 
 void Board::undoAllReversibleMoves() {
