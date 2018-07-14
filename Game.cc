@@ -73,7 +73,7 @@ class TextBoardDrawer : public BoardDrawer {
   std::ostream& ostr_;
 };
 
-std::pair<Field, Field> getHumanMove(Board& board) {
+std::tuple<Field, Field, Figure::Type> getHumanMove(Board& board) {
   bool move_ok = false;
   Field old_field;
   Field new_field;
@@ -108,7 +108,44 @@ std::pair<Field, Field> getHumanMove(Board& board) {
       std::cerr << "Invalid move." << std::endl;
     }
   }
-  return std::make_pair(old_field, new_field);
+  Figure::Type promotion_to = Figure::PAWN;
+  if (Figure::Move::isPromotion(&board, old_field, new_field) == true) {
+    bool promotion_ok = false;
+    while (promotion_ok == false) {
+      std::cout << "Promotion to?" << std::endl;
+      std::cout << ">>> ";
+      std::string promotion_string;
+      std::cin >> promotion_string;
+      if (promotion_string.size() != 1) {
+        continue;
+      }
+      switch (promotion_string[0]) {
+        case 'Q':
+        case 'q':
+          promotion_to = Figure::QUEEN;
+          promotion_ok = true;
+          break;
+        case 'R':
+        case 'r':
+          promotion_to = Figure::ROOK;
+          promotion_ok = true;
+          break;
+        case 'N':
+        case 'n':
+          promotion_to = Figure::KNIGHT;
+          promotion_ok = true;
+          break;
+        case 'B':
+        case 'b':
+          promotion_to = Figure::BISHOP;
+          promotion_ok = true;
+          break;
+        default:
+          break;
+      }
+    }
+  }
+  return std::make_tuple(old_field, new_field, promotion_to);
 }
 
 }  // unnamed namespace
@@ -143,16 +180,20 @@ int main() {
   Board::GameStatus status = Board::GameStatus::NONE;
   while (status == Board::GameStatus::NONE) {
     if (human_plays_white == true) {
-      std::pair<Field, Field> human_move = getHumanMove(board);;
-      status = board.makeMove(human_move.first, human_move.second);
+      auto human_move = getHumanMove(board);
+      status = board.makeMove(std::get<0>(human_move),
+                              std::get<1>(human_move),
+                              std::get<2>(human_move));
     } else {
       engine.makeMove(Figure::WHITE);
       status = board.getGameStatus(Figure::BLACK);
     }
     if (status == Board::GameStatus::NONE) {
       if (human_plays_black == true) {
-        std::pair<Field, Field> human_move = getHumanMove(board);;
-        status = board.makeMove(human_move.first, human_move.second);
+        auto human_move = getHumanMove(board);
+        status = board.makeMove(std::get<0>(human_move),
+                                std::get<1>(human_move),
+                                std::get<2>(human_move));
       } else {
         engine.makeMove(Figure::BLACK);
         status = board.getGameStatus(Figure::WHITE);

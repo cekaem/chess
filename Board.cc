@@ -912,47 +912,7 @@ void Board::clearBoard() {
 }
 
 void Board::setStandardBoard() {
-  clearBoard();
-  addFigure(Figure::PAWN, Field(Field::A, Field::TWO), Figure::WHITE);
-  addFigure(Figure::PAWN, Field(Field::B, Field::TWO), Figure::WHITE);
-  addFigure(Figure::PAWN, Field(Field::C, Field::TWO), Figure::WHITE);
-  addFigure(Figure::PAWN, Field(Field::D, Field::TWO), Figure::WHITE);
-  addFigure(Figure::PAWN, Field(Field::E, Field::TWO), Figure::WHITE);
-  addFigure(Figure::PAWN, Field(Field::F, Field::TWO), Figure::WHITE);
-  addFigure(Figure::PAWN, Field(Field::G, Field::TWO), Figure::WHITE);
-  addFigure(Figure::PAWN, Field(Field::H, Field::TWO), Figure::WHITE);
-  addFigure(Figure::ROOK, Field(Field::A, Field::ONE), Figure::WHITE);
-  addFigure(Figure::ROOK, Field(Field::H, Field::ONE), Figure::WHITE);
-  addFigure(Figure::KNIGHT, Field(Field::B, Field::ONE), Figure::WHITE);
-  addFigure(Figure::KNIGHT, Field(Field::G, Field::ONE), Figure::WHITE);
-  addFigure(Figure::BISHOP, Field(Field::C, Field::ONE), Figure::WHITE);
-  addFigure(Figure::BISHOP, Field(Field::F, Field::ONE), Figure::WHITE);
-  addFigure(Figure::QUEEN, Field(Field::D, Field::ONE), Figure::WHITE);
-  addFigure(Figure::KING, Field(Field::E, Field::ONE), Figure::WHITE);
-
-  addFigure(Figure::PAWN, Field(Field::A, Field::SEVEN), Figure::BLACK);
-  addFigure(Figure::PAWN, Field(Field::B, Field::SEVEN), Figure::BLACK);
-  addFigure(Figure::PAWN, Field(Field::C, Field::SEVEN), Figure::BLACK);
-  addFigure(Figure::PAWN, Field(Field::D, Field::SEVEN), Figure::BLACK);
-  addFigure(Figure::PAWN, Field(Field::E, Field::SEVEN), Figure::BLACK);
-  addFigure(Figure::PAWN, Field(Field::F, Field::SEVEN), Figure::BLACK);
-  addFigure(Figure::PAWN, Field(Field::G, Field::SEVEN), Figure::BLACK);
-  addFigure(Figure::PAWN, Field(Field::H, Field::SEVEN), Figure::BLACK);
-  addFigure(Figure::ROOK, Field(Field::A, Field::EIGHT), Figure::BLACK);
-  addFigure(Figure::ROOK, Field(Field::H, Field::EIGHT), Figure::BLACK);
-  addFigure(Figure::KNIGHT, Field(Field::B, Field::EIGHT), Figure::BLACK);
-  addFigure(Figure::KNIGHT, Field(Field::G, Field::EIGHT), Figure::BLACK);
-  addFigure(Figure::BISHOP, Field(Field::C, Field::EIGHT), Figure::BLACK);
-  addFigure(Figure::BISHOP, Field(Field::F, Field::EIGHT), Figure::BLACK);
-  addFigure(Figure::QUEEN, Field(Field::D, Field::EIGHT), Figure::BLACK);
-  addFigure(Figure::KING, Field(Field::E, Field::EIGHT), Figure::BLACK);
-
-  castlings_[static_cast<size_t>(Figure::Move::Castling::Q)] = true;
-  castlings_[static_cast<size_t>(Figure::Move::Castling::K)] = true;
-  castlings_[static_cast<size_t>(Figure::Move::Castling::q)] = true;
-  castlings_[static_cast<size_t>(Figure::Move::Castling::k)] = true;
-  en_passant_file_ = Field::NONE;
-  reversible_moves_.clear();
+  setBoardFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
 void Board::onGameFinished(Board::GameStatus status) noexcept {
