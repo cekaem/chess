@@ -59,7 +59,8 @@ Engine::BorderValues Engine::findBorderValues(const std::vector<Engine::Move>& m
   return result;
 }
 
-Figure::Move Engine::makeMove(Figure::Color color) {
+Figure::Move Engine::makeMove() {
+  Figure::Color color = board_.getSideToMove();
   Board::GameStatus status = board_.getGameStatus(color);
   if (status != Board::GameStatus::NONE) {
     throw Board::BadBoardStatusException(&board_);
@@ -102,7 +103,7 @@ Figure::Move Engine::makeMove(Figure::Color color) {
     moves_to_mate = border_values.the_smallest_mate_value;
     debug_stream_ << Log::lock << "Found opponent's mate in " << -(moves_to_mate / 2 - 1) << Log::endl;
   }
-  BoardAssert(board_, color, moves_to_mate != BorderValue);
+  BoardAssert(board_, moves_to_mate != BorderValue);
 
   Figure::Move my_move;
   // Collect all best moves.
@@ -137,7 +138,7 @@ Figure::Move Engine::makeMove(Figure::Color color) {
       }
     }
   }
-  BoardAssert(board_, color, the_best_direct_moves.size() > 0);
+  BoardAssert(board_, the_best_direct_moves.size() > 0);
   // Choose randomly move from the best direct moves.
   my_move = the_best_direct_moves[generateRandomValue(the_best_direct_moves.size() - 1)];
 
@@ -216,7 +217,7 @@ Engine::Move Engine::evaluateBoard(
     } else if (border_values.zero_mate_value_exists == true) {
       moves_to_mate = 0;
     } else {
-      BoardAssert(board, color, border_values.the_smallest_mate_value < 0);
+      BoardAssert(board, border_values.the_smallest_mate_value < 0);
       moves_to_mate = border_values.the_smallest_mate_value - 1;
     }
   } else {
@@ -225,12 +226,12 @@ Engine::Move Engine::evaluateBoard(
     } else if (border_values.zero_mate_value_exists == true) {
       moves_to_mate = 0;
     } else {
-      BoardAssert(board, color, border_values.the_biggest_mate_value > 0);
+      BoardAssert(board, border_values.the_biggest_mate_value > 0);
       moves_to_mate = border_values.the_biggest_mate_value + 1;
     }
   }
 
-  BoardAssert(board, color, (value != BorderValue && value != -BorderValue) || moves_to_mate != BorderValue);
+  BoardAssert(board, (value != BorderValue && value != -BorderValue) || moves_to_mate != BorderValue);
   return Move(value, moves_to_mate, false);
 }
 

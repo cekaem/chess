@@ -38,7 +38,7 @@ TEST_PROCEDURE(test1) {
     board.addFigure(Figure::KING, Field("a8"), Figure::BLACK);
     board.addFigure(Figure::KING, Field("c7"), Figure::WHITE);
     board.addFigure(Figure::ROOK, Field("f6"), Figure::WHITE);
-    auto move = engine.makeMove(Figure::WHITE);
+    auto move = engine.makeMove();
     VERIFY_TRUE(MovesEqual(move, "f6-a6"));
   }
   {
@@ -51,7 +51,7 @@ TEST_PROCEDURE(test1) {
     board.addFigure(Figure::PAWN, Field("c7"), Figure::WHITE);
     board.addFigure(Figure::PAWN, Field("a6"), Figure::BLACK);
     board.addFigure(Figure::PAWN, Field("b6"), Figure::BLACK);
-    auto move = engine.makeMove(Figure::WHITE);
+    auto move = engine.makeMove();
     VERIFY_TRUE(MovesEqual(move, "c7-c8", Figure::KNIGHT));
   }
   {
@@ -66,7 +66,8 @@ TEST_PROCEDURE(test1) {
     board.addFigure(Figure::PAWN, Field("h4"), Figure::BLACK);
     board.addFigure(Figure::BISHOP, Field("b7"), Figure::BLACK);
     board.addFigure(Figure::KNIGHT, Field("g2"), Figure::BLACK);
-    auto move = engine.makeMove(Figure::BLACK);
+    board.setSideToMove(Figure::BLACK);
+    auto move = engine.makeMove();
     VERIFY_TRUE(MovesEqual(move, "g2-f4"));
   }
   {
@@ -79,8 +80,9 @@ TEST_PROCEDURE(test1) {
     board.addFigure(Figure::BISHOP, Field("e3"), Figure::WHITE);
     board.addFigure(Figure::BISHOP, Field("e4"), Figure::WHITE);
     board.addFigure(Figure::PAWN, Field("a7"), Figure::BLACK);
+    board.setSideToMove(Figure::BLACK);
     board.makeMove(Field("a7"), Field("a5"));
-    auto move = engine.makeMove(Figure::WHITE);
+    auto move = engine.makeMove();
     VERIFY_TRUE(MovesEqual(move, "b5-a6"));
   }
  TEST_END
@@ -95,7 +97,7 @@ TEST_PROCEDURE(test2) {
     board.addFigure(Figure::KING, Field("a8"), Figure::BLACK);
     board.addFigure(Figure::KING, Field("d2"), Figure::WHITE);
     board.addFigure(Figure::QUEEN, Field("d1"), Figure::BLACK);
-    auto move = engine.makeMove(Figure::WHITE);
+    auto move = engine.makeMove();
     VERIFY_TRUE(MovesEqual(move, "d2-d1"));
   }
   TEST_END
@@ -109,7 +111,7 @@ TEST_PROCEDURE(test3) {
   board.addFigure(Figure::KING, Field("a6"), Figure::WHITE);
   board.addFigure(Figure::KING, Field("d4"), Figure::BLACK);
   board.addFigure(Figure::PAWN, Field("h7"), Figure::WHITE);
-  auto move = engine.makeMove(Figure::WHITE);
+  auto move = engine.makeMove();
   VERIFY_TRUE(MovesEqual(move, "h7-h8", Figure::QUEEN));
   TEST_END
 }
@@ -129,11 +131,12 @@ TEST_PROCEDURE(test4) {
     board.addFigure(Figure::ROOK, Field("e1"), Figure::WHITE);
     board.addFigure(Figure::PAWN, Field("g2"), Figure::WHITE);
     board.addFigure(Figure::PAWN, Field("h2"), Figure::WHITE);
-    auto move = engine.makeMove(Figure::BLACK);
+    board.setSideToMove(Figure::BLACK);
+    auto move = engine.makeMove();
     VERIFY_TRUE(MovesEqual(move, "d4-g1"));
-    move = engine.makeMove(Figure::WHITE);
+    move = engine.makeMove();
     VERIFY_TRUE(MovesEqual(move, "e1-g1"));
-    move = engine.makeMove(Figure::BLACK);
+    move = engine.makeMove();
     VERIFY_TRUE(MovesEqual(move, "d3-f2"));
   }  
   TEST_END
@@ -153,7 +156,8 @@ TEST_PROCEDURE(test5) {
     board.addFigure(Figure::PAWN, Field("h7"), Figure::BLACK);
     board.addFigure(Figure::BISHOP, Field("g6"), Figure::BLACK);
     board.addFigure(Figure::KNIGHT, Field("h5"), Figure::BLACK);
-    auto move = engine.makeMove(Figure::BLACK);
+    board.setSideToMove(Figure::BLACK);
+    auto move = engine.makeMove();
     VERIFY_TRUE(MovesEqual(move, "h7-h6"));
   }
   TEST_END

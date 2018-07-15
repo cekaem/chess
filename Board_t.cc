@@ -148,6 +148,7 @@ TEST_PROCEDURE(test7) {
   VERIFY_EQUALS(white_figures.size(), 2ul);
   VERIFY_CONTAINS(black_figures, queen);
   VERIFY_EQUALS(black_figures.size(), 2ul);
+  board.setSideToMove(Figure::BLACK);
   board.makeMove(field1, field2);
   VERIFY_EQUALS(board.getFigure(field2), queen);
   VERIFY_EQUALS(queen->getPosition(), field2);
@@ -213,6 +214,7 @@ TEST_PROCEDURE(test10) {
   board.addFigure(Figure::QUEEN, Field("d4"), Figure::BLACK);
   board.addFigure(Figure::KING, Field("c2"), Figure::WHITE);
   board.addFigure(Figure::KING, Field("a8"), Figure::BLACK);
+  board.setSideToMove(Figure::BLACK);
   VERIFY_EQUALS(board.makeMove(Field("d4"), Field("e4")), Board::GameStatus::NONE);
   VERIFY_EQUALS(board.makeMove(Field("c2"), Field("c3")), Board::GameStatus::NONE);
   VERIFY_EQUALS(board.makeMove(Field("e4"), Field("e5")), Board::GameStatus::NONE);
@@ -253,6 +255,7 @@ TEST_PROCEDURE(test11) {
     board.addFigure(Figure::KING, Field("a8"), Figure::WHITE);
     board.addFigure(Figure::KING, Field("c7"), Figure::BLACK);
     board.addFigure(Figure::QUEEN, Field("c5"), Figure::BLACK);
+    board.setSideToMove(Figure::BLACK);
 
     VERIFY_EQUALS(board.makeMove(Field("c5"), Field("a5")), Board::GameStatus::BLACK_WON);
   }
@@ -269,6 +272,7 @@ TEST_PROCEDURE(test11) {
     board.addFigure(Figure::KING, Field("a8"), Figure::WHITE);
     board.addFigure(Figure::KING, Field("c7"), Figure::BLACK);
     board.addFigure(Figure::QUEEN, Field("c5"), Figure::BLACK);
+    board.setSideToMove(Figure::BLACK);
 
     VERIFY_EQUALS(board.makeMove(Field("c5"), Field("b6")), Board::GameStatus::DRAW);
   }
@@ -335,17 +339,18 @@ TEST_PROCEDURE(test14) {
     board.addFigure(Figure::ROOK, Field("f2"), Figure::WHITE);
     board.addFigure(Figure::ROOK, Field("a1"), Figure::WHITE);
     board.addFigure(Figure::KING, Field("e1"), Figure::WHITE);
-    std::string fen = board.createFEN(Figure::BLACK);
-    VERIFY_STRINGS_EQUAL(fen.c_str(), "4k2r/Br5p/2q5/6P1/3n4/8/5R2/R3K3 b KQkq - 0 0");
+    board.setSideToMove(Figure::BLACK);
+    std::string fen = board.createFEN();
+    VERIFY_STRINGS_EQUAL(fen.c_str(), "4k2r/Br5p/2q5/6P1/3n4/8/5R2/R3K3 b KQkq - 0 1");
     board.makeMove(Field("h7"), Field("h5"));
-    fen = board.createFEN(Figure::WHITE);
-    VERIFY_STRINGS_EQUAL(fen.c_str(), "4k2r/Br6/2q5/6Pp/3n4/8/5R2/R3K3 w KQkq h6 0 1");
+    fen = board.createFEN();
+    VERIFY_STRINGS_EQUAL(fen.c_str(), "4k2r/Br6/2q5/6Pp/3n4/8/5R2/R3K3 w KQkq h6 0 2");
   }
   {
     Board board;
     board.setStandardBoard();
-    std::string fen = board.createFEN(Figure::WHITE);
-    VERIFY_STRINGS_EQUAL(fen.c_str(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0");
+    std::string fen = board.createFEN();
+    VERIFY_STRINGS_EQUAL(fen.c_str(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
   }
   {
     Board board;
@@ -355,15 +360,17 @@ TEST_PROCEDURE(test14) {
     board.addFigure(Figure::ROOK, Field("h8"), Figure::BLACK);
     board.addFigure(Figure::ROOK, Field("a1"), Figure::WHITE);
     board.addFigure(Figure::ROOK, Field("h1"), Figure::WHITE);
-    std::string fen = board.createFEN(Figure::WHITE);
-    VERIFY_STRINGS_EQUAL(fen.c_str(), "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 0");
+    board.setSideToMove(Figure::BLACK);
+    std::string fen = board.createFEN();
+    VERIFY_STRINGS_EQUAL(fen.c_str(), "r3k2r/8/8/8/8/8/8/R3K2R b KQkq - 0 1");
     board.makeMove(Field("e8"), Field("f8"));
-    fen = board.createFEN(Figure::WHITE);
-    VERIFY_STRINGS_EQUAL(fen.c_str(), "r4k1r/8/8/8/8/8/8/R3K2R w KQ - 0 1");
+    fen = board.createFEN();
+    VERIFY_STRINGS_EQUAL(fen.c_str(), "r4k1r/8/8/8/8/8/8/R3K2R w KQ - 0 2");
     board.makeMove(Field("a1"), Field("a2"));
+    board.setSideToMove(Figure::WHITE);
     board.makeMove(Field("a2"), Field("a1"));
-    fen = board.createFEN(Figure::WHITE);
-    VERIFY_STRINGS_EQUAL(fen.c_str(), "r4k1r/8/8/8/8/8/8/R3K2R w K - 1 1");
+    fen = board.createFEN();
+    VERIFY_STRINGS_EQUAL(fen.c_str(), "r4k1r/8/8/8/8/8/8/R3K2R b K - 1 2");
   }
   TEST_END
 }
@@ -375,7 +382,7 @@ TEST_PROCEDURE(test15) {
     Board board;
     std::string fen("7r/5pp1/2b5/7k/6n1/5B2/Q3K3/4R2q b Qkq c3 3 7");
     VERIFY_TRUE(board.setBoardFromFEN(fen));
-    VERIFY_EQUALS(board.createFEN(Figure::BLACK), fen);
+    VERIFY_EQUALS(board.createFEN(), fen);
     VerifyFigure(board, "a2", Figure::QUEEN, Figure::WHITE);
     VerifyFigure(board, "e1", Figure::ROOK, Figure::WHITE);
     VerifyFigure(board, "f7", Figure::PAWN, Figure::BLACK);
@@ -486,7 +493,7 @@ TEST_PROCEDURE(test19) {
   VERIFY_EQUALS(board.getFullMoveNumber(), 36u);
   board.makeMove(Field("e6"), Field("f7"));
   VERIFY_EQUALS(board.getFullMoveNumber(), 37u);
-  VERIFY_STRINGS_EQUAL(board.createFEN(Figure::WHITE).c_str(), "8/5k2/7P/8/6K1/8/8/8 w KQkq - 0 37");
+  VERIFY_STRINGS_EQUAL(board.createFEN().c_str(), "8/5k2/7P/8/6K1/8/8/8 w KQkq - 0 37");
   TEST_END
 }
 

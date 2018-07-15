@@ -167,7 +167,7 @@ TEST_PROCEDURE(test3) {
   TEST_START
   {
     Board board;
-    const Figure* bishop = board.addFigure(Figure::BISHOP, Field(Field::D, Field::FOUR), Figure::BLACK);
+    const Figure* bishop = board.addFigure(Figure::BISHOP, Field(Field::D, Field::FOUR), Figure::WHITE);
     auto moves = board.calculateMovesForFigure(bishop);
     VERIFY_CONTAINS(moves, createMove(bishop, Field::C, Field::THREE));
     VERIFY_CONTAINS(moves, createMove(bishop, Field::B, Field::TWO));
@@ -368,13 +368,16 @@ TEST_PROCEDURE(test6) {
     board.addFigure(Figure::ROOK, Field(Field::A, Field::EIGHT), Figure::BLACK);
     const Figure* black_rook = board.addFigure(Figure::ROOK, Field(Field::H, Field::EIGHT), Figure::BLACK);
     VERIFY_EQUALS(board.makeMove(Field(Field::A, Field::ONE), Field(Field::A, Field::TWO)), Board::GameStatus::NONE);
+    board.setSideToMove(Figure::WHITE);
     board.makeMove(Field(Field::A, Field::TWO), Field(Field::A, Field::ONE));
     auto moves = board.calculateMovesForFigure(white_king);
     VERIFY_CONTAINS(moves, createMove(white_king, Field::G, Field::ONE, false, false, false,
                                       Figure::PAWN, Figure::Move::Castling::K));
     VERIFY_DOES_NOT_CONTAIN(moves, createMove(white_king, Field::C, Field::ONE, false, false, false,
                                               Figure::PAWN, Figure::Move::Castling::Q));
+    board.setSideToMove(Figure::WHITE);
     board.makeMove(Field(Field::E, Field::ONE), Field(Field::E, Field::TWO));
+    board.setSideToMove(Figure::WHITE);
     board.makeMove(Field(Field::E, Field::TWO), Field(Field::E, Field::ONE));
     moves = board.calculateMovesForFigure(white_king);
     VERIFY_DOES_NOT_CONTAIN(moves, createMove(white_king, Field::C, Field::ONE, false, false, false,
@@ -394,6 +397,7 @@ TEST_PROCEDURE(test6) {
     board.addFigure(Figure::PAWN, Field(Field::E, Field::THREE), Figure::BLACK);
     board.addFigure(Figure::ROOK, Field(Field::F, Field::ONE), Figure::WHITE);
     board.addFigure(Figure::KING, Field(Field::A, Field::EIGHT), Figure::BLACK);
+    board.setSideToMove(Figure::BLACK);
     board.makeMove(Field(Field::B, Field::FIVE), Field(Field::C, Field::SIX));
     auto moves = board.calculateMovesForFigure(king);
     VERIFY_DOES_NOT_CONTAIN(moves, createMove(king, Field::G, Field::TWO, false, true));
@@ -453,6 +457,7 @@ TEST_PROCEDURE(test7) {
     board.addFigure(Figure::BISHOP, Field("e3"), Figure::WHITE);
     board.addFigure(Figure::BISHOP, Field("e4"), Figure::WHITE);
     board.addFigure(Figure::PAWN, Field("a7"), Figure::BLACK);
+    board.setSideToMove(Figure::BLACK);
     board.makeMove(Field("a7"), Field("a5"));
     auto moves = board.calculateMovesForFigure(pawn);
     VERIFY_CONTAINS(moves, createMove(pawn, Field::A, Field::SIX, true, true, true));
@@ -533,6 +538,7 @@ TEST_PROCEDURE(test10) {
     VERIFY_CONTAINS(moves, createMove(pawn, Field::D, Field::ONE, false, true, true, Figure::QUEEN));
     Field field = Field(Field::D, Field::ONE);
     try {
+      board.setSideToMove(Figure::BLACK);
       board.makeMove(Field(Field::D, Field::TWO), field);
     } catch (const Board::IllegalMoveException& e) {
       VERIFY_EQUALS(e.field_, field);

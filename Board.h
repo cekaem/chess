@@ -14,14 +14,14 @@
 
 
 #ifdef _ASSERTS_ON_
-#define BoardAssert(_board_, _side_, _condition_)\
+#define BoardAssert(_board_, _condition_)\
   if ((_condition_) == false) {\
-    std::cerr << (_board_).createFEN(_side_) << std::endl;\
+    std::cerr << (_board_).createFEN() << std::endl;\
     assert(_condition_);\
   }
 #else
 #define NOOP
-#define BoardAssert(_board_, _side_, _condition_) NOOP
+#define BoardAssert(_board_, _condition_) NOOP
 #endif  // _DEBUG_
  
 
@@ -71,7 +71,8 @@ class Board {
         Field::Letter epf,
         std::array<bool, static_cast<int>(Figure::Move::Castling::LAST)>& cast,
         unsigned hc,
-        unsigned fm)
+        unsigned fm,
+        Figure::Color stm)
       : old_field(move.old_field),
         new_field(move.new_field),
         bitten_figure(std::move(bf)),
@@ -80,7 +81,8 @@ class Board {
         castling_move(move.castling != Figure::Move::Castling::LAST),
         castlings(cast),
         halfmove_clock(hc),
-        fullmove_number(fm) {
+        fullmove_number(fm),
+        side_to_move(stm) {
     }
 
     ReversibleMove(ReversibleMove&& other)
@@ -92,7 +94,8 @@ class Board {
         castling_move(other.castling_move),
         castlings(other.castlings),
         halfmove_clock(other.halfmove_clock),
-        fullmove_number(other.fullmove_number) {
+        fullmove_number(other.fullmove_number),
+        side_to_move(other.side_to_move) {
     }
 
     Field old_field;
@@ -103,7 +106,8 @@ class Board {
     bool castling_move{false};
     std::array<bool, static_cast<int>(Figure::Move::Castling::LAST)> castlings{true, true, true, true};
     unsigned halfmove_clock{0};
-    unsigned fullmove_number{0};
+    unsigned fullmove_number{1};
+    Figure::Color side_to_move{Figure::WHITE};
   };
 
   class ReversibleMoveWrapper {
@@ -140,6 +144,8 @@ class Board {
   const King* getKing(Figure::Color color) const noexcept;
   void clearBoard();
   void setStandardBoard();
+  Figure::Color getSideToMove() const { return side_to_move_; }
+  void setSideToMove(Figure::Color side_to_move) { side_to_move_ = side_to_move; }
   GameStatus getGameStatus(Figure::Color color);
   void addBoardDrawer(BoardDrawer* drawer) noexcept;
   void removeBoardDrawer(BoardDrawer* drawer) noexcept;
@@ -148,7 +154,7 @@ class Board {
   bool isKingCheckmated(Figure::Color color);
   bool isKingStalemated(Figure::Color color);
 
-  std::string createFEN(Figure::Color side_to_move) const;
+  std::string createFEN() const;
   bool setBoardFromFEN(const std::string& fen);
 
   bool operator==(const Board& other) const noexcept;
@@ -182,7 +188,8 @@ class Board {
   std::vector<ReversibleMove> reversible_moves_;
   std::array<bool, static_cast<int>(Figure::Move::Castling::LAST)> castlings_{true, true, true, true};
   unsigned halfmove_clock_{0};
-  unsigned fullmove_number_{0};
+  unsigned fullmove_number_{1};
+  Figure::Color side_to_move_{Figure::WHITE};
 };
 
 class BoardDrawer {

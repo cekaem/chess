@@ -185,7 +185,7 @@ int main() {
                               std::get<1>(human_move),
                               std::get<2>(human_move));
     } else {
-      engine.makeMove(Figure::WHITE);
+      engine.makeMove();
       status = board.getGameStatus(Figure::BLACK);
     }
     if (status == Board::GameStatus::NONE) {
@@ -195,7 +195,7 @@ int main() {
                                 std::get<1>(human_move),
                                 std::get<2>(human_move));
       } else {
-        engine.makeMove(Figure::BLACK);
+        engine.makeMove();
         status = board.getGameStatus(Figure::WHITE);
       }
     }

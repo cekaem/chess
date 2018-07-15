@@ -54,6 +54,7 @@ Board::Board(const Board& other) noexcept {
   en_passant_file_ = other.en_passant_file_;
   halfmove_clock_ = other.halfmove_clock_;
   fullmove_number_ = other.fullmove_number_;
+  side_to_move_ = other.side_to_move_;
 }
 
 bool Board::isMoveValid(Field old_field, Field new_field) {
@@ -62,12 +63,16 @@ bool Board::isMoveValid(Field old_field, Field new_field) {
     return false;
   }
 
+  if (figure->getColor() != side_to_move_) {
+    return false;
+  }
+
   try {
     GameStatus status = getGameStatus(figure->getColor());
     if (status != GameStatus::NONE) {
       return false;
     }
-  } catch(const BadBoardStatusException&) {
+  } catch (const BadBoardStatusException&) {
     return false;
   }
 
@@ -135,7 +140,7 @@ std::unique_ptr<Figure> Board::removeFigure(Field field) {
           return iter.get() == figure;
         });
 
-  BoardAssert(*this, figure->getColor(), iter != figures_.end());
+  BoardAssert(*this, iter != figures_.end());
   std::unique_ptr<Figure> result = std::move(*iter);
   figures_.erase(iter);
 
@@ -207,6 +212,10 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
 
   Figure::Color color = figure->getColor();
 
+  if (color != side_to_move_ && rev_mode == false) {
+    throw IllegalMoveException(figure, move.new_field);
+  }
+
   std::unique_ptr<Figure> beaten_figure;
   if (fields_[move.new_field.letter][move.new_field.number] != nullptr) {
     beaten_figure = std::move(removeFigure(move.new_field));
@@ -233,7 +242,7 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
   // Handle pawn promotion
   std::unique_ptr<Figure> promoted_pawn;
   if (move.pawn_promotion != Figure::PAWN) {
-    BoardAssert(*this, figure->getColor(), figure->getType() == Figure::PAWN);
+    BoardAssert(*this, figure->getType() == Figure::PAWN);
     const Pawn* pawn = static_cast<const Pawn*>(figure);
     addFigure(move.pawn_promotion, move.new_field, pawn->getColor());
     promoted_pawn = std::move(removeFigure(move.old_field));
@@ -252,9 +261,12 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
                                    en_passant_file_,
                                    castlings_,
                                    halfmove_clock_,
-                                   fullmove_number_);
+                                   fullmove_number_,
+                                   side_to_move_);
     reversible_moves_.push_back(std::move(reversible_move));
   }
+
+  side_to_move_ = !side_to_move_;
 
   if (color == Figure::BLACK) {
     ++fullmove_number_;
@@ -269,7 +281,7 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
 
   // Handle castling
   if (move.castling != Figure::Move::Castling::LAST) {
-    BoardAssert(*this, figure->getColor(), figure->getType() == Figure::KING);
+    BoardAssert(*this, figure->getType() == Figure::KING);
     Field::Letter old_l = move.castling == Figure::Move::Castling::K || move.castling == Figure::Move::Castling::k ? Field::H : Field::A;
     Field old_rook_position(old_l, move.old_field.number);
     Field::Letter new_l = move.castling == Figure::Move::Castling::K || move.castling == Figure::Move::Castling::k ? Field::F : Field::D;
@@ -401,7 +413,7 @@ bool Board::isKingStalemated(Figure::Color color) {
   return is_stalemate;
 }
 
-std::string Board::createFEN(Figure::Color side_to_move) const {
+std::string Board::createFEN() const {
   std::stringstream fen;
 
   for (int j = BoardSize - 1; j >= 0; --j) {
@@ -427,7 +439,7 @@ std::string Board::createFEN(Figure::Color side_to_move) const {
   }
   fen << ' ';
 
-  fen << (side_to_move == Figure::WHITE ? 'w' : 'b');
+  fen << (side_to_move_ == Figure::WHITE ? 'w' : 'b');
   fen << ' ';
 
   std::stringstream castlings;
@@ -454,7 +466,7 @@ std::string Board::createFEN(Figure::Color side_to_move) const {
     fen << '-';
   } else {
     fen << static_cast<char>(en_passant_file_ + 'a');
-    fen << (side_to_move == Figure::WHITE ? 6 : 3);
+    fen << (side_to_move_ == Figure::WHITE ? 6 : 3);
   }
   fen << ' ' << (halfmove_clock_ / 2) << ' ' << fullmove_number_;
 
@@ -494,8 +506,15 @@ bool Board::setBoardFromFEN(const std::string& fen) {
   }
   
   const char side_to_move = rest_fen[1];
-  if (side_to_move != 'w' && side_to_move != 'b') {
-    return false;
+  switch (side_to_move) {
+    case 'w':
+      side_to_move_ = Figure::WHITE;
+      break;
+    case 'b':
+      side_to_move_ = Figure::BLACK;
+      break;
+    default:
+      return false;
   }
 
   rest_fen = rest_fen.substr(3);
@@ -517,7 +536,7 @@ bool Board::setBoardFromFEN(const std::string& fen) {
     return false;
   }
   std::string en_passant_file = rest_fen.substr(0, space_position);
-  if (setEnPassantFileFromFen(en_passant_file, side_to_move == 'w') == false) {
+  if (setEnPassantFileFromFen(en_passant_file, side_to_move_ == Figure::WHITE) == false) {
     return false;
   }
   rest_fen = rest_fen.substr(space_position);
@@ -726,7 +745,7 @@ bool Board::isDraw() const {
 }
 
 bool Board::canCastle(Figure::Move::Castling castling) const {
-  BoardAssert(*this, Figure::WHITE, castling < Figure::Move::Castling::LAST);
+  BoardAssert(*this, castling < Figure::Move::Castling::LAST);
   if(castlings_[static_cast<size_t>(castling)] == false) {
     return false;
   }
@@ -853,7 +872,7 @@ const King* Board::getKing(Figure::Color color) const noexcept {
 }
 
 void Board::undoLastReversibleMove() {
-  BoardAssert(*this, Figure::WHITE, reversible_moves_.empty() == false);
+  BoardAssert(*this, reversible_moves_.empty() == false);
   ReversibleMove reversible_move = std::move(reversible_moves_.back());
   reversible_moves_.pop_back();
   Figure* promoted_pawn = reversible_move.promoted_pawn.get();
@@ -883,6 +902,7 @@ void Board::undoLastReversibleMove() {
   castlings_ = reversible_move.castlings;
   halfmove_clock_ = reversible_move.halfmove_clock;
   fullmove_number_ = reversible_move.fullmove_number;
+  side_to_move_ = reversible_move.side_to_move;
 }
 
 void Board::undoAllReversibleMoves() {

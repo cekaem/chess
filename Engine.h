@@ -15,7 +15,7 @@
 class Engine {
  public:
   Engine(Board& board, unsigned search_depth, unsigned max_number_of_threads, std::ostream& debug_stream);
-  Figure::Move makeMove(Figure::Color color);
+  Figure::Move makeMove();
 
  private:
   static const int BorderValue = 1000;
