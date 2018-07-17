@@ -24,17 +24,12 @@ bool MovesEqual(Figure::Move move1,
          move1.pawn_promotion == promotion;
 }
 
-class NullBuffer : public std::streambuf {
-} null_buffer;
-
-std::ostream null_stream(&null_buffer);
-
 // Checks if engine detects mate in one
 TEST_PROCEDURE(test1) {
   TEST_START
   {
     Board board;
-    Engine engine(board, 3, 4, null_stream);
+    Engine engine(board, 3, 4);
     board.addFigure(Figure::KING, Field("a8"), Figure::BLACK);
     board.addFigure(Figure::KING, Field("c7"), Figure::WHITE);
     board.addFigure(Figure::ROOK, Field("f6"), Figure::WHITE);
@@ -43,7 +38,7 @@ TEST_PROCEDURE(test1) {
   }
   {
     Board board;
-    Engine engine(board, 3, 4, null_stream);
+    Engine engine(board, 3, 4);
     board.addFigure(Figure::KING, Field("a7"), Figure::BLACK);
     board.addFigure(Figure::KING, Field("h1"), Figure::WHITE);
     board.addFigure(Figure::BISHOP, Field("d5"), Figure::WHITE);
@@ -56,7 +51,7 @@ TEST_PROCEDURE(test1) {
   }
   {
     Board board;
-    Engine engine(board, 3, 4, null_stream);
+    Engine engine(board, 3, 4);
     board.addFigure(Figure::KING, Field("e1"), Figure::BLACK);
     board.addFigure(Figure::KING, Field("h1"), Figure::WHITE);
     board.addFigure(Figure::PAWN, Field("g3"), Figure::WHITE);
@@ -72,7 +67,7 @@ TEST_PROCEDURE(test1) {
   }
   {
     Board board;
-    Engine engine(board, 1, 1, null_stream);
+    Engine engine(board, 1, 1);
     board.addFigure(Figure::KING, Field("b8"), Figure::BLACK);
     board.addFigure(Figure::KING, Field("d8"), Figure::WHITE);
     board.addFigure(Figure::PAWN, Field("b5"), Figure::WHITE);
@@ -93,7 +88,7 @@ TEST_PROCEDURE(test2) {
   TEST_START
   {
     Board board;
-    Engine engine(board, 3, 4, null_stream);
+    Engine engine(board, 3, 4);
     board.addFigure(Figure::KING, Field("a8"), Figure::BLACK);
     board.addFigure(Figure::KING, Field("d2"), Figure::WHITE);
     board.addFigure(Figure::QUEEN, Field("d1"), Figure::BLACK);
@@ -107,7 +102,7 @@ TEST_PROCEDURE(test2) {
 TEST_PROCEDURE(test3) {
   TEST_START
   Board board;
-  Engine engine(board, 3, 4, null_stream);
+  Engine engine(board, 3, 4);
   board.addFigure(Figure::KING, Field("a6"), Figure::WHITE);
   board.addFigure(Figure::KING, Field("d4"), Figure::BLACK);
   board.addFigure(Figure::PAWN, Field("h7"), Figure::WHITE);
@@ -121,7 +116,7 @@ TEST_PROCEDURE(test4) {
   TEST_START
   {
     Board board;
-    Engine engine(board, 3, 4, null_stream);
+    Engine engine(board, 3, 4);
     board.addFigure(Figure::KING, Field("h1"), Figure::WHITE);
     board.addFigure(Figure::KING, Field("b5"), Figure::BLACK);
     board.addFigure(Figure::BISHOP, Field("b6"), Figure::BLACK);
@@ -147,7 +142,7 @@ TEST_PROCEDURE(test5) {
   TEST_START
   {
     Board board;
-    Engine engine(board, 4, 4, null_stream);
+    Engine engine(board, 4, 4);
     board.addFigure(Figure::KING, Field("b4"), Figure::WHITE);
     board.addFigure(Figure::QUEEN, Field("d5"), Figure::WHITE);
     board.addFigure(Figure::KING, Field("g8"), Figure::BLACK);

@@ -17,16 +17,16 @@ $(BIN_DIR)/board_tests: $(OBJ_DIR)/Board_t.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Figur
 $(BIN_DIR)/figure_tests: $(OBJ_DIR)/Figure_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o Board.h Figure.h Field.h
 	$(CXX) $(CFLAGS) -o $(BIN_DIR)/figure_tests $(OBJ_DIR)/Figure_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o
 
-$(BIN_DIR)/engine_tests: $(OBJ_DIR)/Engine_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Engine.o Board.h Figure.h Field.h Engine.h
-	$(CXX) $(CFLAGS) -o $(BIN_DIR)/engine_tests $(OBJ_DIR)/Engine_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Engine.o
+$(BIN_DIR)/engine_tests: $(OBJ_DIR)/Engine_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o Board.h Figure.h Field.h Engine.h
+	$(CXX) $(CFLAGS) -o $(BIN_DIR)/engine_tests $(OBJ_DIR)/Engine_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o
 
-$(BIN_DIR)/game: $(OBJ_DIR)/Game.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/PgnCreator.o Board.h Figure.h Field.h
-	$(CXX) $(CFLAGS) -o $(BIN_DIR)/game $(OBJ_DIR)/Game.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/PgnCreator.o
+$(BIN_DIR)/game: $(OBJ_DIR)/Game.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/PgnCreator.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o Board.h Figure.h Field.h
+	$(CXX) $(CFLAGS) -o $(BIN_DIR)/game $(OBJ_DIR)/Game.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/PgnCreator.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o
 
 $(OBJ_DIR)/Game.o: Game.cc Engine.h Board.h Figure.h Field.h PgnCreator.h
 	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/Game.o Game.cc
 
-$(OBJ_DIR)/Engine.o: Engine.cc Engine.h Board.h Figure.h Field.h utils/Log.h
+$(OBJ_DIR)/Engine.o: Engine.cc Engine.h Board.h Figure.h Field.h utils/SocketLog.h
 	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/Engine.o Engine.cc
 
 $(OBJ_DIR)/Board_t.o: Board_t.cc Board.h utils/Test.h utils/Mock.h Figure.h Field.h
@@ -46,6 +46,12 @@ $(OBJ_DIR)/Figure.o: Figure.cc Figure.h Field.h
 
 $(OBJ_DIR)/PgnCreator.o: PgnCreator.cc PgnCreator.h Figure.h Board.h
 	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/PgnCreator.o PgnCreator.cc
+
+$(OBJ_DIR)/Socket.o: utils/Socket.cc utils/Socket.h
+	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/Socket.o utils/Socket.cc
+
+$(OBJ_DIR)/SocketLog.o: utils/SocketLog.cc utils/SocketLog.h utils/Socket.h
+	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/SocketLog.o utils/SocketLog.cc
 
 clean:
 	rm -f $(BIN_DIR)/*

@@ -307,21 +307,18 @@ Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
     }
   }
 
+  if (figure != nullptr && figure->getType() != Figure::PAWN && move.figure_beaten == false) {
+    ++halfmove_clock_;
+  } else {
+    halfmove_clock_ = 0;
+  }
+
   GameStatus status = GameStatus::NONE;
   if (rev_mode == false) {
     status = getGameStatus(!color);
     if (status != GameStatus::NONE) {
       onGameFinished(status);
     }
-  }
-
-  if (figure != nullptr && figure->getType() != Figure::PAWN && move.figure_beaten == false) {
-    ++halfmove_clock_;
-    if (halfmove_clock_ >= 100 && rev_mode == false) {
-      onGameFinished(GameStatus::DRAW);
-    }
-  } else {
-    halfmove_clock_ = 0;
   }
 
   return status;
@@ -735,6 +732,9 @@ bool Board::isDraw() const {
   king = getKing(Figure::BLACK);
   if (king == nullptr) {
     return false;
+  }
+  if (halfmove_clock_ >= 100) {
+    return true;
   }
   std::vector<const Figure*> white_figures = getFigures(Figure::WHITE);
   std::vector<const Figure*> black_figures = getFigures(Figure::BLACK);

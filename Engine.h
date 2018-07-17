@@ -9,16 +9,18 @@
 
 #include "Board.h"
 #include "Figure.h"
-#include "utils/Log.h"
+#include "utils/SocketLog.h"
 
 
 class Engine {
  public:
-  Engine(Board& board, unsigned search_depth, unsigned max_number_of_threads, std::ostream& debug_stream);
+  Engine(Board& board, unsigned search_depth, unsigned max_number_of_threads, bool enable_logging = false);
+  ~Engine();
   Figure::Move makeMove();
 
  private:
   static const int BorderValue = 1000;
+  static const int LoggerPort = 9090;
 
   struct Move {
     Move() {}
@@ -54,7 +56,7 @@ class Engine {
   unsigned number_of_threads_working_{0u};
   std::mutex number_of_threads_working_mutex_;
   std::condition_variable number_of_threads_working_cv_;
-  mutable utils::Log debug_stream_;
+  mutable utils::SocketLog debug_stream_;
   int moves_count_{0};
 };
 
