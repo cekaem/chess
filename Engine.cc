@@ -11,7 +11,7 @@
 #include "Board.h"
 #include "Figure.h"
 
-using logging::Log;
+using utils::Log;
 
 Engine::Engine(
     Board& board,

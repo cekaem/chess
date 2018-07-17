@@ -1,7 +1,7 @@
 /* Component tests for class Board */
 
-#include "Mock.h"
-#include "Test.h"
+#include "utils/Mock.h"
+#include "utils/Test.h"
 #include "Board.h"
 
 #include "Field.h"

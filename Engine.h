@@ -9,7 +9,7 @@
 
 #include "Board.h"
 #include "Figure.h"
-#include "Log.h"
+#include "utils/Log.h"
 
 
 class Engine {
@@ -54,7 +54,7 @@ class Engine {
   unsigned number_of_threads_working_{0u};
   std::mutex number_of_threads_working_mutex_;
   std::condition_variable number_of_threads_working_cv_;
-  mutable logging::Log debug_stream_;
+  mutable utils::Log debug_stream_;
   int moves_count_{0};
 };
 

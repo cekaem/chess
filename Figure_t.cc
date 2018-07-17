@@ -1,6 +1,6 @@
 /* Component tests for class Figure */
 
-#include "Test.h"
+#include "utils/Test.h"
 #include "Figure.h"
 
 #include "Board.h"

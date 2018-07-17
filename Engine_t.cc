@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <utility>
 
-#include "Test.h"
+#include "utils/Test.h"
 #include "Board.h"
 #include "Engine.h"
 #include "Field.h"
