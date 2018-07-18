@@ -3,7 +3,9 @@
 
 #include <exception>
 #include <iostream>
+#include <map>
 #include <string>
+#include <vector>
 
 #include "Board.h"
 #include "Engine.h"
@@ -18,11 +20,21 @@ class UCIHandler {
     const std::string command;
   };
 
+  struct EndProgramException : public std::exception {};
+
   UCIHandler(std::istream& istr, std::ostream& ostr, bool enable_logging = false);
   void start();
 
  private:
+  const std::map<const char*,
+                 void(UCIHandler::*)(const std::vector<std::string>&)> handlers_ = {
+    {"uci", &UCIHandler::handleCommandUCI},
+    {"quit", &UCIHandler::handleCommandQuit}
+  };
+
   void handleCommand(const std::string& command);
+  void handleCommandUCI(const std::vector<std::string>& params);
+  void handleCommandQuit(const std::vector<std::string>& params);
 
   std::istream& istr_;
   std::ostream& ostr_;

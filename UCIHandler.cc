@@ -2,7 +2,9 @@
 
 #include <algorithm>
 #include <iostream>
+#include <map>
 #include <string>
+#include <vector>
 
 using utils::SocketLog;
 
@@ -34,7 +36,12 @@ void UCIHandler::start() {
       std::getline(istr_, command);
       handleCommand(command);
     } catch (const UnknownCommandException& e) {
-      debug_stream_ << e.command << SocketLog::endl;
+      std::string error_message("Unrecognized command: ");
+      error_message.append(e.what());
+      debug_stream_ << error_message << SocketLog::endl;
+      ostr_ << error_message << std::endl;
+    } catch (const EndProgramException&) {
+      break;
     }
   }
 }
@@ -50,5 +57,39 @@ void UCIHandler::handleCommand(const std::string& line) {
   } else {
     cmd = command.substr(0, space_position);
   }
+  auto iter = std::find_if(std::begin(handlers_),
+                           std::end(handlers_),
+                           [cmd] (const auto& m) -> bool {
+                             return cmd == m.first;
+                           });
+  if (iter == handlers_.end()) {
+    throw UnknownCommandException(cmd);
+  }
   debug_stream_ << "Recognized command: " << cmd << SocketLog::endl;
+
+  std::vector<std::string> params;
+  while (space_position != std::string::npos) {
+    command = command.substr(space_position);
+    ltrim(command);
+    space_position = command.find(' ');
+    std::string param;
+    if (space_position == std::string::npos) {
+      param = command;
+    } else {
+      param = command.substr(0, space_position);
+    }
+    if (param.empty() == false) {
+      params.push_back(param);
+    }
+  }
+
+  (this->*(iter->second))(params);
+}
+
+void UCIHandler::handleCommandUCI(const std::vector<std::string>& params) {
+  ostr_ << "uciok" << std::endl;
+}
+
+void UCIHandler::handleCommandQuit(const std::vector<std::string>& params) {
+  throw EndProgramException();
 }
