@@ -1,4 +1,5 @@
 #ifndef ENGINE_H
+#define ENGINE_H
 
 #include <condition_variable>
 #include <exception>
@@ -14,13 +15,17 @@
 
 class Engine {
  public:
-  Engine(Board& board, unsigned search_depth, unsigned max_number_of_threads, bool enable_logging = false);
+  Engine(Board& board, unsigned search_depth, unsigned max_number_of_threads, utils::SocketLog& debug_stream);
+  Engine(Board& board, utils::SocketLog& debug_stream);
   ~Engine();
+  void setNumberOfThreads(unsigned number_of_threads) { max_number_of_threads_ = number_of_threads; }
+  void setSearchDepth(unsigned search_depth) { search_depth_ = search_depth_; }
   Figure::Move makeMove();
 
  private:
   static const int BorderValue = 1000;
-  static const int LoggerPort = 9090;
+  static const unsigned DefaultSearchDepth = 3;
+  static const unsigned DefaultNumberOfThreads = 5;
 
   struct Move {
     Move() {}
@@ -49,16 +54,15 @@ class Engine {
   int generateRandomValue(int max) const;
 
   Board& board_;
+  utils::SocketLog& debug_stream_;
   std::vector<std::pair<Figure::Move, Move>> evaluated_moves_;
   std::mutex evaluated_moves_mutex_;
-  unsigned search_depth_{1u};
-  unsigned max_number_of_threads_{1u};
+  unsigned search_depth_{DefaultSearchDepth};
+  unsigned max_number_of_threads_{DefaultNumberOfThreads};
   unsigned number_of_threads_working_{0u};
   std::mutex number_of_threads_working_mutex_;
   std::condition_variable number_of_threads_working_cv_;
-  mutable utils::SocketLog debug_stream_;
   int moves_count_{0};
 };
 
-#define ENGINE_H
 #endif  // ENGINE_H

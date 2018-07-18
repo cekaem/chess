@@ -17,16 +17,15 @@ Engine::Engine(
     Board& board,
     unsigned search_depth,
     unsigned max_number_of_threads,
-    bool enable_logging)
-  : board_(board),
-    search_depth_(search_depth),
-    max_number_of_threads_(max_number_of_threads) {
+    SocketLog& debug_stream)
+  : Engine(board, debug_stream) {
+  search_depth_ = search_depth;
+  max_number_of_threads_ = max_number_of_threads;
+}
+
+Engine::Engine(Board& board, SocketLog& debug_stream)
+  : board_(board), debug_stream_(debug_stream) {
   srand(static_cast<unsigned int>(time(nullptr)));
-  if (enable_logging == true) {
-    std::cerr << "Waiting for logger to connect..." << std::endl;
-    debug_stream_.waitForClient(LoggerPort);
-    std::cerr << "Logger connected." << std::endl;
-  }
 }
 
 Engine::~Engine() {

@@ -175,7 +175,8 @@ int main() {
   PgnCreator pgn_creator(std::cout);
   board.addBoardDrawer(&drawer);
   board.addBoardDrawer(&pgn_creator);
-  Engine engine(board, engine_strength, number_of_threads, true);
+  utils::SocketLog logger;
+  Engine engine(board, engine_strength, number_of_threads, logger);
   
   Board::GameStatus status = Board::GameStatus::NONE;
   while (status == Board::GameStatus::NONE) {
