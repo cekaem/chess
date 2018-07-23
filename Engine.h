@@ -5,7 +5,6 @@
 #include <exception>
 #include <iostream>
 #include <mutex>
-#include <utility>
 #include <vector>
 
 #include "Board.h"
@@ -29,11 +28,13 @@ class Engine {
 
   struct Move {
     Move() {}
+    Move(Figure::Move fmove) : move(fmove) {}
     Move(Figure::Move fmove, int v, int m, bool d) : move(fmove), value(v), moves_to_mate(m), is_draw(d) {}
     Figure::Move move;
     int value{0};
     int moves_to_mate{0};
     bool is_draw{false};
+    std::vector<Engine::Move> moves;
   };
 
   struct BorderValues {
@@ -61,11 +62,16 @@ class Engine {
                      int depths_remaining,
                      std::vector<Figure::Move>& moves) const;
 
+  void generateTree(
+      Board& board,
+      Figure::Color color,
+      std::vector<Engine::Move>& moves);
+
   int generateRandomValue(int max) const;
 
   Board& board_;
   utils::SocketLog& debug_stream_;
-  std::vector<std::pair<Figure::Move, Move>> evaluated_moves_;
+  std::vector<Move> evaluated_moves_;
   std::mutex evaluated_moves_mutex_;
   unsigned search_depth_{DefaultSearchDepth};
   unsigned max_number_of_threads_{DefaultNumberOfThreads};

@@ -150,6 +150,7 @@ class Board {
   void addBoardDrawer(BoardDrawer* drawer) noexcept;
   void removeBoardDrawer(BoardDrawer* drawer) noexcept;
   std::vector<Figure::Move> calculateMovesForFigure(const Figure* figure);
+  std::vector<Figure::Move> calculateMovesForFigures(Figure::Color color);
   bool isKingChecked(Figure::Color color);
   bool isKingCheckmated(Figure::Color color);
   bool isKingStalemated(Figure::Color color);

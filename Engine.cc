@@ -6,7 +6,6 @@
 #include <iostream>
 #include <mutex>
 #include <thread>
-#include <utility>
 
 #include "Board.h"
 #include "Figure.h"
@@ -73,19 +72,15 @@ Figure::Move Engine::makeMove() {
     throw Board::BadBoardStatusException(&board_);
   }
 
-  Board copy = board_;
-  std::vector<const Figure*> figures = board_.getFigures(color);
-  for (const Figure* figure: figures) {
-    std::vector<Figure::Move> moves = copy.calculateMovesForFigure(figure);
-    for (Figure::Move& move: moves) {
-      std::unique_lock<std::mutex> ul(number_of_threads_working_mutex_);
-      number_of_threads_working_cv_.wait(
-          ul, [this] { return number_of_threads_working_ < max_number_of_threads_; });
-      std::thread t(&Engine::evaluateBoardMain, this, move);
-      t.detach();
-      ++number_of_threads_working_;
-      debug_stream_ << SocketLog::lock << "Number of working threads: " << number_of_threads_working_ << SocketLog::endl;
-    }
+  std::vector<Figure::Move> moves = board_.calculateMovesForFigures(color);
+  for (Figure::Move& move: moves) {
+    std::unique_lock<std::mutex> ul(number_of_threads_working_mutex_);
+    number_of_threads_working_cv_.wait(
+        ul, [this] { return number_of_threads_working_ < max_number_of_threads_; });
+    std::thread t(&Engine::evaluateBoardMain, this, move);
+    t.detach();
+    ++number_of_threads_working_;
+    debug_stream_ << SocketLog::lock << "Number of working threads: " << number_of_threads_working_ << SocketLog::endl;
   }
 
   // Wait for all threads to finish moves evaluation
@@ -94,11 +89,7 @@ Figure::Move Engine::makeMove() {
 
   // Iterate through all moves and look for mate and for best value.
   // Also look for possible opponent's mate.
-  std::vector<Move> engine_moves;
-  for (auto& move: evaluated_moves_) {
-    engine_moves.push_back(move.second);
-  }
-  auto border_values = findBorderValues(engine_moves);
+  auto border_values = findBorderValues(evaluated_moves_);
   int moves_to_mate = 0;
   int the_best_value = border_values.the_biggest_value;
   if (border_values.the_smallest_positive_mate_value != BorderValue) {
@@ -117,11 +108,11 @@ Figure::Move Engine::makeMove() {
   std::vector<Figure::Move> the_best_moves;
   for (auto& move: evaluated_moves_) {
     if (moves_to_mate != 0) {
-      if (move.second.moves_to_mate == moves_to_mate) {
-        the_best_moves.push_back(move.first);
+      if (move.moves_to_mate == moves_to_mate) {
+        the_best_moves.push_back(move.move);
       }
-    } else if (move.second.moves_to_mate == 0 && move.second.value == the_best_value) {
-      the_best_moves.push_back(move.first);
+    } else if (move.moves_to_mate == 0 && move.value == the_best_value) {
+      the_best_moves.push_back(move.move);
     }
   }
 
@@ -199,17 +190,14 @@ Engine::Move Engine::evaluateBoard(
 
   std::vector<Move> engine_moves;
 
-  std::vector<const Figure*> figures = board.getFigures(color);
-  for (const Figure* figure: figures) {
-    std::vector<Figure::Move> moves = board.calculateMovesForFigure(figure);
-    for (Figure::Move& move: moves) {
-      auto wrapper = board.makeReversibleMove(move);
-      all_moves.push_back(move);
-      Engine::Move engine_move;
-      engine_move = evaluateBoard(board, move, !color, !my_move, depths_remaining - 1, all_moves);
-      all_moves.pop_back();
-      engine_moves.push_back(engine_move);
-    }
+  std::vector<Figure::Move> moves = board.calculateMovesForFigures(color);
+  for (Figure::Move& move: moves) {
+    auto wrapper = board.makeReversibleMove(move);
+    all_moves.push_back(move);
+    Engine::Move engine_move;
+    engine_move = evaluateBoard(board, move, !color, !my_move, depths_remaining - 1, all_moves);
+    all_moves.pop_back();
+    engine_moves.push_back(engine_move);
   }
 
   int value = 0;
@@ -253,11 +241,27 @@ void Engine::evaluateBoardMain(
   copy.makeMove(move);
   Move engine_move = evaluateBoard(copy, move, !color, false, search_depth_ - 1, all_moves);
   evaluated_moves_mutex_.lock();
-  evaluated_moves_.push_back(std::make_pair(move, engine_move));
+  evaluated_moves_.push_back(engine_move);
   evaluated_moves_mutex_.unlock();
   number_of_threads_working_mutex_.lock();
   --number_of_threads_working_;
   debug_stream_ << SocketLog::lock << "Number of working threads: " << number_of_threads_working_ << SocketLog::endl;
   number_of_threads_working_mutex_.unlock();
   number_of_threads_working_cv_.notify_one();
+}
+
+void Engine::generateTree(Board& board, Figure::Color color, std::vector<Engine::Move>& moves) {
+  for (auto& move: moves) {
+    if (move.moves.empty() == false) {
+      auto wrapper = board.makeReversibleMove(move.move);
+      generateTree(board, !color, move.moves);
+    } else {
+      std::vector<Figure::Move> figure_moves = board.calculateMovesForFigures(color);
+      for (Figure::Move& figure_move: figure_moves) {
+        auto wrapper = board.makeReversibleMove(figure_move);
+        Move new_move(figure_move);
+        move.moves.push_back(new_move);
+      }
+    }
+  }
 }

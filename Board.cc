@@ -821,6 +821,16 @@ std::vector<Figure::Move> Board::calculateMovesForFigure(const Figure* figure) {
   return moves;
 }
 
+std::vector<Figure::Move> Board::calculateMovesForFigures(Figure::Color color) {
+  std::vector<Figure::Move> all_moves;
+  auto figures = getFigures(color);
+  for (const auto* figure: figures) {
+    auto moves = calculateMovesForFigure(figure);
+    all_moves.insert(all_moves.end(), moves.begin(), moves.end());
+  }
+  return all_moves;
+}
+
 const Figure* Board::getFigure(Field field) const noexcept {
   return fields_[field.letter][field.number];
 }
