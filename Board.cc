@@ -206,10 +206,6 @@ Board::ReversibleMoveWrapper Board::makeReversibleMove(Figure::Move move) {
 
 Board::GameStatus Board::makeMove(Figure::Move move, bool rev_mode) {
   Figure* figure = fields_[move.old_field.letter][move.old_field.number];
-  if (figure == nullptr) {
-    throw NoFigureException(move.old_field);
-  }
-
   Figure::Color color = figure->getColor();
 
   if (color != side_to_move_ && rev_mode == false) {

@@ -29,7 +29,8 @@ class Engine {
 
   struct Move {
     Move() {}
-    Move(int v, int m, bool d) : value(v), moves_to_mate(m), is_draw(d) {}
+    Move(Figure::Move fmove, int v, int m, bool d) : move(fmove), value(v), moves_to_mate(m), is_draw(d) {}
+    Figure::Move move;
     int value{0};
     int moves_to_mate{0};
     bool is_draw{false};
@@ -48,8 +49,17 @@ class Engine {
   BorderValues findBorderValues(const std::vector<Move>& moves) const;
 
   void evaluateBoardMain(Figure::Move move);
-  Move evaluateBoardForLastNode(Board& board, Figure::Color color, bool my_move, std::vector<Figure::Move>& moves) const;
-  Move evaluateBoard(Board& board, Figure::Color color, bool my_move, int depths_remaining, std::vector<Figure::Move>& moves) const;
+  Move evaluateBoardForLastNode(Board& board,
+                                const Figure::Move& move,
+                                Figure::Color color,
+                                bool my_move,
+                                std::vector<Figure::Move>& moves) const;
+  Move evaluateBoard(Board& board,
+                     const Figure::Move& move,
+                     Figure::Color color,
+                     bool my_move,
+                     int depths_remaining,
+                     std::vector<Figure::Move>& moves) const;
 
   int generateRandomValue(int max) const;
 

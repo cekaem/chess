@@ -135,7 +135,7 @@ Figure::Move Engine::makeMove() {
       auto wrapper = board_.makeReversibleMove(move);
 
       std::vector<Figure::Move> all_moves;
-      auto m = evaluateBoardForLastNode(board_, !color, false, all_moves);
+      auto m = evaluateBoardForLastNode(board_, move, !color, false, all_moves);
       if (m.value > the_best_direct_move_value) {
         the_best_direct_moves.clear();
         the_best_direct_move_value = m.value;
@@ -159,6 +159,7 @@ Figure::Move Engine::makeMove() {
 
 Engine::Move Engine::evaluateBoardForLastNode(
     Board& board,
+    const Figure::Move& current_move,
     Figure::Color color,
     bool my_move,
     std::vector<Figure::Move>& all_moves) const {
@@ -181,18 +182,19 @@ Engine::Move Engine::evaluateBoardForLastNode(
     }
   }
 
-  return Move(value, moves_to_mate, status == Board::GameStatus::DRAW);
+  return Move(current_move, value, moves_to_mate, status == Board::GameStatus::DRAW);
 }
 
 Engine::Move Engine::evaluateBoard(
     Board& board,
+    const Figure::Move& current_move,
     Figure::Color color,
     bool my_move,
     int depths_remaining,
     std::vector<Figure::Move>& all_moves) const {
   Board::GameStatus status = board.getGameStatus(color);
   if (status != Board::GameStatus::NONE || depths_remaining == 0) {
-    return evaluateBoardForLastNode(board, color, my_move, all_moves);
+    return evaluateBoardForLastNode(board, current_move, color, my_move, all_moves);
   }
 
   std::vector<Move> engine_moves;
@@ -204,7 +206,7 @@ Engine::Move Engine::evaluateBoard(
       auto wrapper = board.makeReversibleMove(move);
       all_moves.push_back(move);
       Engine::Move engine_move;
-      engine_move = evaluateBoard(board, !color, !my_move, depths_remaining - 1, all_moves);
+      engine_move = evaluateBoard(board, move, !color, !my_move, depths_remaining - 1, all_moves);
       all_moves.pop_back();
       engine_moves.push_back(engine_move);
     }
@@ -239,7 +241,7 @@ Engine::Move Engine::evaluateBoard(
   }
 
   BoardAssert(board, (value != BorderValue && value != -BorderValue) || moves_to_mate != BorderValue);
-  return Move(value, moves_to_mate, false);
+  return Move(current_move, value, moves_to_mate, false);
 }
 
 void Engine::evaluateBoardMain(
@@ -249,7 +251,7 @@ void Engine::evaluateBoardMain(
   Board copy = board_;
   Figure::Color color = copy.getFigure(move.old_field)->getColor();
   copy.makeMove(move);
-  Move engine_move = evaluateBoard(copy, !color, false, search_depth_ - 1, all_moves);
+  Move engine_move = evaluateBoard(copy, move, !color, false, search_depth_ - 1, all_moves);
   evaluated_moves_mutex_.lock();
   evaluated_moves_.push_back(std::make_pair(move, engine_move));
   evaluated_moves_mutex_.unlock();
