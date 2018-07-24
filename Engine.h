@@ -49,30 +49,21 @@ class Engine {
 
   BorderValues findBorderValues(const std::vector<Move>& moves) const;
 
-  void evaluateBoardMain(Figure::Move move);
-  Move evaluateBoardForLastNode(Board& board,
-                                const Figure::Move& move,
-                                Figure::Color color,
-                                bool my_move,
+  void evaluateBoardMain(Move move);
+  void evaluateBoardForLastNode(Board& board,
+                                Move& move,
                                 std::vector<Figure::Move>& moves) const;
-  Move evaluateBoard(Board& board,
-                     const Figure::Move& move,
-                     Figure::Color color,
-                     bool my_move,
-                     int depths_remaining,
+  void evaluateBoard(Board& board,
+                     Move& move,
                      std::vector<Figure::Move>& moves) const;
 
-  void generateTree(
-      Board& board,
-      Figure::Color color,
-      std::vector<Engine::Move>& moves);
+  void generateTreeMain(Engine::Move move);
+  void generateTree(Board& board, Figure::Color color, Engine::Move& moves);
 
   int generateRandomValue(int max) const;
 
   Board& board_;
   utils::SocketLog& debug_stream_;
-  std::vector<Move> evaluated_moves_;
-  std::mutex evaluated_moves_mutex_;
   unsigned search_depth_{DefaultSearchDepth};
   unsigned max_number_of_threads_{DefaultNumberOfThreads};
   unsigned number_of_threads_working_{0u};
