@@ -3,6 +3,7 @@
 #include <condition_variable>
 #include <cstdlib>
 #include <ctime>
+#include <functional>
 #include <iostream>
 #include <mutex>
 #include <thread>
@@ -72,19 +73,23 @@ Figure::Move Engine::makeMove() {
     throw Board::BadBoardStatusException(&board_);
   }
 
-  std::vector<Figure::Move> moves = board_.calculateMovesForFigures(color);
-  for (unsigned depth = 0; depth < search_depth_; ++depth) {
-    debug_stream_ << SocketLog::lock << "Starting calculating depth " << depth_ + 1 << SocketLog::endl;
-    for (Figure::Move& move: moves) {
+  std::vector<Move> moves;
+  auto figures_moves = board_.calculateMovesForFigures(color);
+  for (auto& move: figures_moves) {
+    moves.push_back(Move(move, nullptr));
+  }
+  for (unsigned depth = 1; depth < search_depth_; ++depth) {
+    debug_stream_ << SocketLog::lock << "Starting calculating depth " << depth + 1 << SocketLog::endl;
+    for (Move& move: moves) {
       std::unique_lock<std::mutex> ul(number_of_threads_working_mutex_);
       number_of_threads_working_cv_.wait(
           ul, [this] { return number_of_threads_working_ < max_number_of_threads_; });
-      std::thread t(&Engine::generateTreeMain, this, move);
+      std::thread t(&Engine::generateTreeMain, this, std::ref(move));
       t.detach();
       ++number_of_threads_working_;
       debug_stream_ << SocketLog::lock << "Number of working threads: " << number_of_threads_working_ << SocketLog::endl;
     }
-    debug_stream_ << SocketLog::lock << "Finished calculating depth " << depth_ + 1 << SocketLog::endl;
+    debug_stream_ << SocketLog::lock << "Finished calculating depth " << depth + 1 << SocketLog::endl;
   }
 
   // Wait for all threads to finish moves evaluation
@@ -93,9 +98,12 @@ Figure::Move Engine::makeMove() {
 
   // Iterate through all moves and look for mate and for best value.
   // Also look for possible opponent's mate.
-  auto border_values = findBorderValues(evaluated_moves_);
+  auto border_values = findBorderValues(moves);
   int moves_to_mate = 0;
-  int the_best_value = border_values.the_biggest_value;
+  int the_best_value =
+      color == Figure::WHITE ?
+      border_values.the_biggest_value :
+      border_values.the_smallest_value;
   if (border_values.the_smallest_positive_mate_value != BorderValue) {
     moves_to_mate = border_values.the_smallest_positive_mate_value;
     debug_stream_ << SocketLog::lock << "Found mate in " << (moves_to_mate / 2 + 1) << SocketLog::endl;
@@ -107,59 +115,52 @@ Figure::Move Engine::makeMove() {
   }
   BoardAssert(board_, moves_to_mate != BorderValue);
 
-  Figure::Move my_move;
   // Collect all best moves.
-  std::vector<Figure::Move> the_best_moves;
-  for (auto& move: evaluated_moves_) {
+  std::vector<Move> the_best_moves;
+  for (auto& move: moves) {
     if (moves_to_mate != 0) {
       if (move.moves_to_mate == moves_to_mate) {
-        the_best_moves.push_back(move.move);
+        the_best_moves.push_back(move);
       }
     } else if (move.moves_to_mate == 0 && move.value == the_best_value) {
-      the_best_moves.push_back(move.move);
+      the_best_moves.push_back(move);
     }
   }
 
   // Check which moves from the ones with the best value is the best in one move.
-  std::vector<Figure::Move> the_best_direct_moves;
+  std::vector<Move> the_best_direct_moves;
   int the_best_direct_move_value = -BorderValue;
   for (auto& move: the_best_moves) {
     if (moves_to_mate != 0) {
       the_best_direct_moves.push_back(move);
     } else {
-      auto wrapper = board_.makeReversibleMove(move);
-
-      std::vector<Figure::Move> all_moves;
-      auto m = evaluateBoardForLastNode(board_, move, !color, false, all_moves);
-      if (m.value > the_best_direct_move_value) {
+      evaluateBoardForLastNode(board_, move);
+      if (move.value > the_best_direct_move_value) {
         the_best_direct_moves.clear();
-        the_best_direct_move_value = m.value;
+        the_best_direct_move_value = move.value;
       }
-      if (m.value >= the_best_direct_move_value) {
+      if (move.value >= the_best_direct_move_value) {
         the_best_direct_moves.push_back(move);
       }
     }
   }
   BoardAssert(board_, the_best_direct_moves.size() > 0);
   // Choose randomly move from the best direct moves.
-  my_move = the_best_direct_moves[generateRandomValue(the_best_direct_moves.size() - 1)];
+  Move my_move = the_best_direct_moves[generateRandomValue(the_best_direct_moves.size() - 1)];
 
   debug_stream_ << SocketLog::lock << "My move (" << moves_count_ << "): ";
-  debug_stream_ << my_move.old_field << "-" << my_move.new_field << SocketLog::endl;
-  board_.makeMove(my_move);
+  debug_stream_ << my_move.move.old_field << "-" << my_move.move.new_field << SocketLog::endl;
+  board_.makeMove(my_move.move);
   ++moves_count_;
-  evaluated_moves_.clear();
-  return my_move;
+  return my_move.move;
 }
 
-Engine::Move Engine::evaluateBoardForLastNode(
-    Board& board,
-    Engine::Move& current_move,
-    std::vector<Figure::Move>& all_moves) const {
+void Engine::evaluateBoardForLastNode(
+    Board& board, Engine::Move& current_move) const {
   auto wrapper = board.makeReversibleMove(current_move.move);
   std::vector<const Figure*> white_figures = board.getFigures(Figure::WHITE);
   std::vector<const Figure*> black_figures = board.getFigures(Figure::BLACK);
-  int current_move.value = 0;
+  current_move.value = 0;
   for (const Figure* figure: white_figures) {
     current_move.value += figure->getValue();
   }
@@ -167,41 +168,40 @@ Engine::Move Engine::evaluateBoardForLastNode(
     current_move.value -= figure->getValue();
   }
 
-  int current_move.moves_to_mate = 0;
+  current_move.moves_to_mate = 0;
   if (board.isKingCheckmated(Figure::WHITE) == true) {
     current_move.moves_to_mate = -1;
   }
   if (board.isKingCheckmated(Figure::BLACK) == true) {
     current_move.moves_to_mate = 1;
   }
-  if (current_move.moves_to_mate != 0 && all_moves.empty() == false) {
-    debug_stream_ << SocketLog::lock << "Found mate: " << all_moves << current_move.move << SocketLog::endl;
+  if (current_move.moves_to_mate != 0) {
+    debug_stream_ << SocketLog::lock << "Found mate: ";
+    std::function<void(const Engine::Move&)> lambda;
+    lambda = [this, &lambda](const Engine::Move& move) -> void {
+      if (move.parent != nullptr) {
+        lambda(*move.parent);
+      }
+      debug_stream_ << move.move << " ";
+    };
+    lambda(current_move);
+    debug_stream_ << SocketLog::endl;
   }
 }
 
-void Engine::evaluateBoard(
-    Board& board,
-    Engine::Move& current_move,
-    std::vector<Figure::Move>& all_moves) const {
+void Engine::evaluateBoard(Board& board, Engine::Move& current_move) const {
   if (current_move.moves.empty() == true) {
-    evaluateBoardForLastNode(board, current_move, all_moves);
+    evaluateBoardForLastNode(board, current_move);
     return;
-  }
-
-  auto wrapper = board.makeReversibleMove(current_move.move);
-  for (auto& move: current_move.moves) {
-    all_moves.push_back(move);
-    evaluateBoard(board, move, all_moves);
-    all_moves.pop_back();
   }
 
   current_move.value = 0;
   auto border_values = findBorderValues(current_move.moves);
-  Figure::Color color = copy.getFigure(move.move.old_field)->getColor();
+  Figure::Color color = board.getFigure(current_move.move.old_field)->getColor();
   if (color == Figure::WHITE) {
-    value = border_values.the_biggest_value;
+    current_move.value = border_values.the_biggest_value;
   } else {
-    value = border_values.the_smallest_value;
+    current_move.value = border_values.the_smallest_value;
   }
   current_move.moves_to_mate = BorderValue;
   if (color == Figure::WHITE) {
@@ -228,20 +228,10 @@ void Engine::evaluateBoard(
                      current_move.moves_to_mate != BorderValue);
 }
 
-void Engine::evaluateBoardMain(Engine::Move move) {
-  std::vector<Figure::Move> all_moves;
-  all_moves.push_back(move.move);
-  Board copy = board_;
-  Figure::Color color = copy.getFigure(move.move.old_field)->getColor();
-  evaluateBoard(copy, move, color, true, all_moves);
-  onThreadFinished();  
-}
-
-void Engine::generateTreeMain(Engine::Move move) {
+void Engine::generateTreeMain(Engine::Move& move) {
   Board copy = board_;
   Figure::Color color = copy.getFigure(move.move.old_field)->getColor();
   generateTree(copy, color, move);
-  evaluateBoardMain(move);
   onThreadFinished();
 }
 
@@ -252,16 +242,17 @@ void Engine::generateTree(Board& board, Figure::Color color, Engine::Move& move)
       generateTree(board, !color, m);
     }
   } else {
-    auto wrapper = board.makeReversibleMove(move.move);
     Board::GameStatus status = board.getGameStatus(color);
     if (status == Board::GameStatus::NONE) {
+      auto wrapper = board.makeReversibleMove(move.move);
       std::vector<Figure::Move> figure_moves = board.calculateMovesForFigures(!color);
       for (Figure::Move& figure_move: figure_moves) {
-        Move new_move(figure_move);
+        Move new_move(figure_move, &move);
         move.moves.push_back(new_move);
       }
     }
   }
+  evaluateBoard(board, move);
 }
 
 void Engine::onThreadFinished() {

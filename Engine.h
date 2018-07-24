@@ -28,13 +28,14 @@ class Engine {
 
   struct Move {
     Move() {}
-    Move(Figure::Move fmove) : move(fmove) {}
+    Move(Figure::Move fmove, Engine::Move* p) : move(fmove), parent(p) {}
     Move(Figure::Move fmove, int v, int m, bool d) : move(fmove), value(v), moves_to_mate(m), is_draw(d) {}
     Figure::Move move;
     int value{0};
     int moves_to_mate{0};
     bool is_draw{false};
     std::vector<Engine::Move> moves;
+    Engine::Move* parent{nullptr};
   };
 
   struct BorderValues {
@@ -49,16 +50,13 @@ class Engine {
 
   BorderValues findBorderValues(const std::vector<Move>& moves) const;
 
-  void evaluateBoardMain(Move move);
-  void evaluateBoardForLastNode(Board& board,
-                                Move& move,
-                                std::vector<Figure::Move>& moves) const;
-  void evaluateBoard(Board& board,
-                     Move& move,
-                     std::vector<Figure::Move>& moves) const;
+  void evaluateBoardForLastNode(Board& board, Move& move) const;
+  void evaluateBoard(Board& board, Move& move) const;
 
-  void generateTreeMain(Engine::Move move);
-  void generateTree(Board& board, Figure::Color color, Engine::Move& moves);
+  void generateTreeMain(Engine::Move& move);
+  void generateTree(Board& board, Figure::Color color, Engine::Move& move);
+  
+  void onThreadFinished();
 
   int generateRandomValue(int max) const;
 

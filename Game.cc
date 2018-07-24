@@ -176,6 +176,7 @@ int main() {
   board.addBoardDrawer(&drawer);
   board.addBoardDrawer(&pgn_creator);
   utils::SocketLog logger;
+  logger.waitForClient(9090);
   Engine engine(board, engine_strength, number_of_threads, logger);
   
   Board::GameStatus status = Board::GameStatus::NONE;
