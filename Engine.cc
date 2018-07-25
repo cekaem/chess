@@ -89,12 +89,11 @@ Figure::Move Engine::makeMove() {
       ++number_of_threads_working_;
       debug_stream_ << SocketLog::lock << "Number of working threads: " << number_of_threads_working_ << SocketLog::endl;
     }
+    // Wait for all threads to finish moves evaluation
+    std::unique_lock<std::mutex> ul(number_of_threads_working_mutex_);
+    number_of_threads_working_cv_.wait(ul, [this] { return number_of_threads_working_ == 0; });
     debug_stream_ << SocketLog::lock << "Finished calculating depth " << depth + 1 << SocketLog::endl;
   }
-
-  // Wait for all threads to finish moves evaluation
-  std::unique_lock<std::mutex> ul(number_of_threads_working_mutex_);
-  number_of_threads_working_cv_.wait(ul, [this] { return number_of_threads_working_ == 0; });
 
   // Iterate through all moves and look for mate and for best value.
   // Also look for possible opponent's mate.
