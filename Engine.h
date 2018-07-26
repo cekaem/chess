@@ -16,7 +16,6 @@ class Engine {
  public:
   Engine(Board& board, unsigned search_depth, unsigned max_number_of_threads, utils::SocketLog& debug_stream);
   Engine(Board& board, utils::SocketLog& debug_stream);
-  ~Engine();
   void setNumberOfThreads(unsigned number_of_threads) { max_number_of_threads_ = number_of_threads; }
   void setSearchDepth(unsigned search_depth) { search_depth_ = search_depth_; }
   Figure::Move makeMove();

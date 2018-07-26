@@ -28,10 +28,6 @@ Engine::Engine(Board& board, SocketLog& debug_stream)
   srand(static_cast<unsigned int>(time(nullptr)));
 }
 
-Engine::~Engine() {
-  debug_stream_ << SocketLog::endLogging;
-}
-
 int Engine::generateRandomValue(int max) const {
   return rand() % (max + 1);
 }
@@ -103,16 +99,28 @@ Figure::Move Engine::makeMove() {
       color == Figure::WHITE ?
       border_values.the_biggest_value :
       border_values.the_smallest_value;
-  if (border_values.the_smallest_positive_mate_value != BorderValue) {
-    moves_to_mate = border_values.the_smallest_positive_mate_value;
-    debug_stream_ << SocketLog::lock << "Found mate in " << (moves_to_mate / 2 + 1) << SocketLog::endl;
-  } else if (border_values.zero_mate_value_exists == true) {
-    moves_to_mate = 0;
+  if (color == Figure::WHITE) {
+    if (border_values.the_smallest_positive_mate_value != BorderValue) {
+      moves_to_mate = border_values.the_smallest_positive_mate_value;
+      debug_stream_ << SocketLog::lock << "=== Found mate in " << (moves_to_mate / 2 + 1) << " ===" << SocketLog::endl;
+    } else if (border_values.zero_mate_value_exists == true) {
+      moves_to_mate = 0;
+    } else {
+      moves_to_mate = border_values.the_smallest_mate_value;
+      debug_stream_ << SocketLog::lock << "=== Found opponent's mate in " << -(moves_to_mate / 2 - 1) << " ===" << SocketLog::endl;
+    }
   } else {
-    moves_to_mate = border_values.the_smallest_mate_value;
-    debug_stream_ << SocketLog::lock << "Found opponent's mate in " << -(moves_to_mate / 2 - 1) << SocketLog::endl;
+    if (border_values.the_biggest_negative_mate_value != -BorderValue) {
+      moves_to_mate = border_values.the_biggest_negative_mate_value;
+      debug_stream_ << SocketLog::lock << "=== Found mate in " << -(moves_to_mate / 2 - 1) << " ===" << SocketLog::endl;
+    } else if (border_values.zero_mate_value_exists == true) {
+      moves_to_mate = 0;
+    } else {
+      moves_to_mate = border_values.the_biggest_mate_value;
+      debug_stream_ << SocketLog::lock << "=== Found opponent's mate in " << (moves_to_mate / 2 + 1) << " ===" << SocketLog::endl;
+    }
   }
-  BoardAssert(board_, moves_to_mate != BorderValue);
+  BoardAssert(board_, moves_to_mate != BorderValue && moves_to_mate != -BorderValue);
 
   // Collect all best moves.
   std::vector<Move> the_best_moves;
@@ -128,17 +136,19 @@ Figure::Move Engine::makeMove() {
 
   // Check which moves from the ones with the best value is the best in one move.
   std::vector<Move> the_best_direct_moves;
-  int the_best_direct_move_value = -BorderValue;
+  int the_best_direct_move_value = color == Figure::WHITE ? -BorderValue : BorderValue;
   for (auto& move: the_best_moves) {
     if (moves_to_mate != 0) {
       the_best_direct_moves.push_back(move);
     } else {
       evaluateBoardForLastNode(board_, move);
-      if (move.value > the_best_direct_move_value) {
+      if ((color == Figure::WHITE && move.value > the_best_direct_move_value) ||
+          (color == Figure::BLACK && move.value < the_best_direct_move_value)) {
         the_best_direct_moves.clear();
         the_best_direct_move_value = move.value;
       }
-      if (move.value >= the_best_direct_move_value) {
+      if ((color == Figure::WHITE && move.value >= the_best_direct_move_value) ||
+          (color == Figure::BLACK && move.value >= the_best_direct_move_value)) {
         the_best_direct_moves.push_back(move);
       }
     }
@@ -198,12 +208,12 @@ void Engine::evaluateBoard(Board& board, Engine::Move& current_move) const {
   auto border_values = findBorderValues(current_move.moves);
   Figure::Color color = board.getFigure(current_move.move.old_field)->getColor();
   if (color == Figure::WHITE) {
-    current_move.value = border_values.the_biggest_value;
-  } else {
     current_move.value = border_values.the_smallest_value;
+  } else {
+    current_move.value = border_values.the_biggest_value;
   }
   current_move.moves_to_mate = BorderValue;
-  if (color == Figure::WHITE) {
+  if (color == Figure::BLACK) {
     if (border_values.the_smallest_positive_mate_value < BorderValue) {
       current_move.moves_to_mate = border_values.the_smallest_positive_mate_value + 1;
     } else if (border_values.zero_mate_value_exists == true) {
@@ -247,6 +257,7 @@ void Engine::generateTree(Board& board, Figure::Color color, Engine::Move& move)
       std::vector<Figure::Move> figure_moves = board.calculateMovesForFigures(!color);
       for (Figure::Move& figure_move: figure_moves) {
         Move new_move(figure_move, &move);
+        evaluateBoardForLastNode(board, new_move);
         move.moves.push_back(new_move);
       }
     }
