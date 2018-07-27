@@ -179,7 +179,7 @@ int main() {
       board,
       engine_strength,
       number_of_threads,
-      Engine::LogSection::MOVE_SEARCHES);
+      Engine::LogSection::MEMORY_CONSUMPTION);
   
   Board::GameStatus status = Board::GameStatus::NONE;
   while (status == Board::GameStatus::NONE) {

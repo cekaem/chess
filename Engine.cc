@@ -6,11 +6,14 @@
 #include <functional>
 #include <iostream>
 #include <mutex>
+#include <stdio.h>
 #include <thread>
+#include <unistd.h>
 
 #include "Board.h"
 #include "Figure.h"
 #include "utils/SocketLog.h"
+#include "utils/Utils.h"
 
 
 using utils::SocketLog;
@@ -18,6 +21,7 @@ using utils::SocketLog;
 namespace {
 
 constexpr int LoggerPort = 9090;
+constexpr int SecondsBetweenMemoryConsumtionMeasures = 2;
 Engine::LogSection g_log_sections_mask = Engine::LogSection::NONE;
 SocketLog g_debug_stream;
 
@@ -95,6 +99,68 @@ Engine::Engine(Board& board, Engine::LogSection log_sections_mask) : board_(boar
   if (log_sections_mask != LogSection::NONE) {
     g_debug_stream.waitForClient(LoggerPort);
   }
+  if (shouldLog(LogSection::MEMORY_CONSUMPTION) != 0) {
+    memory_consumption_measures_ended_ = false;
+    std::thread memory_consumption_logger(&Engine::logMemoryConsumption,
+                                          this,
+                                          SecondsBetweenMemoryConsumtionMeasures);
+    memory_consumption_logger.detach();
+  }
+}
+
+Engine::~Engine() {
+  doMemoryConsumptionMeasures_ = false;
+  std::unique_lock<std::mutex> ul(memory_consumption_measures_ended_mutex_);
+  memory_consumption_measures_ended_cv_.wait(
+    ul, [this] { return memory_consumption_measures_ended_ == true; });
+}
+
+void Engine::logMemoryConsumption(int sec) {
+  unsigned max_consumption = 0u;
+  unsigned long long total_consumption = 0u;
+  unsigned number_of_measures = 0u;
+  while (doMemoryConsumptionMeasures_ == true) {
+    FILE* desc = fopen("/proc/self/status", "r");
+    if (desc == nullptr) {
+      EngineLogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Can't open /proc/self/status");
+      break;
+    }
+    char buff[128];
+    while (fgets(buff, 128, desc) != nullptr) {
+      std::string line(buff);
+      auto pos = line.find("VmSize:");
+      if (pos != 0) {
+        continue;
+      }
+      std::string sub = line.substr(7);  // 7 == strlen("VmSize:")
+      utils::ltrim(sub);
+      pos = sub.find(" kB");
+      if (pos == std::string::npos) {
+        EngineLogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Error during parsing /proc/self/status");
+        doMemoryConsumptionMeasures_ = false;
+        break;
+      }
+      std::string memory_consumption_str = sub.substr(0, pos);
+      unsigned memory_consumption = 0u;
+      if (utils::str_2_uint(memory_consumption_str, memory_consumption) == false) {
+        EngineLogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Error during reading memory consumption from /proc/self/status: ", memory_consumption_str);
+        doMemoryConsumptionMeasures_ = false;
+        break;
+      }
+      EngineLogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Memory consumption: ", memory_consumption);
+      if (memory_consumption > max_consumption) {
+        max_consumption = memory_consumption;
+      }
+      total_consumption += memory_consumption;
+      ++number_of_measures;
+    }
+    ::sleep(sec);
+  }
+  EngineLogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Maximum consumption: ", max_consumption);
+  EngineLogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Average consumption: ", total_consumption / number_of_measures);
+  
+  memory_consumption_measures_ended_ = true;
+  memory_consumption_measures_ended_cv_.notify_one();
 }
 
 int Engine::generateRandomValue(int max) const {

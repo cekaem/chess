@@ -6,17 +6,10 @@
 #include <string>
 #include <vector>
 
+#include "utils/Utils.h"
+
+
 using utils::SocketLog;
-
-namespace {
-
-void ltrim(std::string& str) {
-  str.erase(std::begin(str), std::find_if(std::begin(str), 
-                                          std::end(str),
-                                          [] (char c) -> bool { return std::isspace(c) == false; }));
-}
-
-}  // unnamed namespace
 
 UCIHandler::UCIHandler(std::istream& istr, std::ostream& ostr, Engine::LogSection log_section_mask)
   : istr_(istr), ostr_(ostr), engine_(board_, log_section_mask) {
@@ -42,7 +35,7 @@ void UCIHandler::start() {
 void UCIHandler::handleCommand(const std::string& line) {
   std::string command = line;
   debug_stream_ << "Received command: " << command << SocketLog::endl;
-  ltrim(command);
+  utils::ltrim(command);
   auto space_position = command.find(' ');
   std::string cmd;
   if (space_position == std::string::npos) {
@@ -63,7 +56,7 @@ void UCIHandler::handleCommand(const std::string& line) {
   std::vector<std::string> params;
   while (space_position != std::string::npos) {
     command = command.substr(space_position);
-    ltrim(command);
+    utils::ltrim(command);
     space_position = command.find(' ');
     std::string param;
     if (space_position == std::string::npos) {

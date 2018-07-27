@@ -3,17 +3,10 @@
 #include <algorithm>
 #include <sstream>
 
+#include "utils/Utils.h"
+
+
 int Board::number_of_copies_ = 0;
-
-namespace {
-
-bool str_2_uint(const std::string& str, unsigned& result) {
-  std::stringstream ss(str);
-  ss >> result;
-  return ss.fail() == false && ss.bad() == false;
-}
-
-}  // unnamed namespace
 
 std::ostream& operator<<(std::ostream& ostr, Board::GameStatus status) {
   ostr << static_cast<int>(status);
@@ -542,7 +535,7 @@ bool Board::setBoardFromFEN(const std::string& fen) {
     return false;
   }
   std::string halfmove_clock_str = rest_fen.substr(0, space_position);
-  if (str_2_uint(halfmove_clock_str, halfmove_clock_) == false) {
+  if (utils::str_2_uint(halfmove_clock_str, halfmove_clock_) == false) {
     return false;
   }
   halfmove_clock_ *= 2;
@@ -551,7 +544,7 @@ bool Board::setBoardFromFEN(const std::string& fen) {
     return false;
   }
   std::string fullmove_number_str = rest_fen.substr(1);
-  if (str_2_uint(fullmove_number_str, fullmove_number_) == false) {
+  if (utils::str_2_uint(fullmove_number_str, fullmove_number_) == false) {
     return false;
   }
 

@@ -24,6 +24,7 @@ class Engine {
 
   Engine(Board& board, unsigned search_depth, unsigned max_number_of_threads, LogSection log_sections_mask);
   Engine(Board& board, LogSection log_sections_mask);
+  ~Engine();
   void setNumberOfThreads(unsigned number_of_threads) { max_number_of_threads_ = number_of_threads; }
   void setSearchDepth(unsigned search_depth) { search_depth_ = search_depth_; }
   Figure::Move makeMove();
@@ -67,6 +68,8 @@ class Engine {
 
   int generateRandomValue(int max) const;
 
+  void logMemoryConsumption(int sec);
+
   Board& board_;
   unsigned search_depth_{DefaultSearchDepth};
   unsigned max_number_of_threads_{DefaultNumberOfThreads};
@@ -74,6 +77,10 @@ class Engine {
   std::mutex number_of_threads_working_mutex_;
   std::condition_variable number_of_threads_working_cv_;
   int moves_count_{0};
+  bool doMemoryConsumptionMeasures_{true};
+  bool memory_consumption_measures_ended_{true};
+  std::mutex memory_consumption_measures_ended_mutex_;
+  std::condition_variable memory_consumption_measures_ended_cv_;
 };
 
 #endif  // ENGINE_H
