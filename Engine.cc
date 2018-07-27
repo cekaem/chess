@@ -21,7 +21,7 @@ using utils::SocketLog;
 namespace {
 
 constexpr int LoggerPort = 9090;
-constexpr int SecondsBetweenMemoryConsumtionMeasures = 2;
+constexpr int SecondsBetweenMemoryConsumptionMeasures = 2;
 Engine::LogSection g_log_sections_mask = Engine::LogSection::NONE;
 SocketLog g_debug_stream;
 
@@ -99,17 +99,17 @@ Engine::Engine(Board& board, Engine::LogSection log_sections_mask) : board_(boar
   if (log_sections_mask != LogSection::NONE) {
     g_debug_stream.waitForClient(LoggerPort);
   }
-  if (shouldLog(LogSection::MEMORY_CONSUMPTION) != 0) {
+  if (shouldLog(LogSection::MEMORY_CONSUMPTION)) {
     memory_consumption_measures_ended_ = false;
     std::thread memory_consumption_logger(&Engine::logMemoryConsumption,
                                           this,
-                                          SecondsBetweenMemoryConsumtionMeasures);
+                                          SecondsBetweenMemoryConsumptionMeasures);
     memory_consumption_logger.detach();
   }
 }
 
 Engine::~Engine() {
-  doMemoryConsumptionMeasures_ = false;
+  do_memory_consumption_measures_ = false;
   std::unique_lock<std::mutex> ul(memory_consumption_measures_ended_mutex_);
   memory_consumption_measures_ended_cv_.wait(
     ul, [this] { return memory_consumption_measures_ended_ == true; });
@@ -119,7 +119,7 @@ void Engine::logMemoryConsumption(int sec) {
   unsigned max_consumption = 0u;
   unsigned long long total_consumption = 0u;
   unsigned number_of_measures = 0u;
-  while (doMemoryConsumptionMeasures_ == true) {
+  while (do_memory_consumption_measures_ == true) {
     FILE* desc = fopen("/proc/self/status", "r");
     if (desc == nullptr) {
       EngineLogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Can't open /proc/self/status");
@@ -137,14 +137,14 @@ void Engine::logMemoryConsumption(int sec) {
       pos = sub.find(" kB");
       if (pos == std::string::npos) {
         EngineLogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Error during parsing /proc/self/status");
-        doMemoryConsumptionMeasures_ = false;
+        do_memory_consumption_measures_ = false;
         break;
       }
       std::string memory_consumption_str = sub.substr(0, pos);
       unsigned memory_consumption = 0u;
       if (utils::str_2_uint(memory_consumption_str, memory_consumption) == false) {
         EngineLogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Error during reading memory consumption from /proc/self/status: ", memory_consumption_str);
-        doMemoryConsumptionMeasures_ = false;
+        do_memory_consumption_measures_ = false;
         break;
       }
       EngineLogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Memory consumption: ", memory_consumption);

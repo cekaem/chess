@@ -77,7 +77,7 @@ class Engine {
   std::mutex number_of_threads_working_mutex_;
   std::condition_variable number_of_threads_working_cv_;
   int moves_count_{0};
-  bool doMemoryConsumptionMeasures_{true};
+  bool do_memory_consumption_measures_{true};
   bool memory_consumption_measures_ended_{true};
   std::mutex memory_consumption_measures_ended_mutex_;
   std::condition_variable memory_consumption_measures_ended_cv_;
