@@ -9,13 +9,21 @@
 
 #include "Board.h"
 #include "Figure.h"
-#include "utils/SocketLog.h"
 
 
 class Engine {
  public:
-  Engine(Board& board, unsigned search_depth, unsigned max_number_of_threads, utils::SocketLog& debug_stream);
-  Engine(Board& board, utils::SocketLog& debug_stream);
+  enum class LogSection {
+    NONE = 0x0,
+    MOVE_SEARCHES = 0x01,
+    MATES = 0x02,
+    THREADS = 0x04,
+    MEMORY_CONSUMPTION = 0x08,
+    ALL = MOVE_SEARCHES | MATES | THREADS | MEMORY_CONSUMPTION
+  };
+
+  Engine(Board& board, unsigned search_depth, unsigned max_number_of_threads, LogSection log_sections_mask);
+  Engine(Board& board, LogSection log_sections_mask);
   void setNumberOfThreads(unsigned number_of_threads) { max_number_of_threads_ = number_of_threads; }
   void setSearchDepth(unsigned search_depth) { search_depth_ = search_depth_; }
   Figure::Move makeMove();
@@ -60,7 +68,6 @@ class Engine {
   int generateRandomValue(int max) const;
 
   Board& board_;
-  utils::SocketLog& debug_stream_;
   unsigned search_depth_{DefaultSearchDepth};
   unsigned max_number_of_threads_{DefaultNumberOfThreads};
   unsigned number_of_threads_working_{0u};

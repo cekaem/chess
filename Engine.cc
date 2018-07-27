@@ -10,22 +10,91 @@
 
 #include "Board.h"
 #include "Figure.h"
+#include "utils/SocketLog.h"
+
 
 using utils::SocketLog;
+
+namespace {
+
+constexpr int LoggerPort = 9090;
+Engine::LogSection g_log_sections_mask = Engine::LogSection::NONE;
+SocketLog g_debug_stream;
+
+bool shouldLog(Engine::LogSection section) {
+  return (static_cast<int>(section) & static_cast<int>(g_log_sections_mask)) != 0;
+}
+
+template<typename T1>
+void EngineLogWithEndLine(Engine::LogSection section, const T1& t1) {
+  if (shouldLog(section)) {
+    g_debug_stream << SocketLog::lock << t1 << SocketLog::endl;
+  }
+}
+
+template<typename T1, typename T2>
+void EngineLogWithEndLine(Engine::LogSection section,
+                          const T1& t1,
+                          const T2& t2) {
+  if (shouldLog(section)) {
+    g_debug_stream << SocketLog::lock << t1 << t2 << SocketLog::endl;
+  }
+}
+
+template<typename T1, typename T2, typename T3>
+void EngineLogWithEndLine(Engine::LogSection section,
+                          const T1& t1,
+                          const T2& t2,
+                          const T3& t3) {
+  if (shouldLog(section)) {
+    g_debug_stream << SocketLog::lock << t1 << t2 << t3 << SocketLog::endl;
+  }
+}
+
+template<typename T1>
+void EngineLog(Engine::LogSection section, const T1& t1) {
+  if (shouldLog(section)) {
+    g_debug_stream << t1;
+  }
+}
+
+template<typename T1, typename T2>
+void EngineLog(Engine::LogSection section,
+               const T1& t1,
+               const T2& t2) {
+  if (shouldLog(section)) {
+    g_debug_stream << t1 << t2;
+  }
+}
+
+template<typename T1, typename T2, typename T3>
+void EngineLog(Engine::LogSection section,
+               const T1& t1,
+               const T2& t2,
+               const T3& t3) {
+  if (shouldLog(section)) {
+    g_debug_stream << t1 << t2 << t3;
+  }
+}
+
+}  // unnamed namespace
 
 Engine::Engine(
     Board& board,
     unsigned search_depth,
     unsigned max_number_of_threads,
-    SocketLog& debug_stream)
-  : Engine(board, debug_stream) {
+    Engine::LogSection log_sections_mask)
+  : Engine(board, log_sections_mask) {
   search_depth_ = search_depth;
   max_number_of_threads_ = max_number_of_threads;
 }
 
-Engine::Engine(Board& board, SocketLog& debug_stream)
-  : board_(board), debug_stream_(debug_stream) {
+Engine::Engine(Board& board, Engine::LogSection log_sections_mask) : board_(board) {
   srand(static_cast<unsigned int>(time(nullptr)));
+  g_log_sections_mask = log_sections_mask;
+  if (log_sections_mask != LogSection::NONE) {
+    g_debug_stream.waitForClient(LoggerPort);
+  }
 }
 
 int Engine::generateRandomValue(int max) const {
@@ -75,7 +144,7 @@ Figure::Move Engine::makeMove() {
     moves.push_back(Move(move, nullptr));
   }
   for (unsigned depth = 1; depth < search_depth_; ++depth) {
-    debug_stream_ << SocketLog::lock << "Starting calculating depth " << depth + 1 << SocketLog::endl;
+    EngineLogWithEndLine(LogSection::MOVE_SEARCHES, "Starting calculating depth ", depth + 1);
     for (Move& move: moves) {
       std::unique_lock<std::mutex> ul(number_of_threads_working_mutex_);
       number_of_threads_working_cv_.wait(
@@ -83,12 +152,12 @@ Figure::Move Engine::makeMove() {
       std::thread t(&Engine::generateTreeMain, this, std::ref(move));
       t.detach();
       ++number_of_threads_working_;
-      debug_stream_ << SocketLog::lock << "Number of working threads: " << number_of_threads_working_ << SocketLog::endl;
+      EngineLogWithEndLine(LogSection::THREADS, "Number of working threads: ", number_of_threads_working_);
     }
     // Wait for all threads to finish moves evaluation
     std::unique_lock<std::mutex> ul(number_of_threads_working_mutex_);
     number_of_threads_working_cv_.wait(ul, [this] { return number_of_threads_working_ == 0; });
-    debug_stream_ << SocketLog::lock << "Finished calculating depth " << depth + 1 << SocketLog::endl;
+    EngineLogWithEndLine(LogSection::MOVE_SEARCHES, "Finished calculating depth ", depth + 1);
   }
 
   // Iterate through all moves and look for mate and for best value.
@@ -102,22 +171,22 @@ Figure::Move Engine::makeMove() {
   if (color == Figure::WHITE) {
     if (border_values.the_smallest_positive_mate_value != BorderValue) {
       moves_to_mate = border_values.the_smallest_positive_mate_value;
-      debug_stream_ << SocketLog::lock << "=== Found mate in " << (moves_to_mate / 2 + 1) << " ===" << SocketLog::endl;
+      EngineLogWithEndLine(LogSection::MATES, "=== Found mate in ", moves_to_mate / 2 + 1, " ===");
     } else if (border_values.zero_mate_value_exists == true) {
       moves_to_mate = 0;
     } else {
       moves_to_mate = border_values.the_smallest_mate_value;
-      debug_stream_ << SocketLog::lock << "=== Found opponent's mate in " << -(moves_to_mate / 2 - 1) << " ===" << SocketLog::endl;
+      EngineLogWithEndLine(LogSection::MATES, "=== Found opponent's mate in " -(moves_to_mate / 2 - 1), " ===");
     }
   } else {
     if (border_values.the_biggest_negative_mate_value != -BorderValue) {
       moves_to_mate = border_values.the_biggest_negative_mate_value;
-      debug_stream_ << SocketLog::lock << "=== Found mate in " << -(moves_to_mate / 2 - 1) << " ===" << SocketLog::endl;
+      EngineLogWithEndLine(LogSection::MATES, "=== Found mate in ", -(moves_to_mate / 2 - 1), " ===");
     } else if (border_values.zero_mate_value_exists == true) {
       moves_to_mate = 0;
     } else {
       moves_to_mate = border_values.the_biggest_mate_value;
-      debug_stream_ << SocketLog::lock << "=== Found opponent's mate in " << (moves_to_mate / 2 + 1) << " ===" << SocketLog::endl;
+      EngineLogWithEndLine(LogSection::MATES, "=== Found opponent's mate in ", moves_to_mate / 2 + 1, " ===");
     }
   }
   BoardAssert(board_, moves_to_mate != BorderValue && moves_to_mate != -BorderValue);
@@ -157,8 +226,7 @@ Figure::Move Engine::makeMove() {
   // Choose randomly move from the best direct moves.
   Move my_move = the_best_direct_moves[generateRandomValue(the_best_direct_moves.size() - 1)];
 
-  debug_stream_ << SocketLog::lock << "My move (" << moves_count_ << "): ";
-  debug_stream_ << my_move.move.old_field << "-" << my_move.move.new_field << SocketLog::endl;
+  EngineLogWithEndLine(LogSection::MOVE_SEARCHES, "My move: ", my_move.move.old_field, my_move.move.new_field);
   board_.makeMove(my_move.move);
   ++moves_count_;
   return my_move.move;
@@ -185,16 +253,16 @@ void Engine::evaluateBoardForLastNode(
     current_move.moves_to_mate = 1;
   }
   if (current_move.moves_to_mate != 0) {
-    debug_stream_ << SocketLog::lock << "Found mate: ";
+    EngineLog(LogSection::MATES, SocketLog::lock, "Found mate: ");
     std::function<void(const Engine::Move&)> lambda;
     lambda = [this, &lambda](const Engine::Move& move) -> void {
       if (move.parent != nullptr) {
         lambda(*move.parent);
       }
-      debug_stream_ << move.move << " ";
+      EngineLog(LogSection::MATES, move.move, " ");
     };
     lambda(current_move);
-    debug_stream_ << SocketLog::endl;
+    EngineLog(LogSection::MATES, SocketLog::endl);
   }
 }
 
@@ -268,7 +336,7 @@ void Engine::generateTree(Board& board, Figure::Color color, Engine::Move& move)
 void Engine::onThreadFinished() {
   number_of_threads_working_mutex_.lock();
   --number_of_threads_working_;
-  debug_stream_ << SocketLog::lock << "Number of working threads: " << number_of_threads_working_ << SocketLog::endl;
+  EngineLogWithEndLine(LogSection::THREADS, "Number of working threads: ", number_of_threads_working_);
   number_of_threads_working_mutex_.unlock();
   number_of_threads_working_cv_.notify_one();
 }

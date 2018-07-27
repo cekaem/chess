@@ -10,8 +10,6 @@ using utils::SocketLog;
 
 namespace {
 
-constexpr int LoggerPort = 9090;
-
 void ltrim(std::string& str) {
   str.erase(std::begin(str), std::find_if(std::begin(str), 
                                           std::end(str),
@@ -20,13 +18,8 @@ void ltrim(std::string& str) {
 
 }  // unnamed namespace
 
-UCIHandler::UCIHandler(std::istream& istr, std::ostream& ostr, bool enable_logging)
-  : istr_(istr), ostr_(ostr), engine_(board_, debug_stream_) {
-  if (enable_logging == true) {
-    ostr_ << "Waiting for logger to connect..." << std::endl;
-    debug_stream_.waitForClient(LoggerPort);
-    ostr_ << "Logger connected." << std::endl;
-  }
+UCIHandler::UCIHandler(std::istream& istr, std::ostream& ostr, Engine::LogSection log_section_mask)
+  : istr_(istr), ostr_(ostr), engine_(board_, log_section_mask) {
 }
 
 void UCIHandler::start() {

@@ -31,7 +31,7 @@ $(BIN_DIR)/uci_engine: $(OBJ_DIR)/UCIEngine.o $(OBJ_DIR)/UCIHandler.o $(OBJ_DIR)
 $(OBJ_DIR)/Game.o: Game.cc Engine.h Board.h Figure.h Field.h PgnCreator.h
 	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/Game.o Game.cc
 
-$(OBJ_DIR)/UCIEngine.o: UCIEngine.cc UCIHandler.h
+$(OBJ_DIR)/UCIEngine.o: UCIEngine.cc UCIHandler.h Engine.h
 	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/UCIEngine.o UCIEngine.cc
 
 $(OBJ_DIR)/UCIHandler.o: UCIHandler.cc UCIHandler.h Board.h Figure.h Field.h utils/SocketLog.h utils/Socket.h

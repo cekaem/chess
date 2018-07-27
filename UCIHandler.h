@@ -22,7 +22,9 @@ class UCIHandler {
 
   struct EndProgramException : public std::exception {};
 
-  UCIHandler(std::istream& istr, std::ostream& ostr, bool enable_logging = false);
+  UCIHandler(std::istream& istr,
+             std::ostream& ostr,
+             Engine::LogSection log_section_mask = Engine::LogSection::NONE);
   void start();
 
  private:
