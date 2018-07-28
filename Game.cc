@@ -179,7 +179,10 @@ int main() {
       board,
       engine_strength,
       number_of_threads,
-      Engine::LogSection::MEMORY_CONSUMPTION);
+      static_cast<Engine::LogSection>(
+        static_cast<int>(Engine::LogSection::TIMER) |
+        static_cast<int>(Engine::LogSection::MOVE_SEARCHES))
+  );
   
   Board::GameStatus status = Board::GameStatus::NONE;
   while (status == Board::GameStatus::NONE) {

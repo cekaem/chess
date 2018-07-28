@@ -9,6 +9,7 @@
 
 #include "Board.h"
 #include "Figure.h"
+#include "utils/Timer.h"
 
 
 class Engine {
@@ -19,7 +20,8 @@ class Engine {
     MATES = 0x02,
     THREADS = 0x04,
     MEMORY_CONSUMPTION = 0x08,
-    ALL = MOVE_SEARCHES | MATES | THREADS | MEMORY_CONSUMPTION
+    TIMER = 0x10,
+    ALL = MOVE_SEARCHES | MATES | THREADS | MEMORY_CONSUMPTION | TIMER
   };
 
   Engine(Board& board, unsigned search_depth, unsigned max_number_of_threads, LogSection log_sections_mask);
@@ -27,7 +29,7 @@ class Engine {
   ~Engine();
   void setNumberOfThreads(unsigned number_of_threads) { max_number_of_threads_ = number_of_threads; }
   void setSearchDepth(unsigned search_depth) { search_depth_ = search_depth_; }
-  Figure::Move makeMove();
+  Figure::Move makeMove(unsigned time_for_move = 0u);
 
  private:
   static const int BorderValue = 1000;
@@ -69,6 +71,8 @@ class Engine {
   int generateRandomValue(int max) const;
 
   void logMemoryConsumption(int sec);
+ 
+  void onTimerExpired();
 
   Board& board_;
   unsigned search_depth_{DefaultSearchDepth};
@@ -81,6 +85,8 @@ class Engine {
   bool memory_consumption_measures_ended_{true};
   std::mutex memory_consumption_measures_ended_mutex_;
   std::condition_variable memory_consumption_measures_ended_cv_;
+  utils::Timer timer_;
+  bool timer_expired_{false};
 };
 
 #endif  // ENGINE_H

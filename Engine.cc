@@ -2,6 +2,7 @@
 
 #include <condition_variable>
 #include <cstdlib>
+#include <chrono>
 #include <ctime>
 #include <functional>
 #include <iostream>
@@ -197,7 +198,18 @@ Engine::BorderValues Engine::findBorderValues(const std::vector<Engine::Move>& m
   return result;
 }
 
-Figure::Move Engine::makeMove() {
+void Engine::onTimerExpired() {
+  EngineLogWithEndLine(LogSection::TIMER, "Timer expired");
+  timer_expired_ = true;
+}
+
+Figure::Move Engine::makeMove(unsigned time_for_move) {
+  timer_expired_ = false;
+  auto start_time = std::chrono::steady_clock::now();
+  if (time_for_move > 0) {
+    EngineLogWithEndLine(LogSection::TIMER, "Starting timer");
+    timer_.start(time_for_move, std::bind(&Engine::onTimerExpired, this));
+  }
   Figure::Color color = board_.getSideToMove();
   Board::GameStatus status = board_.getGameStatus(color);
   if (status != Board::GameStatus::NONE) {
@@ -225,6 +237,7 @@ Figure::Move Engine::makeMove() {
     number_of_threads_working_cv_.wait(ul, [this] { return number_of_threads_working_ == 0; });
     EngineLogWithEndLine(LogSection::MOVE_SEARCHES, "Finished calculating depth ", depth + 1);
   }
+  timer_.stop();
 
   // Iterate through all moves and look for mate and for best value.
   // Also look for possible opponent's mate.
@@ -292,7 +305,12 @@ Figure::Move Engine::makeMove() {
   // Choose randomly move from the best direct moves.
   Move my_move = the_best_direct_moves[generateRandomValue(the_best_direct_moves.size() - 1)];
 
-  EngineLogWithEndLine(LogSection::MOVE_SEARCHES, "My move: ", my_move.move.old_field, my_move.move.new_field);
+  auto end_time = std::chrono::steady_clock::now();
+  auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+  EngineLog(LogSection::MOVE_SEARCHES, SocketLog::lock);
+  EngineLog(LogSection::MOVE_SEARCHES, "My move: ", my_move.move.old_field, my_move.move.new_field);
+  EngineLog(LogSection::MOVE_SEARCHES, " (calculation time: ", time_elapsed, ")");
+  EngineLog(LogSection::MOVE_SEARCHES, SocketLog::endl);
   board_.makeMove(my_move.move);
   ++moves_count_;
   return my_move.move;
@@ -382,6 +400,9 @@ void Engine::generateTree(Board& board, Figure::Color color, Engine::Move& move)
   if (move.moves.empty() == false) {
     auto wrapper = board.makeReversibleMove(move.move);
     for (auto& m: move.moves) {
+      if (timer_expired_ == true) {
+        break;
+      }
       generateTree(board, !color, m);
     }
   } else {
