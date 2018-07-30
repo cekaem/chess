@@ -8,7 +8,21 @@
 
 #include "Engine.h"
 #include "Logger.h"
+#include "utils/SocketLog.h"
 #include "utils/Utils.h"
+
+
+namespace {
+
+const std::map<const char*,
+               void(UCIHandler::*)(const std::vector<std::string>&)> g_handlers = {
+  {"uci", &UCIHandler::handleCommandUCI},
+  {"isready", &UCIHandler::handleCommandIsReady},
+  {"position", &UCIHandler::handleCommandPosition},
+  {"quit", &UCIHandler::handleCommandQuit}
+};
+
+}  // unnamed namespace
 
 
 UCIHandler::UCIHandler(std::istream& istr, std::ostream& ostr)
@@ -43,12 +57,12 @@ void UCIHandler::handleCommand(const std::string& line) {
   } else {
     cmd = command.substr(0, space_position);
   }
-  auto iter = std::find_if(std::begin(handlers_),
-                           std::end(handlers_),
+  auto iter = std::find_if(std::begin(g_handlers),
+                           std::end(g_handlers),
                            [cmd] (const auto& m) -> bool {
                              return cmd == m.first;
                            });
-  if (iter == handlers_.end()) {
+  if (iter == g_handlers.end()) {
     throw UnknownCommandException(cmd);
   }
   LogWithEndLine(Logger::LogSection::UCI_HANDLER, "Recognized command: ", cmd);
@@ -74,6 +88,35 @@ void UCIHandler::handleCommand(const std::string& line) {
 
 void UCIHandler::handleCommandUCI(const std::vector<std::string>& params) {
   ostr_ << "uciok" << std::endl;
+}
+
+void UCIHandler::handleCommandIsReady(const std::vector<std::string>& params) {
+  ostr_ << "readyok" << std::endl;
+}
+
+void UCIHandler::handleCommandPosition(const std::vector<std::string>& params) {
+  if (params.empty() == true) {
+    LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: got no parameters");
+    return;
+  }
+  if (params[0] == "fen") {
+    if (params.size() < 7) {
+      LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: got wrong fen string");
+      return;
+    }
+    std::string fen;
+    for (int i = 1; i < 7; ++i) {
+      fen += params[i] + " ";
+    }
+    if (board_.setBoardFromFEN(fen) == true) {
+      LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: set board from received fen");
+    } else {
+      LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: got wrong fen: ", fen);
+    }
+  } else if (params[0] == "starpos") {
+    board_.setStandardBoard();
+    LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: set starting position");
+  }
 }
 
 void UCIHandler::handleCommandQuit(const std::vector<std::string>& params) {

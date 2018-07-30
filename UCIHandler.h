@@ -24,16 +24,13 @@ class UCIHandler {
   UCIHandler(std::istream& istr, std::ostream& ostr);
   void start();
 
- private:
-  const std::map<const char*,
-                 void(UCIHandler::*)(const std::vector<std::string>&)> handlers_ = {
-    {"uci", &UCIHandler::handleCommandUCI},
-    {"quit", &UCIHandler::handleCommandQuit}
-  };
-
-  void handleCommand(const std::string& command);
   void handleCommandUCI(const std::vector<std::string>& params);
   void handleCommandQuit(const std::vector<std::string>& params);
+  void handleCommandIsReady(const std::vector<std::string>& params);
+  void handleCommandPosition(const std::vector<std::string>& params);
+
+ private:
+  void handleCommand(const std::string& command);
 
   std::istream& istr_;
   std::ostream& ostr_;
