@@ -6,13 +6,13 @@
 #include <string>
 #include <vector>
 
+#include "Engine.h"
+#include "Logger.h"
 #include "utils/Utils.h"
 
 
-using utils::SocketLog;
-
-UCIHandler::UCIHandler(std::istream& istr, std::ostream& ostr, Engine::LogSection log_section_mask)
-  : istr_(istr), ostr_(ostr), engine_(board_, log_section_mask) {
+UCIHandler::UCIHandler(std::istream& istr, std::ostream& ostr)
+  : istr_(istr), ostr_(ostr), engine_(board_) {
 }
 
 void UCIHandler::start() {
@@ -24,7 +24,7 @@ void UCIHandler::start() {
     } catch (const UnknownCommandException& e) {
       std::string error_message("Unrecognized command: ");
       error_message.append(e.what());
-      debug_stream_ << error_message << SocketLog::endl;
+      LogWithEndLine(Logger::LogSection::UCI_HANDLER, error_message);
       ostr_ << error_message << std::endl;
     } catch (const EndProgramException&) {
       break;
@@ -34,7 +34,7 @@ void UCIHandler::start() {
 
 void UCIHandler::handleCommand(const std::string& line) {
   std::string command = line;
-  debug_stream_ << "Received command: " << command << SocketLog::endl;
+  LogWithEndLine(Logger::LogSection::UCI_HANDLER, "Received command: ", command);
   utils::ltrim(command);
   auto space_position = command.find(' ');
   std::string cmd;
@@ -51,7 +51,7 @@ void UCIHandler::handleCommand(const std::string& line) {
   if (iter == handlers_.end()) {
     throw UnknownCommandException(cmd);
   }
-  debug_stream_ << "Recognized command: " << cmd << SocketLog::endl;
+  LogWithEndLine(Logger::LogSection::UCI_HANDLER, "Recognized command: ", cmd);
 
   std::vector<std::string> params;
   while (space_position != std::string::npos) {

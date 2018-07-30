@@ -9,7 +9,6 @@
 
 #include "Board.h"
 #include "Engine.h"
-#include "utils/SocketLog.h"
 
 
 class UCIHandler {
@@ -22,9 +21,7 @@ class UCIHandler {
 
   struct EndProgramException : public std::exception {};
 
-  UCIHandler(std::istream& istr,
-             std::ostream& ostr,
-             Engine::LogSection log_section_mask = Engine::LogSection::NONE);
+  UCIHandler(std::istream& istr, std::ostream& ostr);
   void start();
 
  private:
@@ -41,7 +38,6 @@ class UCIHandler {
   std::istream& istr_;
   std::ostream& ostr_;
   Board board_;
-  utils::SocketLog debug_stream_;
   Engine engine_;
 };
 

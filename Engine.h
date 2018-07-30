@@ -14,19 +14,8 @@
 
 class Engine {
  public:
-  enum class LogSection {
-    NONE = 0x0,
-    MOVE_SEARCHES = 0x01,
-    MATES = 0x02,
-    THREADS = 0x04,
-    MEMORY_CONSUMPTION = 0x08,
-    TIMER = 0x10,
-    ALL = MOVE_SEARCHES | MATES | THREADS | MEMORY_CONSUMPTION | TIMER
-  };
-
-  Engine(Board& board, unsigned search_depth, unsigned max_number_of_threads, LogSection log_sections_mask);
-  Engine(Board& board, LogSection log_sections_mask);
-  ~Engine();
+  Engine(Board& board, unsigned search_depth, unsigned max_number_of_threads);
+  Engine(Board& board);
   void setNumberOfThreads(unsigned number_of_threads) { max_number_of_threads_ = number_of_threads; }
   void setSearchDepth(unsigned search_depth) { search_depth_ = search_depth_; }
   Figure::Move makeMove(unsigned time_for_move = 0u);
@@ -70,8 +59,6 @@ class Engine {
 
   int generateRandomValue(int max) const;
 
-  void logMemoryConsumption(int sec);
- 
   void onTimerExpired();
 
   Board& board_;
@@ -81,10 +68,6 @@ class Engine {
   std::mutex number_of_threads_working_mutex_;
   std::condition_variable number_of_threads_working_cv_;
   int moves_count_{0};
-  bool do_memory_consumption_measures_{true};
-  bool memory_consumption_measures_ended_{true};
-  std::mutex memory_consumption_measures_ended_mutex_;
-  std::condition_variable memory_consumption_measures_ended_cv_;
   utils::Timer timer_;
   bool timer_expired_{false};
 };

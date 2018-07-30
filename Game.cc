@@ -178,11 +178,7 @@ int main() {
   Engine engine(
       board,
       engine_strength,
-      number_of_threads,
-      static_cast<Engine::LogSection>(
-        static_cast<int>(Engine::LogSection::TIMER) |
-        static_cast<int>(Engine::LogSection::MOVE_SEARCHES))
-  );
+      number_of_threads);
   
   Board::GameStatus status = Board::GameStatus::NONE;
   while (status == Board::GameStatus::NONE) {

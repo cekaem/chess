@@ -13,155 +13,24 @@
 
 #include "Board.h"
 #include "Figure.h"
+#include "Logger.h"
 #include "utils/SocketLog.h"
 #include "utils/Utils.h"
 
-
 using utils::SocketLog;
 
-namespace {
-
-constexpr int LoggerPort = 9090;
-constexpr int SecondsBetweenMemoryConsumptionMeasures = 2;
-Engine::LogSection g_log_sections_mask = Engine::LogSection::NONE;
-SocketLog g_debug_stream;
-
-bool shouldLog(Engine::LogSection section) {
-  return (static_cast<int>(section) & static_cast<int>(g_log_sections_mask)) != 0;
-}
-
-template<typename T1>
-void EngineLogWithEndLine(Engine::LogSection section, const T1& t1) {
-  if (shouldLog(section)) {
-    g_debug_stream << SocketLog::lock << t1 << SocketLog::endl;
-  }
-}
-
-template<typename T1, typename T2>
-void EngineLogWithEndLine(Engine::LogSection section,
-                          const T1& t1,
-                          const T2& t2) {
-  if (shouldLog(section)) {
-    g_debug_stream << SocketLog::lock << t1 << t2 << SocketLog::endl;
-  }
-}
-
-template<typename T1, typename T2, typename T3>
-void EngineLogWithEndLine(Engine::LogSection section,
-                          const T1& t1,
-                          const T2& t2,
-                          const T3& t3) {
-  if (shouldLog(section)) {
-    g_debug_stream << SocketLog::lock << t1 << t2 << t3 << SocketLog::endl;
-  }
-}
-
-template<typename T1>
-void EngineLog(Engine::LogSection section, const T1& t1) {
-  if (shouldLog(section)) {
-    g_debug_stream << t1;
-  }
-}
-
-template<typename T1, typename T2>
-void EngineLog(Engine::LogSection section,
-               const T1& t1,
-               const T2& t2) {
-  if (shouldLog(section)) {
-    g_debug_stream << t1 << t2;
-  }
-}
-
-template<typename T1, typename T2, typename T3>
-void EngineLog(Engine::LogSection section,
-               const T1& t1,
-               const T2& t2,
-               const T3& t3) {
-  if (shouldLog(section)) {
-    g_debug_stream << t1 << t2 << t3;
-  }
-}
-
-}  // unnamed namespace
 
 Engine::Engine(
     Board& board,
     unsigned search_depth,
-    unsigned max_number_of_threads,
-    Engine::LogSection log_sections_mask)
-  : Engine(board, log_sections_mask) {
+    unsigned max_number_of_threads)
+  : Engine(board) {
   search_depth_ = search_depth;
   max_number_of_threads_ = max_number_of_threads;
 }
 
-Engine::Engine(Board& board, Engine::LogSection log_sections_mask) : board_(board) {
+Engine::Engine(Board& board) : board_(board) {
   srand(static_cast<unsigned int>(time(nullptr)));
-  g_log_sections_mask = log_sections_mask;
-  if (log_sections_mask != LogSection::NONE) {
-    g_debug_stream.waitForClient(LoggerPort);
-  }
-  if (shouldLog(LogSection::MEMORY_CONSUMPTION)) {
-    memory_consumption_measures_ended_ = false;
-    std::thread memory_consumption_logger(&Engine::logMemoryConsumption,
-                                          this,
-                                          SecondsBetweenMemoryConsumptionMeasures);
-    memory_consumption_logger.detach();
-  }
-}
-
-Engine::~Engine() {
-  do_memory_consumption_measures_ = false;
-  std::unique_lock<std::mutex> ul(memory_consumption_measures_ended_mutex_);
-  memory_consumption_measures_ended_cv_.wait(
-    ul, [this] { return memory_consumption_measures_ended_ == true; });
-}
-
-void Engine::logMemoryConsumption(int sec) {
-  unsigned max_consumption = 0u;
-  unsigned long long total_consumption = 0u;
-  unsigned number_of_measures = 0u;
-  while (do_memory_consumption_measures_ == true) {
-    FILE* desc = fopen("/proc/self/status", "r");
-    if (desc == nullptr) {
-      EngineLogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Can't open /proc/self/status");
-      break;
-    }
-    char buff[128];
-    while (fgets(buff, 128, desc) != nullptr) {
-      std::string line(buff);
-      auto pos = line.find("VmSize:");
-      if (pos != 0) {
-        continue;
-      }
-      std::string sub = line.substr(7);  // 7 == strlen("VmSize:")
-      utils::ltrim(sub);
-      pos = sub.find(" kB");
-      if (pos == std::string::npos) {
-        EngineLogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Error during parsing /proc/self/status");
-        do_memory_consumption_measures_ = false;
-        break;
-      }
-      std::string memory_consumption_str = sub.substr(0, pos);
-      unsigned memory_consumption = 0u;
-      if (utils::str_2_uint(memory_consumption_str, memory_consumption) == false) {
-        EngineLogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Error during reading memory consumption from /proc/self/status: ", memory_consumption_str);
-        do_memory_consumption_measures_ = false;
-        break;
-      }
-      EngineLogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Memory consumption: ", memory_consumption);
-      if (memory_consumption > max_consumption) {
-        max_consumption = memory_consumption;
-      }
-      total_consumption += memory_consumption;
-      ++number_of_measures;
-    }
-    ::sleep(sec);
-  }
-  EngineLogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Maximum consumption: ", max_consumption);
-  EngineLogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Average consumption: ", total_consumption / number_of_measures);
-  
-  memory_consumption_measures_ended_ = true;
-  memory_consumption_measures_ended_cv_.notify_one();
 }
 
 int Engine::generateRandomValue(int max) const {
@@ -199,7 +68,7 @@ Engine::BorderValues Engine::findBorderValues(const std::vector<Engine::Move>& m
 }
 
 void Engine::onTimerExpired() {
-  EngineLogWithEndLine(LogSection::TIMER, "Timer expired");
+  LogWithEndLine(Logger::LogSection::ENGINE_TIMER, "Timer expired");
   timer_expired_ = true;
 }
 
@@ -207,7 +76,7 @@ Figure::Move Engine::makeMove(unsigned time_for_move) {
   timer_expired_ = false;
   auto start_time = std::chrono::steady_clock::now();
   if (time_for_move > 0) {
-    EngineLogWithEndLine(LogSection::TIMER, "Starting timer");
+    LogWithEndLine(Logger::LogSection::ENGINE_TIMER, "Starting timer");
     timer_.start(time_for_move, std::bind(&Engine::onTimerExpired, this));
   }
   Figure::Color color = board_.getSideToMove();
@@ -222,7 +91,7 @@ Figure::Move Engine::makeMove(unsigned time_for_move) {
     moves.push_back(Move(move, nullptr));
   }
   for (unsigned depth = 1; depth < search_depth_; ++depth) {
-    EngineLogWithEndLine(LogSection::MOVE_SEARCHES, "Starting calculating depth ", depth + 1);
+    LogWithEndLine(Logger::LogSection::ENGINE_MOVE_SEARCHES, "Starting calculating depth ", depth + 1);
     for (Move& move: moves) {
       std::unique_lock<std::mutex> ul(number_of_threads_working_mutex_);
       number_of_threads_working_cv_.wait(
@@ -230,12 +99,12 @@ Figure::Move Engine::makeMove(unsigned time_for_move) {
       std::thread t(&Engine::generateTreeMain, this, std::ref(move));
       t.detach();
       ++number_of_threads_working_;
-      EngineLogWithEndLine(LogSection::THREADS, "Number of working threads: ", number_of_threads_working_);
+      LogWithEndLine(Logger::LogSection::ENGINE_THREADS, "Number of working threads: ", number_of_threads_working_);
     }
     // Wait for all threads to finish moves evaluation
     std::unique_lock<std::mutex> ul(number_of_threads_working_mutex_);
     number_of_threads_working_cv_.wait(ul, [this] { return number_of_threads_working_ == 0; });
-    EngineLogWithEndLine(LogSection::MOVE_SEARCHES, "Finished calculating depth ", depth + 1);
+    LogWithEndLine(Logger::LogSection::ENGINE_MOVE_SEARCHES, "Finished calculating depth ", depth + 1);
   }
   timer_.stop();
 
@@ -250,22 +119,22 @@ Figure::Move Engine::makeMove(unsigned time_for_move) {
   if (color == Figure::WHITE) {
     if (border_values.the_smallest_positive_mate_value != BorderValue) {
       moves_to_mate = border_values.the_smallest_positive_mate_value;
-      EngineLogWithEndLine(LogSection::MATES, "=== Found mate in ", moves_to_mate / 2 + 1, " ===");
+      LogWithEndLine(Logger::LogSection::ENGINE_MATES, "=== Found mate in ", moves_to_mate / 2 + 1, " ===");
     } else if (border_values.zero_mate_value_exists == true) {
       moves_to_mate = 0;
     } else {
       moves_to_mate = border_values.the_smallest_mate_value;
-      EngineLogWithEndLine(LogSection::MATES, "=== Found opponent's mate in " -(moves_to_mate / 2 - 1), " ===");
+      LogWithEndLine(Logger::LogSection::ENGINE_MATES, "=== Found opponent's mate in " -(moves_to_mate / 2 - 1), " ===");
     }
   } else {
     if (border_values.the_biggest_negative_mate_value != -BorderValue) {
       moves_to_mate = border_values.the_biggest_negative_mate_value;
-      EngineLogWithEndLine(LogSection::MATES, "=== Found mate in ", -(moves_to_mate / 2 - 1), " ===");
+      LogWithEndLine(Logger::LogSection::ENGINE_MATES, "=== Found mate in ", -(moves_to_mate / 2 - 1), " ===");
     } else if (border_values.zero_mate_value_exists == true) {
       moves_to_mate = 0;
     } else {
       moves_to_mate = border_values.the_biggest_mate_value;
-      EngineLogWithEndLine(LogSection::MATES, "=== Found opponent's mate in ", moves_to_mate / 2 + 1, " ===");
+      LogWithEndLine(Logger::LogSection::ENGINE_MATES, "=== Found opponent's mate in ", moves_to_mate / 2 + 1, " ===");
     }
   }
   BoardAssert(board_, moves_to_mate != BorderValue && moves_to_mate != -BorderValue);
@@ -307,10 +176,10 @@ Figure::Move Engine::makeMove(unsigned time_for_move) {
 
   auto end_time = std::chrono::steady_clock::now();
   auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-  EngineLog(LogSection::MOVE_SEARCHES, SocketLog::lock);
-  EngineLog(LogSection::MOVE_SEARCHES, "My move: ", my_move.move.old_field, my_move.move.new_field);
-  EngineLog(LogSection::MOVE_SEARCHES, " (calculation time: ", time_elapsed, ")");
-  EngineLog(LogSection::MOVE_SEARCHES, SocketLog::endl);
+  Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, SocketLog::lock);
+  Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, "My move: ", my_move.move.old_field, my_move.move.new_field);
+  Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, " (calculation time: ", time_elapsed, ")");
+  Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, SocketLog::endl);
   board_.makeMove(my_move.move);
   ++moves_count_;
   return my_move.move;
@@ -337,16 +206,16 @@ void Engine::evaluateBoardForLastNode(
     current_move.moves_to_mate = 1;
   }
   if (current_move.moves_to_mate != 0) {
-    EngineLog(LogSection::MATES, SocketLog::lock, "Found mate: ");
+    Log(Logger::LogSection::ENGINE_MATES, SocketLog::lock, "Found mate: ");
     std::function<void(const Engine::Move&)> lambda;
     lambda = [this, &lambda](const Engine::Move& move) -> void {
       if (move.parent != nullptr) {
         lambda(*move.parent);
       }
-      EngineLog(LogSection::MATES, move.move, " ");
+      Log(Logger::LogSection::ENGINE_MATES, move.move, " ");
     };
     lambda(current_move);
-    EngineLog(LogSection::MATES, SocketLog::endl);
+    Log(Logger::LogSection::ENGINE_MATES, SocketLog::endl);
   }
 }
 
@@ -423,7 +292,7 @@ void Engine::generateTree(Board& board, Figure::Color color, Engine::Move& move)
 void Engine::onThreadFinished() {
   number_of_threads_working_mutex_.lock();
   --number_of_threads_working_;
-  EngineLogWithEndLine(LogSection::THREADS, "Number of working threads: ", number_of_threads_working_);
+  LogWithEndLine(Logger::LogSection::ENGINE_THREADS, "Number of working threads: ", number_of_threads_working_);
   number_of_threads_working_mutex_.unlock();
   number_of_threads_working_cv_.notify_one();
 }
