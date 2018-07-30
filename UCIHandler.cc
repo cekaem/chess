@@ -19,6 +19,7 @@ const std::map<const char*,
   {"uci", &UCIHandler::handleCommandUCI},
   {"isready", &UCIHandler::handleCommandIsReady},
   {"position", &UCIHandler::handleCommandPosition},
+  {"go", &UCIHandler::handleCommandGo},
   {"quit", &UCIHandler::handleCommandQuit}
 };
 
@@ -116,6 +117,28 @@ void UCIHandler::handleCommandPosition(const std::vector<std::string>& params) {
   } else if (params[0] == "starpos") {
     board_.setStandardBoard();
     LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: set starting position");
+  }
+}
+
+void UCIHandler::handleCommandGo(const std::vector<std::string>& params) {
+  if (params.empty() == true) {
+    LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: got no parameters");
+    return;
+  }
+  if (params[0] == "movetime") {
+    if (params.size() < 2) {
+      LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: got movetime without value");
+      return;
+    }
+    unsigned time_to_move = 0;
+    if (utils::str_2_uint(params[1], time_to_move) == false) {
+      LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: got movetime with invalid value");
+    }
+    auto move = engine_.makeMove(time_to_move);
+    std::stringstream response;
+    response << "bestmove " << move.old_field << move.new_field;
+    LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: sending response: ", response.str());
+    ostr_ << response.str() << std::endl;
   }
 }
 

@@ -28,6 +28,7 @@ class UCIHandler {
   void handleCommandQuit(const std::vector<std::string>& params);
   void handleCommandIsReady(const std::vector<std::string>& params);
   void handleCommandPosition(const std::vector<std::string>& params);
+  void handleCommandGo(const std::vector<std::string>& params);
 
  private:
   void handleCommand(const std::string& command);
