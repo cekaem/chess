@@ -2,6 +2,7 @@
 
 #include <condition_variable>
 #include <exception>
+#include <functional>
 #include <mutex>
 #include <thread>
 #include <unistd.h>
@@ -29,12 +30,31 @@ void Logger::start(int port, Logger::LogSection log_sections_mask) {
   log_sections_mask_ = log_sections_mask;
   log_.waitForClient(port);
   if ((log_sections_mask & LogSection::MEMORY_CONSUMPTION) != LogSection::NONE) {
+    startLoggingMemoryConsumption();
+  }
+}
+
+void Logger::startLoggingMemoryConsumption() {
+  if (is_logging_memory_consumption_ == false) {
+    is_logging_memory_consumption_ = true;
     memory_consumption_measures_ended_ = false;
     std::thread memory_consumption_logger(&Logger::logMemoryConsumption,
                                           this,
                                           SecondsBetweenMemoryConsumptionMeasures);
     memory_consumption_logger.detach();
   }
+}
+
+bool Logger::alertOnMemoryConsumption(
+    unsigned threshold,
+    std::function<void(int)> callback) {
+  if (memory_consumption_callback_) {
+    return false;
+  }
+  memory_consumption_callback_ = callback;
+  memory_consumption_threshold_ = threshold;
+  startLoggingMemoryConsumption();
+  return true;
 }
 
 bool Logger::shouldLog(Logger::LogSection section) const {
@@ -59,6 +79,10 @@ void Logger::logMemoryConsumption(int sec) {
     ++number_of_measures;
     if (memory_consumption > max_consumption) {
       max_consumption = memory_consumption;
+    }
+    if (memory_consumption_callback_ && memory_consumption >= memory_consumption_threshold_) {
+      LogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Memory consumption threshold hit: ", memory_consumption);
+      memory_consumption_callback_(memory_consumption);
     }
     ::sleep(sec);
   }

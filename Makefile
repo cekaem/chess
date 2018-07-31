@@ -28,7 +28,7 @@ $(BIN_DIR)/game: $(OBJ_DIR)/Game.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/Figure.o $(OBJ
 $(BIN_DIR)/uci_engine: $(OBJ_DIR)/UCIEngine.o $(OBJ_DIR)/UCIHandler.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Logger.o Board.h Figure.h Field.h
 	$(CXX) $(CFLAGS) -o $(BIN_DIR)/uci_engine $(OBJ_DIR)/UCIEngine.o $(OBJ_DIR)/UCIHandler.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Logger.o
 
-$(OBJ_DIR)/Game.o: Game.cc Engine.h Board.h Figure.h Field.h PgnCreator.h
+$(OBJ_DIR)/Game.o: Game.cc Engine.h Board.h Figure.h Field.h PgnCreator.h Logger.h
 	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/Game.o Game.cc
 
 $(OBJ_DIR)/UCIEngine.o: UCIEngine.cc UCIHandler.h Engine.h

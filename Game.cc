@@ -5,6 +5,7 @@
 #include "Board.h"
 #include "Engine.h"
 #include "Figure.h"
+#include "Logger.h"
 #include "PgnCreator.h"
 
 namespace {
@@ -155,6 +156,9 @@ int main() {
   bool human_plays_black = false;
   int engine_strength = 0;
   int number_of_threads = 0;
+
+  Logger::getLogger().start(9090, Logger::LogSection::MEMORY_CONSUMPTION |
+                                  Logger::LogSection::ENGINE_MOVE_SEARCHES);
 
   std::cout << "Human plays white?" << std::endl;
   std::cout << "> ";

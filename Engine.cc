@@ -19,6 +19,7 @@
 
 using utils::SocketLog;
 
+long long Engine::Move::number_of_copies = 0;
 
 Engine::Engine(
     Board& board,
@@ -31,6 +32,9 @@ Engine::Engine(
 
 Engine::Engine(Board& board) : board_(board) {
   srand(static_cast<unsigned int>(time(nullptr)));
+  Logger::getLogger().alertOnMemoryConsumption(
+      max_memory_consumption_,
+      std::bind(&Engine::onMaxMemoryConsumptionExceeded, this, std::placeholders::_1));
 }
 
 int Engine::generateRandomValue(int max) const {
@@ -69,11 +73,18 @@ Engine::BorderValues Engine::findBorderValues(const std::vector<Engine::Move>& m
 
 void Engine::onTimerExpired() {
   LogWithEndLine(Logger::LogSection::ENGINE_TIMER, "Timer expired");
-  timer_expired_ = true;
+  end_calculations_ = true;
+}
+
+void Engine::onMaxMemoryConsumptionExceeded(unsigned memory_consumption) {
+  end_calculations_ = true;
 }
 
 Figure::Move Engine::makeMove(unsigned time_for_move) {
-  timer_expired_ = false;
+  end_calculations_ = false;
+  LogWithEndLine(Logger::LogSection::ENGINE_MOVE_SEARCHES, "Make move: going to sleep: ", Move::number_of_copies);
+  ::sleep(10);
+  LogWithEndLine(Logger::LogSection::ENGINE_MOVE_SEARCHES, "Make move: woke up");
   auto start_time = std::chrono::steady_clock::now();
   if (time_for_move > 0) {
     LogWithEndLine(Logger::LogSection::ENGINE_TIMER, "Starting timer");
@@ -269,7 +280,7 @@ void Engine::generateTree(Board& board, Figure::Color color, Engine::Move& move)
   if (move.moves.empty() == false) {
     auto wrapper = board.makeReversibleMove(move.move);
     for (auto& m: move.moves) {
-      if (timer_expired_ == true) {
+      if (end_calculations_ == true) {
         break;
       }
       generateTree(board, !color, m);

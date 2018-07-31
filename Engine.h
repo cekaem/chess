@@ -18,23 +18,59 @@ class Engine {
   Engine(Board& board);
   void setNumberOfThreads(unsigned number_of_threads) { max_number_of_threads_ = number_of_threads; }
   void setSearchDepth(unsigned search_depth) { search_depth_ = search_depth_; }
+  void setMaxMemoryConsumption(unsigned m) { max_memory_consumption_ = m; }
   Figure::Move makeMove(unsigned time_for_move = 0u);
 
  private:
   static const int BorderValue = 1000;
   static const unsigned DefaultSearchDepth = 3;
   static const unsigned DefaultNumberOfThreads = 5;
+  static const unsigned DefaultMaxMemoryConsumption = 5000000u;  // kB
 
   struct Move {
-    Move() {}
-    Move(Figure::Move fmove, Engine::Move* p) : move(fmove), parent(p) {}
-    Move(Figure::Move fmove, int v, int m, bool d) : move(fmove), value(v), moves_to_mate(m), is_draw(d) {}
+    Move() { ++number_of_copies; }
+    Move(const Move& other) {
+      move = other.move;
+      value = other.value;
+      moves_to_mate = other.moves_to_mate;
+      is_draw = other.is_draw;
+      moves = other.moves;
+      parent = other.parent;
+      ++number_of_copies;
+    }
+    ~Move() { --number_of_copies; }
+    Move(Figure::Move fmove, Engine::Move* p) : move(fmove), parent(p) { ++number_of_copies; }
+    Move(Figure::Move fmove, int v, int m, bool d) : move(fmove), value(v), moves_to_mate(m), is_draw(d) { ++number_of_copies; }
+
+    Move& operator=(const Move& other) {
+      move = other.move;
+      value = other.value;
+      moves_to_mate = other.moves_to_mate;
+      is_draw = other.is_draw;
+      moves = other.moves;
+      parent = other.parent;
+      ++number_of_copies;
+      return *this;
+    }
+
+    Move(Move&& other) {
+      move = other.move;
+      value = other.value;
+      moves_to_mate = other.moves_to_mate;
+      is_draw = other.is_draw;
+      moves = other.moves;
+      parent = other.parent;
+      ++number_of_copies;
+    }
+
     Figure::Move move;
     int value{0};
     int moves_to_mate{0};
     bool is_draw{false};
     std::vector<Engine::Move> moves;
     Engine::Move* parent{nullptr};
+
+    static long long number_of_copies;
   };
 
   struct BorderValues {
@@ -61,15 +97,18 @@ class Engine {
 
   void onTimerExpired();
 
+  void onMaxMemoryConsumptionExceeded(unsigned memory_consumption);
+
   Board& board_;
   unsigned search_depth_{DefaultSearchDepth};
   unsigned max_number_of_threads_{DefaultNumberOfThreads};
+  unsigned max_memory_consumption_{DefaultMaxMemoryConsumption};
   unsigned number_of_threads_working_{0u};
   std::mutex number_of_threads_working_mutex_;
   std::condition_variable number_of_threads_working_cv_;
   int moves_count_{0};
   utils::Timer timer_;
-  bool timer_expired_{false};
+  bool end_calculations_{false};
 };
 
 #endif  // ENGINE_H

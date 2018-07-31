@@ -2,13 +2,14 @@
 #define LOGGER_H
 
 #include <condition_variable>
+#include <functional>
 #include <mutex>
 
 #include "utils/SocketLog.h"
 
 class Logger {
  public:
-  static const int SecondsBetweenMemoryConsumptionMeasures = 2;
+  static constexpr int SecondsBetweenMemoryConsumptionMeasures = 2;
 
   enum class LogSection {
     NONE = 0x0,
@@ -30,6 +31,7 @@ class Logger {
   static Logger& getLogger();
   void start(int port, LogSection log_sections_mask);
   bool shouldLog(LogSection section) const;
+  bool alertOnMemoryConsumption(unsigned threshold, std::function<void(int)> callback);
   utils::SocketLog& getStream() { return log_; }
 
  private:
@@ -37,6 +39,7 @@ class Logger {
   Logger(const Logger&) = delete;
   Logger& operator=(const Logger&) = delete;
 
+  void startLoggingMemoryConsumption();
   void logMemoryConsumption(int sec);
 
   utils::SocketLog log_;
@@ -45,6 +48,9 @@ class Logger {
 
   bool do_memory_consumption_measures_{true};
   bool memory_consumption_measures_ended_{true};
+  bool is_logging_memory_consumption_{false};
+  unsigned memory_consumption_threshold_{0u};
+  std::function<void(int)> memory_consumption_callback_;
   std::mutex memory_consumption_measures_ended_mutex_;
   std::condition_variable memory_consumption_measures_ended_cv_;
 };
