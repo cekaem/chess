@@ -28,40 +28,17 @@ class Engine {
   static const unsigned DefaultMaxMemoryConsumption = 5000000u;  // kB
 
   struct Move {
-    Move() { ++number_of_copies; }
+    Move() {}
     Move(const Move& other) {
+      // Created to avoid unnecessary coping of field moves
       move = other.move;
       value = other.value;
       moves_to_mate = other.moves_to_mate;
       is_draw = other.is_draw;
-      moves = other.moves;
       parent = other.parent;
-      ++number_of_copies;
     }
-    ~Move() { --number_of_copies; }
-    Move(Figure::Move fmove, Engine::Move* p) : move(fmove), parent(p) { ++number_of_copies; }
-    Move(Figure::Move fmove, int v, int m, bool d) : move(fmove), value(v), moves_to_mate(m), is_draw(d) { ++number_of_copies; }
-
-    Move& operator=(const Move& other) {
-      move = other.move;
-      value = other.value;
-      moves_to_mate = other.moves_to_mate;
-      is_draw = other.is_draw;
-      moves = other.moves;
-      parent = other.parent;
-      ++number_of_copies;
-      return *this;
-    }
-
-    Move(Move&& other) {
-      move = other.move;
-      value = other.value;
-      moves_to_mate = other.moves_to_mate;
-      is_draw = other.is_draw;
-      moves = other.moves;
-      parent = other.parent;
-      ++number_of_copies;
-    }
+    Move(Figure::Move fmove, Engine::Move* p) : move(fmove), parent(p) {}
+    Move(Figure::Move fmove, int v, int m, bool d) : move(fmove), value(v), moves_to_mate(m), is_draw(d) {}
 
     Figure::Move move;
     int value{0};
@@ -69,8 +46,6 @@ class Engine {
     bool is_draw{false};
     std::vector<Engine::Move> moves;
     Engine::Move* parent{nullptr};
-
-    static long long number_of_copies;
   };
 
   struct BorderValues {
