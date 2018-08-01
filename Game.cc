@@ -181,7 +181,6 @@ int main() {
   board.addBoardDrawer(&pgn_creator);
   Engine engine(
       board,
-      engine_strength,
       number_of_threads);
   
   Board::GameStatus status = Board::GameStatus::NONE;
@@ -192,7 +191,7 @@ int main() {
                               std::get<1>(human_move),
                               std::get<2>(human_move));
     } else {
-      engine.makeMove();
+      engine.makeMove(2000, engine_strength);
       status = board.getGameStatus(Figure::BLACK);
     }
     if (status == Board::GameStatus::NONE) {
@@ -202,7 +201,7 @@ int main() {
                                 std::get<1>(human_move),
                                 std::get<2>(human_move));
       } else {
-        engine.makeMove();
+        engine.makeMove(2000, engine_strength);
         status = board.getGameStatus(Figure::WHITE);
       }
     }

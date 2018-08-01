@@ -28,6 +28,7 @@ const std::map<const char*,
 
 UCIHandler::UCIHandler(std::istream& istr, std::ostream& ostr)
   : istr_(istr), ostr_(ostr), engine_(board_) {
+  board_.setStandardBoard();
 }
 
 void UCIHandler::start() {
@@ -134,7 +135,7 @@ void UCIHandler::handleCommandGo(const std::vector<std::string>& params) {
     if (utils::str_2_uint(params[1], time_to_move) == false) {
       LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: got movetime with invalid value");
     }
-    auto move = engine_.makeMove(time_to_move);
+    auto move = engine_.makeMove(time_to_move, 1000/* infinite depth */);
     std::stringstream response;
     response << "bestmove " << move.old_field << move.new_field;
     LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: sending response: ", response.str());

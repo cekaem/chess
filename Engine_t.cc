@@ -30,7 +30,7 @@ TEST_PROCEDURE(test1) {
   TEST_START
   {
     Board board;
-    Engine engine(board, 3, 4);
+    Engine engine(board, 4);
     board.addFigure(Figure::KING, Field("a8"), Figure::BLACK);
     board.addFigure(Figure::KING, Field("c7"), Figure::WHITE);
     board.addFigure(Figure::ROOK, Field("f6"), Figure::WHITE);
@@ -39,7 +39,7 @@ TEST_PROCEDURE(test1) {
   }
   {
     Board board;
-    Engine engine(board, 3, 4);
+    Engine engine(board, 4);
     board.addFigure(Figure::KING, Field("a7"), Figure::BLACK);
     board.addFigure(Figure::KING, Field("h1"), Figure::WHITE);
     board.addFigure(Figure::BISHOP, Field("d5"), Figure::WHITE);
@@ -52,14 +52,14 @@ TEST_PROCEDURE(test1) {
   }
   {
     Board board;
-    Engine engine(board, 3, 4);
+    Engine engine(board, 4);
     board.setBoardFromFEN("8/1b6/8/8/7p/4p1P1/6nP/4k1BK b - - 0 1");
     auto move = engine.makeMove();
     VERIFY_TRUE(MovesEqual(move, "g2-f4"));
   }
   {
     Board board;
-    Engine engine(board, 1, 1);
+    Engine engine(board, 1);
     board.addFigure(Figure::KING, Field("b8"), Figure::BLACK);
     board.addFigure(Figure::KING, Field("d8"), Figure::WHITE);
     board.addFigure(Figure::PAWN, Field("b5"), Figure::WHITE);
@@ -80,7 +80,7 @@ TEST_PROCEDURE(test2) {
   TEST_START
   {
     Board board;
-    Engine engine(board, 3, 4);
+    Engine engine(board, 4);
     board.addFigure(Figure::KING, Field("a8"), Figure::BLACK);
     board.addFigure(Figure::KING, Field("d2"), Figure::WHITE);
     board.addFigure(Figure::QUEEN, Field("d1"), Figure::BLACK);
@@ -94,7 +94,7 @@ TEST_PROCEDURE(test2) {
 TEST_PROCEDURE(test3) {
   TEST_START
   Board board;
-  Engine engine(board, 3, 4);
+  Engine engine(board, 4);
   board.addFigure(Figure::KING, Field("a6"), Figure::WHITE);
   board.addFigure(Figure::KING, Field("d4"), Figure::BLACK);
   board.addFigure(Figure::PAWN, Field("h7"), Figure::WHITE);
@@ -108,7 +108,7 @@ TEST_PROCEDURE(test4) {
   TEST_START
   {
     Board board;
-    Engine engine(board, 3, 4);
+    Engine engine(board, 4);
     board.setBoardFromFEN("8/8/1b6/1k6/3q4/3n4/6PP/R3R2K b - - 0 1");
     auto move = engine.makeMove();
     VERIFY_TRUE(MovesEqual(move, "d4-g1"));
@@ -125,9 +125,9 @@ TEST_PROCEDURE(test5) {
   TEST_START
   {
     Board board;
-    Engine engine(board, 4, 4);
+    Engine engine(board, 4);
     board.setBoardFromFEN("6k1/5ppp/6b1/3Q3n/1K6/8/8/8 b - - 0 1");
-    auto move = engine.makeMove();
+    auto move = engine.makeMove(5000, 4);
     VERIFY_TRUE(MovesEqual(move, "h7-h6"));
   }
   TEST_END

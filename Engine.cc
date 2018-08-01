@@ -22,10 +22,8 @@ using utils::SocketLog;
 
 Engine::Engine(
     Board& board,
-    unsigned search_depth,
     unsigned max_number_of_threads)
   : Engine(board) {
-  search_depth_ = search_depth;
   max_number_of_threads_ = max_number_of_threads;
 }
 
@@ -79,7 +77,7 @@ void Engine::onMaxMemoryConsumptionExceeded(unsigned memory_consumption) {
   end_calculations_ = true;
 }
 
-Figure::Move Engine::makeMove(unsigned time_for_move) {
+Figure::Move Engine::makeMove(unsigned time_for_move, unsigned search_depth) {
   end_calculations_ = false;
   auto start_time = std::chrono::steady_clock::now();
   if (time_for_move > 0) {
@@ -97,7 +95,7 @@ Figure::Move Engine::makeMove(unsigned time_for_move) {
   for (auto& move: figures_moves) {
     moves.push_back(Move(move, nullptr));
   }
-  for (unsigned depth = 1; depth < search_depth_; ++depth) {
+  for (unsigned depth = 1; depth < search_depth && end_calculations_ == false; ++depth) {
     LogWithEndLine(Logger::LogSection::ENGINE_MOVE_SEARCHES, "Starting calculating depth ", depth + 1);
     for (Move& move: moves) {
       std::unique_lock<std::mutex> ul(number_of_threads_working_mutex_);

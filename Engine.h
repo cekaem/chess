@@ -14,12 +14,11 @@
 
 class Engine {
  public:
-  Engine(Board& board, unsigned search_depth, unsigned max_number_of_threads);
+  Engine(Board& board, unsigned max_number_of_threads);
   Engine(Board& board);
   void setNumberOfThreads(unsigned number_of_threads) { max_number_of_threads_ = number_of_threads; }
-  void setSearchDepth(unsigned search_depth) { search_depth_ = search_depth_; }
   void setMaxMemoryConsumption(unsigned m) { max_memory_consumption_ = m; }
-  Figure::Move makeMove(unsigned time_for_move = 0u);
+  Figure::Move makeMove(unsigned time_for_move = 0u, unsigned search_depth = DefaultSearchDepth);
 
  private:
   static const int BorderValue = 1000;
@@ -75,7 +74,6 @@ class Engine {
   void onMaxMemoryConsumptionExceeded(unsigned memory_consumption);
 
   Board& board_;
-  unsigned search_depth_{DefaultSearchDepth};
   unsigned max_number_of_threads_{DefaultNumberOfThreads};
   unsigned max_memory_consumption_{DefaultMaxMemoryConsumption};
   unsigned number_of_threads_working_{0u};
