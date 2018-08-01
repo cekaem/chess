@@ -4,6 +4,7 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "Engine.h"
@@ -20,6 +21,7 @@ const std::map<const char*,
   {"isready", &UCIHandler::handleCommandIsReady},
   {"position", &UCIHandler::handleCommandPosition},
   {"go", &UCIHandler::handleCommandGo},
+  {"stop", &UCIHandler::handleCommandStop},
   {"quit", &UCIHandler::handleCommandQuit}
 };
 
@@ -121,6 +123,10 @@ void UCIHandler::handleCommandPosition(const std::vector<std::string>& params) {
   }
 }
 
+void UCIHandler::handleCommandStop(const std::vector<std::string>& params) {
+  engine_.endCalculations();
+}
+
 void UCIHandler::handleCommandGo(const std::vector<std::string>& params) {
   if (params.empty() == true) {
     LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: got no parameters");
@@ -131,16 +137,25 @@ void UCIHandler::handleCommandGo(const std::vector<std::string>& params) {
       LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: got movetime without value");
       return;
     }
-    unsigned time_to_move = 0;
-    if (utils::str_2_uint(params[1], time_to_move) == false) {
+    unsigned time_for_move = 0;
+    if (utils::str_2_uint(params[1], time_for_move) == false) {
       LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: got movetime with invalid value");
     }
-    auto move = engine_.makeMove(time_to_move, 1000/* infinite depth */);
-    std::stringstream response;
-    response << "bestmove " << move.old_field << move.new_field;
-    LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: sending response: ", response.str());
-    ostr_ << response.str() << std::endl;
+    move_calculation_in_process_ = true;
+    std::thread make_move_thread(&UCIHandler::makeMoveOnAnotherThread,
+                                 this,
+                                 time_for_move,
+                                 1000/* infinite depth */);
+    make_move_thread.detach();
   }
+}
+
+void UCIHandler::makeMoveOnAnotherThread(unsigned time_for_move, unsigned max_depth) {
+  std::stringstream response;
+  auto move = engine_.makeMove(time_for_move, max_depth);
+  response << "bestmove " << move.old_field << move.new_field;
+  LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: sending response: ", response.str());
+  ostr_ << response.str() << std::endl;
 }
 
 void UCIHandler::handleCommandQuit(const std::vector<std::string>& params) {

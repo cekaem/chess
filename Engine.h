@@ -19,6 +19,7 @@ class Engine {
   void setNumberOfThreads(unsigned number_of_threads) { max_number_of_threads_ = number_of_threads; }
   void setMaxMemoryConsumption(unsigned m) { max_memory_consumption_ = m; }
   Figure::Move makeMove(unsigned time_for_move = 0u, unsigned search_depth = DefaultSearchDepth);
+  void endCalculations() { end_calculations_ = true; }
 
  private:
   static const int BorderValue = 1000;
