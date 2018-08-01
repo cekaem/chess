@@ -25,7 +25,7 @@ class Engine {
   static const int BorderValue = 1000;
   static const unsigned DefaultSearchDepth = 3;
   static const unsigned DefaultNumberOfThreads = 5;
-  static const unsigned DefaultMaxMemoryConsumption = 5000000u;  // kB
+  static const unsigned DefaultMaxMemoryConsumption = 2000000u;  // kB. ~2GB
 
   struct Move {
     Move() {}

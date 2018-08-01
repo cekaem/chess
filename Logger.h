@@ -9,7 +9,7 @@
 
 class Logger {
  public:
-  static constexpr int SecondsBetweenMemoryConsumptionMeasures = 2;
+  static constexpr int SecondsBetweenMemoryConsumptionMeasures = 1;
 
   enum class LogSection {
     NONE = 0x0,
@@ -40,7 +40,7 @@ class Logger {
   Logger& operator=(const Logger&) = delete;
 
   void startLoggingMemoryConsumption();
-  void logMemoryConsumption(int sec);
+  void logMemoryConsumption();
 
   utils::SocketLog log_;
   bool is_started_{false};
@@ -52,7 +52,9 @@ class Logger {
   unsigned memory_consumption_threshold_{0u};
   std::function<void(int)> memory_consumption_callback_;
   std::mutex memory_consumption_measures_ended_mutex_;
+  std::mutex do_memory_consumption_measures_mutex_;
   std::condition_variable memory_consumption_measures_ended_cv_;
+  std::condition_variable do_memory_consumption_measures_cv_;
 };
 
 inline Logger::LogSection operator&(

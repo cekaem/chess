@@ -5,7 +5,6 @@
 #include <functional>
 #include <mutex>
 #include <thread>
-#include <unistd.h>
 
 #include "utils/Utils.h"
 
@@ -16,7 +15,10 @@ Logger& Logger::getLogger() {
 }
 
 Logger::~Logger() {
+  do_memory_consumption_measures_mutex_.lock();
   do_memory_consumption_measures_ = false;
+  do_memory_consumption_measures_mutex_.unlock();
+  do_memory_consumption_measures_cv_.notify_one();
   std::unique_lock<std::mutex> ul(memory_consumption_measures_ended_mutex_);
   memory_consumption_measures_ended_cv_.wait(
     ul, [this] { return memory_consumption_measures_ended_ == true; });
@@ -38,9 +40,7 @@ void Logger::startLoggingMemoryConsumption() {
   if (is_logging_memory_consumption_ == false) {
     is_logging_memory_consumption_ = true;
     memory_consumption_measures_ended_ = false;
-    std::thread memory_consumption_logger(&Logger::logMemoryConsumption,
-                                          this,
-                                          SecondsBetweenMemoryConsumptionMeasures);
+    std::thread memory_consumption_logger(&Logger::logMemoryConsumption, this);
     memory_consumption_logger.detach();
   }
 }
@@ -61,7 +61,7 @@ bool Logger::shouldLog(Logger::LogSection section) const {
   return (section & log_sections_mask_) != LogSection::NONE;
 }
 
-void Logger::logMemoryConsumption(int sec) {
+void Logger::logMemoryConsumption() {
   unsigned max_consumption = 0u;
   unsigned long long total_consumption = 0u;
   unsigned number_of_measures = 0u;
@@ -84,7 +84,12 @@ void Logger::logMemoryConsumption(int sec) {
       LogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Memory consumption threshold hit: ", memory_consumption);
       memory_consumption_callback_(memory_consumption);
     }
-    ::sleep(sec);
+    std::unique_lock ul(do_memory_consumption_measures_mutex_);
+    using namespace std::chrono_literals;
+    do_memory_consumption_measures_cv_.wait_for(
+        ul,
+        SecondsBetweenMemoryConsumptionMeasures * 1000ms,
+        [this]() -> bool { return do_memory_consumption_measures_ == false; });
   }
   LogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Maximum consumption: ", max_consumption);
   LogWithEndLine(LogSection::MEMORY_CONSUMPTION, "Average consumption: ", total_consumption / number_of_measures);

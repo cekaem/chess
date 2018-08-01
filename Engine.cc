@@ -81,9 +81,6 @@ void Engine::onMaxMemoryConsumptionExceeded(unsigned memory_consumption) {
 
 Figure::Move Engine::makeMove(unsigned time_for_move) {
   end_calculations_ = false;
-  LogWithEndLine(Logger::LogSection::ENGINE_MOVE_SEARCHES, "Make move: going to sleep");
-  ::sleep(10);
-  LogWithEndLine(Logger::LogSection::ENGINE_MOVE_SEARCHES, "Make move: woke up");
   auto start_time = std::chrono::steady_clock::now();
   if (time_for_move > 0) {
     LogWithEndLine(Logger::LogSection::ENGINE_TIMER, "Starting timer");
