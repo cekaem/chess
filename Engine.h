@@ -14,6 +14,14 @@
 
 class Engine {
  public:
+  struct SearchInfo {
+    unsigned depth{0u};
+    unsigned nodes{0u};
+    unsigned score_cp{0u};
+    unsigned score_mate{0u};
+    std::pair<Field, Field> ponder;
+  };
+
   Engine(Board& board, unsigned max_number_of_threads);
   Engine(Board& board);
   void setNumberOfThreads(unsigned number_of_threads) { max_number_of_threads_ = number_of_threads; }

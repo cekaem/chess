@@ -14,7 +14,7 @@ static const int PAWN_VALUE = 1;
 static const int KNIGHT_VALUE = 3;
 static const int BISHOP_VALUE = 3;
 static const int ROOK_VALUE = 5;
-static const int QUEEN_VALUE = 8;
+static const int QUEEN_VALUE = 9;
 static const int KING_VALUE = 0;
 
 class Figure {

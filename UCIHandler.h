@@ -33,9 +33,9 @@ class UCIHandler {
 
  private:
   void handleCommand(const std::string& command);
-  void makeMoveOnAnotherThread(unsigned time_for_move, unsigned max_depth);
+  void calculateMoveOnAnotherThread(unsigned time_for_move, unsigned max_depth);
 
-  bool move_calculation_in_process_{false};
+  bool move_calculation_in_progress_{false};
   std::istream& istr_;
   std::ostream& ostr_;
   Board board_;

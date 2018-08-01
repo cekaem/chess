@@ -128,6 +128,10 @@ void UCIHandler::handleCommandStop(const std::vector<std::string>& params) {
 }
 
 void UCIHandler::handleCommandGo(const std::vector<std::string>& params) {
+  if (move_calculation_in_progress_ == true) {
+    LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: move calculation already in progress");
+    return;
+  }
   if (params.empty() == true) {
     LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: got no parameters");
     return;
@@ -141,8 +145,8 @@ void UCIHandler::handleCommandGo(const std::vector<std::string>& params) {
     if (utils::str_2_uint(params[1], time_for_move) == false) {
       LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: got movetime with invalid value");
     }
-    move_calculation_in_process_ = true;
-    std::thread make_move_thread(&UCIHandler::makeMoveOnAnotherThread,
+    move_calculation_in_progress_ = true;
+    std::thread make_move_thread(&UCIHandler::calculateMoveOnAnotherThread,
                                  this,
                                  time_for_move,
                                  1000/* infinite depth */);
@@ -150,9 +154,10 @@ void UCIHandler::handleCommandGo(const std::vector<std::string>& params) {
   }
 }
 
-void UCIHandler::makeMoveOnAnotherThread(unsigned time_for_move, unsigned max_depth) {
+void UCIHandler::calculateMoveOnAnotherThread(unsigned time_for_move, unsigned max_depth) {
   std::stringstream response;
   auto move = engine_.makeMove(time_for_move, max_depth);
+  move_calculation_in_progress_ = false;
   response << "bestmove " << move.old_field << move.new_field;
   LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: sending response: ", response.str());
   ostr_ << response.str() << std::endl;
