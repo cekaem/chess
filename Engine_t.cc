@@ -127,7 +127,7 @@ TEST_PROCEDURE(test5) {
     Board board;
     Engine engine(board, 4);
     board.setBoardFromFEN("6k1/5ppp/6b1/3Q3n/1K6/8/8/8 b - - 0 1");
-    auto move = engine.makeMove(5000, 4);
+    auto move = engine.makeMove(10000, 4);
     VERIFY_TRUE(MovesEqual(move, "h7-h6"));
   }
   TEST_END

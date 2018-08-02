@@ -5,6 +5,7 @@
 #include <exception>
 #include <iostream>
 #include <mutex>
+#include <utility>
 #include <vector>
 
 #include "Board.h"
@@ -19,6 +20,7 @@ class Engine {
     unsigned nodes{0u};
     unsigned score_cp{0u};
     unsigned score_mate{0u};
+    unsigned time{0u};
     std::vector<Figure::Move> best_line;
   };
 
@@ -71,6 +73,7 @@ class Engine {
 
   void evaluateBoardForLastNode(Board& board, Move& move) const;
   void evaluateBoard(Board& board, Move& move) const;
+  std::pair<int, int> evaluateBorderValues(BorderValues values, Figure::Color color) const;
 
   void generateTreeMain(Engine::Move& move);
   void generateTree(Board& board, Figure::Color color, Engine::Move& move);
@@ -92,6 +95,7 @@ class Engine {
   std::mutex number_of_threads_working_mutex_;
   std::condition_variable number_of_threads_working_cv_;
   int moves_count_{0};
+  unsigned nodes_evaluated_{0u};
   utils::Timer timer_;
   bool end_calculations_{false};
 };

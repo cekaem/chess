@@ -122,17 +122,18 @@ Engine::SearchInfo Engine::startSearch(unsigned time_for_move, unsigned search_d
   }
   timer_.stop();
 
-  Move* my_move = lookForTheBestMove(moves, color);
   SearchInfo info;
-  info.best_line.push_back(my_move->move);
-  info.depth = 1u;
-  Figure::Color c = color;
-  while (my_move->moves.empty() == false) {
+  std::function<void(std::vector<Move>&, Figure::Color)> lambda;
+  lambda = [this, &info, &lambda](std::vector<Move>& moves, Figure::Color color) -> void {
     ++info.depth;
-    c = !c;
-    my_move = lookForTheBestMove(my_move->moves, c);
-    info.best_line.push_back(my_move->move);
-  }
+    Move* the_best_move = lookForTheBestMove(moves, color);
+    info.best_line.push_back(the_best_move->move);
+    if (the_best_move->moves.empty() == false) {
+      auto wrapper = board_.makeReversibleMove(the_best_move->move);
+      lambda(the_best_move->moves, !color);
+    }
+  };
+  lambda(moves, color);
 
   auto end_time = std::chrono::steady_clock::now();
   auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
@@ -140,41 +141,48 @@ Engine::SearchInfo Engine::startSearch(unsigned time_for_move, unsigned search_d
   Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, "Best line: ", info.best_line);
   Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, " (calculation time: ", time_elapsed, ")");
   Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, SocketLog::endl);
+  info.time = time_elapsed;
+  info.nodes = nodes_evaluated_;
 
   return info;
+}
+
+std::pair<int, int> Engine::evaluateBorderValues(Engine::BorderValues values, Figure::Color color) const {
+  int moves_to_mate = 0;
+  int the_best_value = color == Figure::WHITE ? values.the_biggest_value : values.the_smallest_value;
+  if (color == Figure::WHITE) {
+    if (values.the_smallest_positive_mate_value != BorderValue) {
+      moves_to_mate = values.the_smallest_positive_mate_value;
+      LogWithEndLine(Logger::LogSection::ENGINE_MATES, "=== Found mate in ", moves_to_mate / 2 + 1, " ===");
+    } else if (values.zero_mate_value_exists == true) {
+      moves_to_mate = 0;
+    } else {
+      moves_to_mate = values.the_smallest_mate_value;
+      LogWithEndLine(Logger::LogSection::ENGINE_MATES, "=== Found opponent's mate in " -(moves_to_mate / 2 - 1), " ===");
+    }
+  } else {
+    if (values.the_biggest_negative_mate_value != -BorderValue) {
+      moves_to_mate = values.the_biggest_negative_mate_value;
+      LogWithEndLine(Logger::LogSection::ENGINE_MATES, "=== Found mate in ", -(moves_to_mate / 2 - 1), " ===");
+    } else if (values.zero_mate_value_exists == true) {
+      moves_to_mate = 0;
+    } else {
+      moves_to_mate = values.the_biggest_mate_value;
+      LogWithEndLine(Logger::LogSection::ENGINE_MATES, "=== Found opponent's mate in ", moves_to_mate / 2 + 1, " ===");
+    }
+  }
+  BoardAssert(board_, moves_to_mate != BorderValue && moves_to_mate != -BorderValue);
+  return std::make_pair(the_best_value, moves_to_mate);
 }
 
 Engine::Move* Engine::lookForTheBestMove(std::vector<Engine::Move>& moves, Figure::Color color) const {
   // Iterate through all moves and look for mate and for best value.
   // Also look for possible opponent's mate.
   auto border_values = findBorderValues(moves);
-  int moves_to_mate = 0;
-  int the_best_value =
-      color == Figure::WHITE ?
-      border_values.the_biggest_value :
-      border_values.the_smallest_value;
-  if (color == Figure::WHITE) {
-    if (border_values.the_smallest_positive_mate_value != BorderValue) {
-      moves_to_mate = border_values.the_smallest_positive_mate_value;
-      LogWithEndLine(Logger::LogSection::ENGINE_MATES, "=== Found mate in ", moves_to_mate / 2 + 1, " ===");
-    } else if (border_values.zero_mate_value_exists == true) {
-      moves_to_mate = 0;
-    } else {
-      moves_to_mate = border_values.the_smallest_mate_value;
-      LogWithEndLine(Logger::LogSection::ENGINE_MATES, "=== Found opponent's mate in " -(moves_to_mate / 2 - 1), " ===");
-    }
-  } else {
-    if (border_values.the_biggest_negative_mate_value != -BorderValue) {
-      moves_to_mate = border_values.the_biggest_negative_mate_value;
-      LogWithEndLine(Logger::LogSection::ENGINE_MATES, "=== Found mate in ", -(moves_to_mate / 2 - 1), " ===");
-    } else if (border_values.zero_mate_value_exists == true) {
-      moves_to_mate = 0;
-    } else {
-      moves_to_mate = border_values.the_biggest_mate_value;
-      LogWithEndLine(Logger::LogSection::ENGINE_MATES, "=== Found opponent's mate in ", moves_to_mate / 2 + 1, " ===");
-    }
-  }
-  BoardAssert(board_, moves_to_mate != BorderValue && moves_to_mate != -BorderValue);
+  std::pair<int, int> evaluation = evaluateBorderValues(border_values, color);
+  int the_best_value = evaluation.first;
+  int moves_to_mate = evaluation.second;
+
   // Collect all best moves.
   std::vector<Move*> the_best_moves;
   for (auto& move: moves) {
@@ -286,6 +294,7 @@ void Engine::evaluateBoard(Board& board, Engine::Move& current_move) const {
 }
 
 void Engine::generateTreeMain(Engine::Move& move) {
+  nodes_evaluated_ = 0u;
   Board copy = board_;
   Figure::Color color = copy.getFigure(move.move.old_field)->getColor();
   generateTree(copy, color, move);
@@ -294,6 +303,7 @@ void Engine::generateTreeMain(Engine::Move& move) {
 
 void Engine::generateTree(Board& board, Figure::Color color, Engine::Move& move) {
   if (move.moves.empty() == false) {
+    nodes_evaluated_ += move.moves.size();
     auto wrapper = board.makeReversibleMove(move.move);
     for (auto& m: move.moves) {
       if (end_calculations_ == true) {
@@ -306,6 +316,7 @@ void Engine::generateTree(Board& board, Figure::Color color, Engine::Move& move)
     if (status == Board::GameStatus::NONE) {
       auto wrapper = board.makeReversibleMove(move.move);
       std::vector<Figure::Move> figure_moves = board.calculateMovesForFigures(!color);
+      nodes_evaluated_ += figure_moves.size();
       for (Figure::Move& figure_move: figure_moves) {
         Move new_move(figure_move, &move);
         evaluateBoardForLastNode(board, new_move);
