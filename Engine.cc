@@ -122,20 +122,29 @@ Engine::SearchInfo Engine::startSearch(unsigned time_for_move, unsigned search_d
   }
   timer_.stop();
 
-  Figure::Move my_move = lookForTheBestMove(moves, color);
+  Move* my_move = lookForTheBestMove(moves, color);
+  SearchInfo info;
+  info.best_line.push_back(my_move->move);
+  info.depth = 1u;
+  Figure::Color c = color;
+  while (my_move->moves.empty() == false) {
+    ++info.depth;
+    c = !c;
+    my_move = lookForTheBestMove(my_move->moves, c);
+    info.best_line.push_back(my_move->move);
+  }
 
   auto end_time = std::chrono::steady_clock::now();
   auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
   Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, SocketLog::lock);
-  Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, "Best move: ", my_move.old_field, my_move.new_field);
+  Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, "Best line: ", info.best_line);
   Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, " (calculation time: ", time_elapsed, ")");
   Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, SocketLog::endl);
-  SearchInfo info;
-  info.best_line.push_back(my_move);
+
   return info;
 }
 
-Figure::Move Engine::lookForTheBestMove(std::vector<Engine::Move>& moves, Figure::Color color) const {
+Engine::Move* Engine::lookForTheBestMove(std::vector<Engine::Move>& moves, Figure::Color color) const {
   // Iterate through all moves and look for mate and for best value.
   // Also look for possible opponent's mate.
   auto border_values = findBorderValues(moves);
@@ -167,40 +176,40 @@ Figure::Move Engine::lookForTheBestMove(std::vector<Engine::Move>& moves, Figure
   }
   BoardAssert(board_, moves_to_mate != BorderValue && moves_to_mate != -BorderValue);
   // Collect all best moves.
-  std::vector<Move> the_best_moves;
+  std::vector<Move*> the_best_moves;
   for (auto& move: moves) {
     if (moves_to_mate != 0) {
       if (move.moves_to_mate == moves_to_mate) {
-        the_best_moves.push_back(move);
+        the_best_moves.push_back(&move);
       }
     } else if (move.moves_to_mate == 0 && move.value == the_best_value) {
-      the_best_moves.push_back(move);
+      the_best_moves.push_back(&move);
     }
   }
 
   // Check which moves from the ones with the best value is the best in one move.
-  std::vector<Move> the_best_direct_moves;
+  std::vector<Move*> the_best_direct_moves;
   int the_best_direct_move_value = color == Figure::WHITE ? -BorderValue : BorderValue;
-  for (auto& move: the_best_moves) {
+  for (auto* move: the_best_moves) {
     if (moves_to_mate != 0) {
       the_best_direct_moves.push_back(move);
     } else {
-      evaluateBoardForLastNode(board_, move);
-      if ((color == Figure::WHITE && move.value > the_best_direct_move_value) ||
-          (color == Figure::BLACK && move.value < the_best_direct_move_value)) {
+      evaluateBoardForLastNode(board_, *move);
+      if ((color == Figure::WHITE && move->value > the_best_direct_move_value) ||
+          (color == Figure::BLACK && move->value < the_best_direct_move_value)) {
         the_best_direct_moves.clear();
-        the_best_direct_move_value = move.value;
+        the_best_direct_move_value = move->value;
       }
-      if ((color == Figure::WHITE && move.value >= the_best_direct_move_value) ||
-          (color == Figure::BLACK && move.value >= the_best_direct_move_value)) {
+      if ((color == Figure::WHITE && move->value >= the_best_direct_move_value) ||
+          (color == Figure::BLACK && move->value >= the_best_direct_move_value)) {
         the_best_direct_moves.push_back(move);
       }
     }
   }
   BoardAssert(board_, the_best_direct_moves.size() > 0);
   // Choose randomly move from the best direct moves.
-  Move my_move = the_best_direct_moves[generateRandomValue(the_best_direct_moves.size() - 1)];
-  return my_move.move;
+  Move* my_move = the_best_direct_moves[generateRandomValue(the_best_direct_moves.size() - 1)];
+  return my_move;
 }
 
 void Engine::evaluateBoardForLastNode(

@@ -75,7 +75,7 @@ class Engine {
   void generateTreeMain(Engine::Move& move);
   void generateTree(Board& board, Figure::Color color, Engine::Move& move);
 
-  Figure::Move lookForTheBestMove(std::vector<Engine::Move>& moves, Figure::Color color) const;
+  Move* lookForTheBestMove(std::vector<Engine::Move>& moves, Figure::Color color) const;
   
   void onThreadFinished();
 
