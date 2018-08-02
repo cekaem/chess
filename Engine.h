@@ -19,13 +19,14 @@ class Engine {
     unsigned nodes{0u};
     unsigned score_cp{0u};
     unsigned score_mate{0u};
-    std::pair<Field, Field> ponder;
+    std::vector<Figure::Move> best_line;
   };
 
   Engine(Board& board, unsigned max_number_of_threads);
   Engine(Board& board);
   void setNumberOfThreads(unsigned number_of_threads) { max_number_of_threads_ = number_of_threads; }
   void setMaxMemoryConsumption(unsigned m) { max_memory_consumption_ = m; }
+  SearchInfo startSearch(unsigned time_for_move, unsigned search_depth);
   Figure::Move makeMove(unsigned time_for_move = 0u, unsigned search_depth = DefaultSearchDepth);
   void endCalculations() { end_calculations_ = true; }
 
@@ -73,6 +74,8 @@ class Engine {
 
   void generateTreeMain(Engine::Move& move);
   void generateTree(Board& board, Figure::Color color, Engine::Move& move);
+
+  Figure::Move lookForTheBestMove(std::vector<Engine::Move>& moves, Figure::Color color) const;
   
   void onThreadFinished();
 

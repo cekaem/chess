@@ -78,6 +78,15 @@ void Engine::onMaxMemoryConsumptionExceeded(unsigned memory_consumption) {
 }
 
 Figure::Move Engine::makeMove(unsigned time_for_move, unsigned search_depth) {
+  auto info = startSearch(time_for_move, search_depth);
+  auto move = info.best_line[0];
+  ++moves_count_;
+  board_.makeMove(move);
+  return move;
+}
+
+
+Engine::SearchInfo Engine::startSearch(unsigned time_for_move, unsigned search_depth) {
   end_calculations_ = false;
   auto start_time = std::chrono::steady_clock::now();
   if (time_for_move > 0) {
@@ -113,6 +122,20 @@ Figure::Move Engine::makeMove(unsigned time_for_move, unsigned search_depth) {
   }
   timer_.stop();
 
+  Figure::Move my_move = lookForTheBestMove(moves, color);
+
+  auto end_time = std::chrono::steady_clock::now();
+  auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+  Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, SocketLog::lock);
+  Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, "Best move: ", my_move.old_field, my_move.new_field);
+  Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, " (calculation time: ", time_elapsed, ")");
+  Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, SocketLog::endl);
+  SearchInfo info;
+  info.best_line.push_back(my_move);
+  return info;
+}
+
+Figure::Move Engine::lookForTheBestMove(std::vector<Engine::Move>& moves, Figure::Color color) const {
   // Iterate through all moves and look for mate and for best value.
   // Also look for possible opponent's mate.
   auto border_values = findBorderValues(moves);
@@ -143,7 +166,6 @@ Figure::Move Engine::makeMove(unsigned time_for_move, unsigned search_depth) {
     }
   }
   BoardAssert(board_, moves_to_mate != BorderValue && moves_to_mate != -BorderValue);
-
   // Collect all best moves.
   std::vector<Move> the_best_moves;
   for (auto& move: moves) {
@@ -178,15 +200,6 @@ Figure::Move Engine::makeMove(unsigned time_for_move, unsigned search_depth) {
   BoardAssert(board_, the_best_direct_moves.size() > 0);
   // Choose randomly move from the best direct moves.
   Move my_move = the_best_direct_moves[generateRandomValue(the_best_direct_moves.size() - 1)];
-
-  auto end_time = std::chrono::steady_clock::now();
-  auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-  Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, SocketLog::lock);
-  Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, "My move: ", my_move.move.old_field, my_move.move.new_field);
-  Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, " (calculation time: ", time_elapsed, ")");
-  Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, SocketLog::endl);
-  board_.makeMove(my_move.move);
-  ++moves_count_;
   return my_move.move;
 }
 
