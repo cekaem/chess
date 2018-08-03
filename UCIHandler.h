@@ -34,6 +34,7 @@ class UCIHandler {
  private:
   void handleCommand(const std::string& command);
   void calculateMoveOnAnotherThread(unsigned time_for_move, unsigned max_depth);
+  void sendInfoToGUI(Engine::SearchInfo info) const;
 
   bool move_calculation_in_progress_{false};
   std::istream& istr_;

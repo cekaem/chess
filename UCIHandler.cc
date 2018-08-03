@@ -25,6 +25,10 @@ const std::map<const char*,
   {"quit", &UCIHandler::handleCommandQuit}
 };
 
+constexpr char MyName[] = "CKEngine";
+constexpr char CurrentVersion[] = "0.1";
+constexpr char Author[] = "Cezary Kułakowski";
+
 }  // unnamed namespace
 
 
@@ -91,6 +95,8 @@ void UCIHandler::handleCommand(const std::string& line) {
 }
 
 void UCIHandler::handleCommandUCI(const std::vector<std::string>& params) {
+  ostr_ << "id name " << MyName << " " << CurrentVersion << std::endl;
+  ostr_ << "id author " << Author << std::endl;
   ostr_ << "uciok" << std::endl;
 }
 
@@ -136,6 +142,14 @@ void UCIHandler::handleCommandGo(const std::vector<std::string>& params) {
     LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: got no parameters");
     return;
   }
+  if (params[0] == "infinite") {
+    move_calculation_in_progress_ = true;
+    std::thread make_move_thread(&UCIHandler::calculateMoveOnAnotherThread,
+                                 this,
+                                 0, /* no time limit */
+                                 1000 /* infinite depth */);
+    make_move_thread.detach();
+  }
   if (params[0] == "movetime") {
     if (params.size() < 2) {
       LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: got movetime without value");
@@ -149,17 +163,34 @@ void UCIHandler::handleCommandGo(const std::vector<std::string>& params) {
     std::thread make_move_thread(&UCIHandler::calculateMoveOnAnotherThread,
                                  this,
                                  time_for_move,
-                                 1000/* infinite depth */);
+                                 1000 /* infinite depth */);
     make_move_thread.detach();
   }
 }
 
-void UCIHandler::calculateMoveOnAnotherThread(unsigned time_for_move, unsigned max_depth) {
+void UCIHandler::sendInfoToGUI(Engine::SearchInfo info) const {
   std::stringstream response;
-  auto move = engine_.makeMove(time_for_move, max_depth);
-  move_calculation_in_progress_ = false;
+  response << "info depth " << info.depth << " score cp " << info.score_cp;
+  if (info.score_mate != 0) {
+   response  << " mate " << info.score_mate;
+  }
+  response << " nodes " << info.nodes << " time " << info.time << " pv " << info.best_line;
+  LogWithEndLine(Logger::LogSection::UCI_HANDLER, "Sending info to gui: ", response.str());
+  ostr_ <<  response.str() << std::endl;
+}
+
+void UCIHandler::calculateMoveOnAnotherThread(unsigned time_for_move, unsigned max_depth) {
+  auto info = engine_.startSearch(time_for_move, max_depth);
+  sendInfoToGUI(info);
+  std::stringstream response;
+  Figure::Move move = info.best_line[0];
   response << "bestmove " << move.old_field << move.new_field;
+  if (info.best_line.size() > 1) {
+    Figure::Move ponder = info.best_line[1];
+    response << " ponder " << ponder.old_field << ponder.new_field;
+  }
   LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: sending response: ", response.str());
+  move_calculation_in_progress_ = false;
   ostr_ << response.str() << std::endl;
 }
 

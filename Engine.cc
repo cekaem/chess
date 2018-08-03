@@ -129,7 +129,7 @@ Engine::SearchInfo Engine::startSearch(unsigned time_for_move, unsigned search_d
     Move* the_best_move = lookForTheBestMove(moves, color);
     info.best_line.push_back(the_best_move->move);
     if (info.depth == 1) {
-      info.score_cp = the_best_move->value;
+      info.score_cp = the_best_move->value * 1000;
       info.score_mate = the_best_move->moves_to_mate / 2;
     }
     if (the_best_move->moves.empty() == false) {
