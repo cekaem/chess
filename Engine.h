@@ -18,8 +18,8 @@ class Engine {
   struct SearchInfo {
     unsigned depth{0u};
     unsigned nodes{0u};
-    unsigned score_cp{0u};
-    unsigned score_mate{0u};
+    int score_cp{0};
+    int score_mate{0};
     unsigned time{0u};
     std::vector<Figure::Move> best_line;
   };

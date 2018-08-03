@@ -128,6 +128,10 @@ Engine::SearchInfo Engine::startSearch(unsigned time_for_move, unsigned search_d
     ++info.depth;
     Move* the_best_move = lookForTheBestMove(moves, color);
     info.best_line.push_back(the_best_move->move);
+    if (info.depth == 1) {
+      info.score_cp = the_best_move->value;
+      info.score_mate = the_best_move->moves_to_mate / 2;
+    }
     if (the_best_move->moves.empty() == false) {
       auto wrapper = board_.makeReversibleMove(the_best_move->move);
       lambda(the_best_move->moves, !color);
@@ -135,10 +139,21 @@ Engine::SearchInfo Engine::startSearch(unsigned time_for_move, unsigned search_d
   };
   lambda(moves, color);
 
+  if (color == Figure::BLACK) {
+    info.score_cp = -info.score_cp;
+    info.score_mate = -info.score_mate;
+  }
+
+  if (info.score_mate != 0) {
+    LogWithEndLine(Logger::LogSection::ENGINE_MATES, "=== Found mate in ", info.score_mate, " ===");
+  }
+
   auto end_time = std::chrono::steady_clock::now();
   auto time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
   Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, SocketLog::lock);
-  Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, "Best line: ", info.best_line);
+  Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, "Best line (", info.score_cp, ", ");
+  Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, info.score_mate, "): ");
+  Log(Logger::LogSection::ENGINE_MOVE_SEARCHES,  info.best_line);
   Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, " (calculation time: ", time_elapsed, ")");
   Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, SocketLog::endl);
   info.time = time_elapsed;
@@ -153,22 +168,18 @@ std::pair<int, int> Engine::evaluateBorderValues(Engine::BorderValues values, Fi
   if (color == Figure::WHITE) {
     if (values.the_smallest_positive_mate_value != BorderValue) {
       moves_to_mate = values.the_smallest_positive_mate_value;
-      LogWithEndLine(Logger::LogSection::ENGINE_MATES, "=== Found mate in ", moves_to_mate / 2 + 1, " ===");
     } else if (values.zero_mate_value_exists == true) {
       moves_to_mate = 0;
     } else {
       moves_to_mate = values.the_smallest_mate_value;
-      LogWithEndLine(Logger::LogSection::ENGINE_MATES, "=== Found opponent's mate in " -(moves_to_mate / 2 - 1), " ===");
     }
   } else {
     if (values.the_biggest_negative_mate_value != -BorderValue) {
       moves_to_mate = values.the_biggest_negative_mate_value;
-      LogWithEndLine(Logger::LogSection::ENGINE_MATES, "=== Found mate in ", -(moves_to_mate / 2 - 1), " ===");
     } else if (values.zero_mate_value_exists == true) {
       moves_to_mate = 0;
     } else {
       moves_to_mate = values.the_biggest_mate_value;
-      LogWithEndLine(Logger::LogSection::ENGINE_MATES, "=== Found opponent's mate in ", moves_to_mate / 2 + 1, " ===");
     }
   }
   BoardAssert(board_, moves_to_mate != BorderValue && moves_to_mate != -BorderValue);
