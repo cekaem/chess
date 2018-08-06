@@ -24,15 +24,17 @@ class UCIHandler {
   UCIHandler(std::istream& istr, std::ostream& ostr);
   void start();
 
-  void handleCommandUCI(const std::vector<std::string>& params);
-  void handleCommandQuit(const std::vector<std::string>& params);
-  void handleCommandIsReady(const std::vector<std::string>& params);
-  void handleCommandPosition(const std::vector<std::string>& params);
-  void handleCommandGo(const std::vector<std::string>& params);
-  void handleCommandStop(const std::vector<std::string>& params);
+  // public for testing purposes
+  bool handleCommand(const std::string& command);
+
+  bool handleCommandUCI(const std::vector<std::string>& params);
+  bool handleCommandQuit(const std::vector<std::string>& params);
+  bool handleCommandIsReady(const std::vector<std::string>& params);
+  bool handleCommandPosition(const std::vector<std::string>& params);
+  bool handleCommandGo(const std::vector<std::string>& params);
+  bool handleCommandStop(const std::vector<std::string>& params);
 
  private:
-  void handleCommand(const std::string& command);
   void calculateMoveOnAnotherThread(unsigned time_for_move, unsigned max_depth);
   void sendInfoToGUI(Engine::SearchInfo info) const;
 

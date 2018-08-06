@@ -8,6 +8,8 @@
 #include <vector>
 
 #include "Engine.h"
+#include "Field.h"
+#include "Figure.h"
 #include "Logger.h"
 #include "utils/SocketLog.h"
 #include "utils/Utils.h"
@@ -16,7 +18,7 @@
 namespace {
 
 const std::map<const char*,
-               void(UCIHandler::*)(const std::vector<std::string>&)> g_handlers = {
+               bool(UCIHandler::*)(const std::vector<std::string>&)> g_handlers = {
   {"uci", &UCIHandler::handleCommandUCI},
   {"isready", &UCIHandler::handleCommandIsReady},
   {"position", &UCIHandler::handleCommandPosition},
@@ -48,6 +50,12 @@ void UCIHandler::start() {
       error_message.append(e.what());
       LogWithEndLine(Logger::LogSection::UCI_HANDLER, error_message);
       ostr_ << error_message << std::endl;
+    } catch (const HandleOfCommandFailed& e) {
+      std::string error_message("Handle of command ");
+      error_message.append(e.what());
+      error_message.append(" failed.");
+      LogWithEndLine(Logger::LogSection::UCI_HANDLER, error_message);
+    }
     } catch (const EndProgramException&) {
       break;
     }
@@ -91,29 +99,38 @@ void UCIHandler::handleCommand(const std::string& line) {
     }
   }
 
-  (this->*(iter->second))(params);
+  bool result = (this->*(iter->second))(params);
+  if (result == true) {
+    LogWithEndLine(Logger::LogSection::UCI_HANDLER, "Handle of command ", cmd, " succeeded.");
+  } else {
+    throw HandleOfCommandFailed(cmd);
+  }
 }
 
-void UCIHandler::handleCommandUCI(const std::vector<std::string>& params) {
+bool UCIHandler::handleCommandUCI(const std::vector<std::string>& params) {
   ostr_ << "id name " << MyName << " " << CurrentVersion << std::endl;
   ostr_ << "id author " << Author << std::endl;
   ostr_ << "uciok" << std::endl;
+  return true;
 }
 
-void UCIHandler::handleCommandIsReady(const std::vector<std::string>& params) {
+bool UCIHandler::handleCommandIsReady(const std::vector<std::string>& params) {
   ostr_ << "readyok" << std::endl;
+  return true;
 }
 
-void UCIHandler::handleCommandPosition(const std::vector<std::string>& params) {
+bool UCIHandler::handleCommandPosition(const std::vector<std::string>& params) {
   if (params.empty() == true) {
     LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: got no parameters");
-    return;
+    return false;
   }
+  unsigned current_param_index = 0;
   if (params[0] == "fen") {
     if (params.size() < 7) {
       LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: got wrong fen string");
-      return;
+      return false;
     }
+    current_param_index = 7u;
     std::string fen;
     for (int i = 1; i < 7; ++i) {
       fen += params[i] + " ";
@@ -122,25 +139,99 @@ void UCIHandler::handleCommandPosition(const std::vector<std::string>& params) {
       LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: set board from received fen");
     } else {
       LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: got wrong fen: ", fen);
+      return false;
     }
-  } else if (params[0] == "starpos") {
+  } else if (params[0] == "startpos") {
+    current_param_index = 1u;
     board_.setStandardBoard();
     LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: set starting position");
+  } else {
+    LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: bad parameter: ", params[0]);
+    return false;
   }
+
+  if (params.size() == current_param_index) {
+    // No moves were specified, handle of command is completed.
+    return true;
+  }
+
+  if (params[current_param_index] != "moves") {
+    LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: \"moves\" expected, got \"", params[current_param_index], "\"");
+    return false;
+  }
+  ++current_param_index;
+  if (current_param_index >= params.size()) {
+    LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: keyword moves found but no moves were specified");
+    return false;
+  }
+  for (unsigned index = current_param_index; index < params.size(); ++index) {
+    std::string move = params[index];
+    if (move.size() != 4 && move.size() != 5) {
+      LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: bad move ", move);
+      return false;
+    }
+    std::string old_field = move.substr(0, 2);
+    std::string new_field = move.substr(2, 2);
+    if (Field::isFieldValid(old_field) == false) {
+      LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: bad field ", old_field);
+      return false;
+    }
+    if (Field::isFieldValid(new_field) == false) {
+      LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: bad field ", new_field);
+      return false;
+    }
+    Figure::Type promotion = Figure::PAWN;
+    if (move.size() == 5) {
+      switch (move[4]) {
+        case 'b':
+        case 'B':
+          promotion = Figure::BISHOP;
+          break;
+        case 'n':
+        case 'N':
+          promotion = Figure::KNIGHT;
+          break;
+        case 'r':
+        case 'R':
+          promotion = Figure::ROOK;
+          break;
+        case 'q':
+        case 'Q':
+          promotion = Figure::QUEEN;
+          break;
+        default:
+          LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: bad move (promotion) ", move);
+          return false;
+      }
+    }
+    try {
+      board_.makeMove(Field(old_field.c_str()), Field(new_field.c_str()), promotion);
+    } catch (const std::exception&) {
+      LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: invalid move ", move);
+      return false;
+    }
+  }
+  return true;
 }
 
-void UCIHandler::handleCommandStop(const std::vector<std::string>& params) {
+bool UCIHandler::handleCommandStop(const std::vector<std::string>& params) {
   engine_.endCalculations();
+  return true;
 }
 
-void UCIHandler::handleCommandGo(const std::vector<std::string>& params) {
+bool UCIHandler::handleCommandQuit(const std::vector<std::string>& params) {
+  throw EndProgramException();
+  return true;
+}
+
+bool UCIHandler::handleCommandGo(const std::vector<std::string>& params) {
   if (move_calculation_in_progress_ == true) {
     LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: move calculation already in progress");
-    return;
+    return false;
   }
   if (params.empty() == true) {
     LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: got no parameters");
-    return;
+    return false;
   }
   if (params[0] == "infinite") {
     move_calculation_in_progress_ = true;
@@ -153,7 +244,7 @@ void UCIHandler::handleCommandGo(const std::vector<std::string>& params) {
   if (params[0] == "movetime") {
     if (params.size() < 2) {
       LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: got movetime without value");
-      return;
+      return false;
     }
     unsigned time_for_move = 0;
     if (utils::str_2_uint(params[1], time_for_move) == false) {
@@ -166,6 +257,7 @@ void UCIHandler::handleCommandGo(const std::vector<std::string>& params) {
                                  1000);
     make_move_thread.detach();
   }
+  return true;
 }
 
 void UCIHandler::sendInfoToGUI(Engine::SearchInfo info) const {
@@ -192,8 +284,4 @@ void UCIHandler::calculateMoveOnAnotherThread(unsigned time_for_move, unsigned m
   LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: sending response: ", response.str());
   move_calculation_in_progress_ = false;
   ostr_ << response.str() << std::endl;
-}
-
-void UCIHandler::handleCommandQuit(const std::vector<std::string>& params) {
-  throw EndProgramException();
 }

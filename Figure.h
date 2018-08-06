@@ -38,6 +38,9 @@ class Figure {
 
     Move(Field field) : new_field(field) {}
 
+    Move(Field ofield, Field nfield, Type promo)
+        : old_field(ofield), new_field(nfield), pawn_promotion(promo) {}
+
     Move(Field ofield, Field nfield, Castling cast)
         : old_field(ofield), new_field(nfield), castling(cast) {}
 
