@@ -101,10 +101,12 @@ Engine::SearchInfo Engine::startSearch(unsigned time_for_move, unsigned search_d
 
   std::vector<Move> moves;
   auto figures_moves = board_.calculateMovesForFigures(color);
+  nodes_evaluated_ += figures_moves.size();
   for (auto& move: figures_moves) {
     moves.push_back(Move(move, nullptr));
   }
   for (unsigned depth = 1; depth < search_depth && end_calculations_ == false; ++depth) {
+    nodes_evaluated_ = 0u;
     LogWithEndLine(Logger::LogSection::ENGINE_MOVE_SEARCHES, "Starting calculating depth ", depth + 1);
     for (Move& move: moves) {
       std::unique_lock<std::mutex> ul(number_of_threads_working_mutex_);
@@ -123,13 +125,14 @@ Engine::SearchInfo Engine::startSearch(unsigned time_for_move, unsigned search_d
   timer_.stop();
 
   SearchInfo info;
+  info.nodes = nodes_evaluated_;
   std::function<void(std::vector<Move>&, Figure::Color)> lambda;
   lambda = [this, &info, &lambda](std::vector<Move>& moves, Figure::Color color) -> void {
     ++info.depth;
     Move* the_best_move = lookForTheBestMove(moves, color);
     info.best_line.push_back(the_best_move->move);
     if (info.depth == 1) {
-      info.score_cp = the_best_move->value * 1000;
+      info.score_cp = the_best_move->value * 100;
       info.score_mate = the_best_move->moves_to_mate / 2;
     }
     if (the_best_move->moves.empty() == false) {
@@ -157,7 +160,6 @@ Engine::SearchInfo Engine::startSearch(unsigned time_for_move, unsigned search_d
   Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, " (calculation time: ", time_elapsed, ")");
   Log(Logger::LogSection::ENGINE_MOVE_SEARCHES, SocketLog::endl);
   info.time = time_elapsed;
-  info.nodes = nodes_evaluated_;
 
   return info;
 }
@@ -305,7 +307,6 @@ void Engine::evaluateBoard(Board& board, Engine::Move& current_move) const {
 }
 
 void Engine::generateTreeMain(Engine::Move& move) {
-  nodes_evaluated_ = 0u;
   Board copy = board_;
   Figure::Color color = copy.getFigure(move.move.old_field)->getColor();
   generateTree(copy, color, move);
@@ -314,8 +315,8 @@ void Engine::generateTreeMain(Engine::Move& move) {
 
 void Engine::generateTree(Board& board, Figure::Color color, Engine::Move& move) {
   if (move.moves.empty() == false) {
-    nodes_evaluated_ += move.moves.size();
     auto wrapper = board.makeReversibleMove(move.move);
+    nodes_evaluated_ += move.moves.size();
     for (auto& m: move.moves) {
       if (end_calculations_ == true) {
         break;
@@ -326,9 +327,9 @@ void Engine::generateTree(Board& board, Figure::Color color, Engine::Move& move)
     Board::GameStatus status = board.getGameStatus(color);
     if (status == Board::GameStatus::NONE) {
       auto wrapper = board.makeReversibleMove(move.move);
-      std::vector<Figure::Move> figure_moves = board.calculateMovesForFigures(!color);
-      nodes_evaluated_ += figure_moves.size();
-      for (Figure::Move& figure_move: figure_moves) {
+      std::vector<Figure::Move> figures_moves = board.calculateMovesForFigures(!color);
+      nodes_evaluated_ += figures_moves.size();
+      for (Figure::Move& figure_move: figures_moves) {
         Move new_move(figure_move, &move);
         evaluateBoardForLastNode(board, new_move);
         move.moves.push_back(new_move);

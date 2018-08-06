@@ -163,7 +163,7 @@ void UCIHandler::handleCommandGo(const std::vector<std::string>& params) {
     std::thread make_move_thread(&UCIHandler::calculateMoveOnAnotherThread,
                                  this,
                                  time_for_move,
-                                 1000 /* infinite depth */);
+                                 1000);
     make_move_thread.detach();
   }
 }

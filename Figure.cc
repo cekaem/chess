@@ -195,7 +195,26 @@ bool Figure::Move::operator==(const Figure::Move& other) const {
 }
 
 std::ostream& operator<<(std::ostream& ostr, const Figure::Move& move) {
-  ostr << move.old_field << "-" << move.new_field;
+  ostr << move.old_field << move.new_field;
+  switch (move.pawn_promotion) {
+    case Figure::PAWN:
+      break;
+    case Figure::BISHOP:
+      ostr << "b";
+      break;
+    case Figure::KNIGHT:
+      ostr << "n";
+      break;
+    case Figure::ROOK:
+      ostr << "r";
+      break;
+    case Figure::QUEEN:
+      ostr << "q";
+      break;
+    case Figure::KING:
+      assert(!"It should not happen.");
+      break;
+  }
   return ostr;
 }
 
