@@ -29,6 +29,7 @@ class UCIHandler {
 
   UCIHandler(std::istream& istr, std::ostream& ostr);
   void start();
+  const Board& getBoard() const { return board_; }
 
   // public for testing purposes
   void handleCommand(const std::string& command);
