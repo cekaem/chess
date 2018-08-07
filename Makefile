@@ -7,7 +7,7 @@ dirs:
 
 bin: dirs game uci_engine
 
-test: dirs $(BIN_DIR)/board_tests $(BIN_DIR)/figure_tests $(BIN_DIR)/engine_tests
+test: dirs $(BIN_DIR)/board_tests $(BIN_DIR)/figure_tests $(BIN_DIR)/engine_tests $(BIN_DIR)/uci_handler_tests
 
 game: $(BIN_DIR)/game
 
@@ -21,6 +21,9 @@ $(BIN_DIR)/figure_tests: $(OBJ_DIR)/Figure_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Bo
 
 $(BIN_DIR)/engine_tests: $(OBJ_DIR)/Engine_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Logger.o Board.h Figure.h Field.h Engine.h
 	$(CXX) $(CFLAGS) -o $(BIN_DIR)/engine_tests $(OBJ_DIR)/Engine_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Logger.o
+
+$(BIN_DIR)/uci_handler_tests: $(OBJ_DIR)/UCIHandler_t.o $(OBJ_DIR)/UCIHandler.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Logger.o Board.h Figure.h Field.h Engine.h UCIHandler.h
+	$(CXX) $(CFLAGS) -o $(BIN_DIR)/uci_handler_tests $(OBJ_DIR)/UCIHandler_t.o $(OBJ_DIR)/UCIHandler.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Logger.o
 
 $(BIN_DIR)/game: $(OBJ_DIR)/Game.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/PgnCreator.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o $(OBJ_DIR)/Logger.o $(OBJ_DIR)/Utils.o Board.h Figure.h Field.h
 	$(CXX) $(CFLAGS) -o $(BIN_DIR)/game $(OBJ_DIR)/Game.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/PgnCreator.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Logger.o
@@ -51,6 +54,9 @@ $(OBJ_DIR)/Figure_t.o: Figure_t.cc Figure.h utils/Test.h utils/Mock.h Board.h Fi
 
 $(OBJ_DIR)/Engine_t.o: Engine_t.cc Figure.h utils/Test.h utils/Mock.h Board.h Field.h Engine.h
 	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/Engine_t.o Engine_t.cc
+
+$(OBJ_DIR)/UCIHandler_t.o: UCIHandler_t.cc UCIHandler.cc UCIHandler.h Figure.h utils/Test.h utils/Mock.h Board.h Field.h Engine.h
+	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/UCIHandler_t.o UCIHandler_t.cc
 
 $(OBJ_DIR)/Figure.o: Figure.cc Figure.h Field.h
 	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/Figure.o Figure.cc

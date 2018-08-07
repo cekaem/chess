@@ -19,13 +19,19 @@ class UCIHandler {
     const std::string command;
   };
 
+  struct HandleOfCommandFailed : public std::exception {
+    HandleOfCommandFailed(const std::string& cmd) : command(cmd) {}
+    const char* what() const noexcept override { return command.c_str(); }
+    const std::string command;
+  };
+
   struct EndProgramException : public std::exception {};
 
   UCIHandler(std::istream& istr, std::ostream& ostr);
   void start();
 
   // public for testing purposes
-  bool handleCommand(const std::string& command);
+  void handleCommand(const std::string& command);
 
   bool handleCommandUCI(const std::vector<std::string>& params);
   bool handleCommandQuit(const std::vector<std::string>& params);

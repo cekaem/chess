@@ -55,7 +55,6 @@ void UCIHandler::start() {
       error_message.append(e.what());
       error_message.append(" failed.");
       LogWithEndLine(Logger::LogSection::UCI_HANDLER, error_message);
-    }
     } catch (const EndProgramException&) {
       break;
     }
