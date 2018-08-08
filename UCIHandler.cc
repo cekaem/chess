@@ -40,6 +40,7 @@ UCIHandler::UCIHandler(std::istream& istr, std::ostream& ostr)
 }
 
 void UCIHandler::start() {
+  LogWithEndLine(Logger::LogSection::UCI_HANDLER, "UCIHandler started");
   while(1) {
     try {
       std::string command;

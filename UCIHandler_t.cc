@@ -1,5 +1,6 @@
 /* Component tests for class UCIHandler */
 
+#include <cassert>
 #include <chrono>
 #include <condition_variable>
 #include <exception>
@@ -21,29 +22,68 @@
 
 namespace {
 
+class LineStreamBuf : public std::streambuf {
+ public:
+  bool isLineReadyForRead() const { return line_completed_; }
+
+ private:
+  int overflow(int c) override {
+    std::unique_lock<std::mutex> ul(line_completed_mutex_);
+    line_completed_cv_.wait(ul, [this] { return line_completed_ == false; });
+    buff_.push_back(c);
+    if (c == '\n') {
+      line_completed_ = true;
+      line_completed_cv_.notify_one();
+    }
+    return c;
+  }
+
+  int underflow() override {
+    std::unique_lock<std::mutex> ul(line_completed_mutex_);
+    line_completed_cv_.wait(ul, [this] { return line_completed_; });
+    assert(buff_.empty() == false);
+    return buff_.front();
+  }
+
+  int uflow() override {
+    int result = underflow();
+    buff_.erase(std::begin(buff_));
+    if (result == '\n') {
+      line_completed_ = false;
+      line_completed_cv_.notify_one();
+    }
+    return result;
+  }
+
+  std::string buff_;
+  bool line_completed_{false};
+  std::condition_variable line_completed_cv_;
+  std::mutex line_completed_mutex_;
+} line_ostream_buf, line_istream_buf;
+
+std::iostream line_ostream(&line_ostream_buf);
+std::iostream line_istream(&line_istream_buf);
+
+
 class UCIHandlerWrapper {
  public:
   bool sendCommandAndWaitForResponse(const std::string& command,
                                      const std::string& response,
                                      unsigned timeout) {
-    std::stringstream ss;
-    UCIHandler handler(ss, ss);
-    std::cout << "MAIN: starting thread." << std::endl;
+    UCIHandler handler(line_istream, line_ostream);
     std::thread t(&UCIHandlerWrapper::uciThread, this, std::ref(handler));
     t.detach();
     std::unique_lock ul(uci_handler_started_mutex_);
     uci_handler_started_cv_.wait(ul, [this] { return uci_handler_started_ == true; });
-    std::cout << "MAIN: thread started." << std::endl;
     auto start_time = std::chrono::steady_clock::now();
     unsigned time_elapsed = 0;
-    ss << command << std::endl;
-    std::cout << "MAIN: command sent" << std::endl;
+    line_istream << command << std::endl;
     bool response_found = false;
     do {
-      std::string s;
-      while (ss >> s) {
+      while (line_ostream_buf.isLineReadyForRead() == true) {
+        std::string s;
+        std::getline(line_ostream, s);
         if (s.find(response) != std::string::npos) {
-          std::cout << "MAIN: found response" << std::endl;
           response_found = true;
           break;
         }
@@ -56,15 +96,10 @@ class UCIHandlerWrapper {
       time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
     } while (time_elapsed < timeout);
 
-    std::cout << "MAIN: sending quit" << std::endl;
-    
-    ss << "quit" << std::endl;
+    line_istream << "quit" << std::endl;
     ul.lock();
-    std::cout << "MAIN: waiting for thread to finish" << std::endl;
     uci_handler_started_cv_.wait(ul, [this] { return uci_handler_started_ == false; });
 
-    std::cout << "MAIN: end" << std::endl;
-    
     return response_found;
   }
   
@@ -74,14 +109,11 @@ class UCIHandlerWrapper {
       std::unique_lock ul(uci_handler_started_mutex_);
       uci_handler_started_ = true;
     }
-    std::cout << "THREAD: started" << std::endl;
     uci_handler_started_cv_.notify_one();
     handler.start();
-    std::cout << "THREAD: uci handler ended" << std::endl;
     std::unique_lock ul(uci_handler_started_mutex_);
     uci_handler_started_ = false;
     uci_handler_started_cv_.notify_one();
-    std::cout << "THREAD: end" << std::endl;
   }
 
   bool uci_handler_started_{false};
@@ -109,8 +141,7 @@ TEST_PROCEDURE(test1) {
 TEST_PROCEDURE(test2) {
   TEST_START
   UCIHandlerWrapper wrapper;
-  Logger::getLogger().start(9090, Logger::LogSection::UCI_HANDLER);
-  wrapper.sendCommandAndWaitForResponse("uci", "uciok", 100);
+  VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("uci", "uciok", 100));
   TEST_END
 }
 
