@@ -152,6 +152,15 @@ TEST_PROCEDURE(test3) {
   TEST_END
 }
 
+// Checks if UCIHandler properly handles command go
+TEST_PROCEDURE(test4) {
+  TEST_START
+  VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("go movetime 100", "info ", 120));
+  VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("go movetime 500", "bestmove ", 550));
+  VERIFY_FALSE(wrapper.sendCommandAndWaitForResponse("go movetime 500", "bestmove ", 499));
+  TEST_END
+}
+
 } // unnamed namespace
 
 
@@ -160,6 +169,7 @@ int main() {
     TEST("UCIHandler properly handles unrecognized commands", test1);
     TEST("UCIHandler properly handles command uci", test2);
     TEST("UCIHandler properly handles command isready", test3);
+    TEST("UCIHandler properly handles command go", test4);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;

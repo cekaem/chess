@@ -1,9 +1,11 @@
 #ifndef UCI_HANDLER_H
 #define UCI_HANDLER_H
 
+#include <condition_variable>
 #include <exception>
 #include <iostream>
 #include <map>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -46,6 +48,8 @@ class UCIHandler {
   void sendInfoToGUI(Engine::SearchInfo info) const;
 
   bool move_calculation_in_progress_{false};
+  std::mutex move_calculation_in_progress_mutex_;
+  std::condition_variable move_calculation_in_progress_cv_;
   std::istream& istr_;
   std::ostream& ostr_;
   Board board_;

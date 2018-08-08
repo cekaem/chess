@@ -216,10 +216,16 @@ bool UCIHandler::handleCommandPosition(const std::vector<std::string>& params) {
 
 bool UCIHandler::handleCommandStop(const std::vector<std::string>& params) {
   engine_.endCalculations();
+  std::unique_lock ul(move_calculation_in_progress_mutex_);
+  move_calculation_in_progress_cv_.wait(ul, [this] { return move_calculation_in_progress_ == false; });
   return true;
 }
 
 bool UCIHandler::handleCommandQuit(const std::vector<std::string>& params) {
+  if (move_calculation_in_progress_ == true) {
+    std::vector<std::string> params;
+    handleCommandStop(params);
+  }
   throw EndProgramException();
   return true;
 }
@@ -282,6 +288,8 @@ void UCIHandler::calculateMoveOnAnotherThread(unsigned time_for_move, unsigned m
     response << " ponder " << ponder.old_field << ponder.new_field;
   }
   LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: sending response: ", response.str());
-  move_calculation_in_progress_ = false;
   ostr_ << response.str() << std::endl;
+  std::unique_lock ul(move_calculation_in_progress_mutex_);
+  move_calculation_in_progress_ = false;
+  move_calculation_in_progress_cv_.notify_one();
 }

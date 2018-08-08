@@ -7,9 +7,10 @@
 
 int main() {
   try {
+    /*
     Logger::getLogger().start(9090, Logger::LogSection::UCI_HANDLER |
-                                    Logger::LogSection::ENGINE_MOVE_SEARCHES /*|
-                                    Logger::LogSection::MEMORY_CONSUMPTION*/);
+                                    Logger::LogSection::ENGINE_MOVE_SEARCHES);
+    */
     UCIHandler handler(std::cin, std::cout);
     handler.start();
   } catch (const std::exception& e) {
