@@ -69,12 +69,15 @@ class UCIHandlerWrapper {
  public:
   bool sendCommandAndWaitForResponse(const std::string& command,
                                      const std::string& response,
-                                     unsigned timeout) {
+                                     unsigned timeout_ms) {
+    line_ostream.clear();
     UCIHandler handler(line_istream, line_ostream);
     std::thread t(&UCIHandlerWrapper::uciThread, this, std::ref(handler));
     t.detach();
-    std::unique_lock ul(uci_handler_started_mutex_);
-    uci_handler_started_cv_.wait(ul, [this] { return uci_handler_started_ == true; });
+    {
+      std::unique_lock ul(uci_handler_started_mutex_);
+      uci_handler_started_cv_.wait(ul, [this] { return uci_handler_started_ == true; });
+    }
     auto start_time = std::chrono::steady_clock::now();
     unsigned time_elapsed = 0;
     line_istream << command << std::endl;
@@ -94,10 +97,14 @@ class UCIHandlerWrapper {
       usleep(5000);
       auto end_time = std::chrono::steady_clock::now();
       time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-    } while (time_elapsed < timeout);
+    } while (time_elapsed < timeout_ms);
+
+    // Make all write command to ostream fail. It will quickly clear the buffer
+    // so the other thread can unblock and read and handle quit command.
+    line_ostream.setstate(std::ios_base::eofbit);
 
     line_istream << "quit" << std::endl;
-    ul.lock();
+    std::unique_lock ul(uci_handler_started_mutex_);
     uci_handler_started_cv_.wait(ul, [this] { return uci_handler_started_ == false; });
 
     return response_found;
@@ -119,29 +126,29 @@ class UCIHandlerWrapper {
   bool uci_handler_started_{false};
   std::mutex uci_handler_started_mutex_;
   std::condition_variable uci_handler_started_cv_;
-};
+} wrapper;
     
 
 // Checks if UCIHandler properly handles unrecognized commands
 TEST_PROCEDURE(test1) {
   TEST_START
-  std::stringstream ss;
-  UCIHandler handler(ss, ss);
-  try {
-    handler.handleCommand("invalid_command");
-  } catch (const UCIHandler::UnknownCommandException& e) {
-    VERIFY_STRINGS_EQUAL("invalid_command", e.command.c_str());
-    RETURN
-  }
-  NOT_REACHED
+  VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("invalid_command", "Unrecognized command: invalid_command", 100));
   TEST_END
 }
 
 // Checks if UCIHandler properly handles command uci
 TEST_PROCEDURE(test2) {
   TEST_START
-  UCIHandlerWrapper wrapper;
+  VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("uci", "id author ", 100));
+  VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("uci", "id name ", 100));
   VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("uci", "uciok", 100));
+  TEST_END
+}
+
+// Checks if UCIHandler properly handles command isready
+TEST_PROCEDURE(test3) {
+  TEST_START
+  VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("isready", "readyok", 100));
   TEST_END
 }
 
@@ -152,6 +159,7 @@ int main() {
   try {
     TEST("UCIHandler properly handles unrecognized commands", test1);
     TEST("UCIHandler properly handles command uci", test2);
+    TEST("UCIHandler properly handles command isready", test3);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;
