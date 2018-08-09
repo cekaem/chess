@@ -71,8 +71,7 @@ class UCIHandlerWrapper {
                                      const std::string& response,
                                      unsigned timeout_ms) {
     line_ostream.clear();
-    UCIHandler handler(line_istream, line_ostream);
-    std::thread t(&UCIHandlerWrapper::uciThread, this, std::ref(handler));
+    std::thread t(&UCIHandlerWrapper::uciThread, this);
     t.detach();
     {
       std::unique_lock ul(uci_handler_started_mutex_);
@@ -109,29 +108,35 @@ class UCIHandlerWrapper {
 
     return response_found;
   }
+
+  void sendCommandToUCIHandler(const std::string& command) {
+    handler_.handleCommand(command);
+  }
   
  private:
-  void uciThread(UCIHandler& handler) {
+  void uciThread() {
     {
       std::unique_lock ul(uci_handler_started_mutex_);
       uci_handler_started_ = true;
     }
     uci_handler_started_cv_.notify_one();
-    handler.start();
+    handler_.start();
     std::unique_lock ul(uci_handler_started_mutex_);
     uci_handler_started_ = false;
     uci_handler_started_cv_.notify_one();
   }
 
+  UCIHandler handler_{line_istream, line_ostream};
   bool uci_handler_started_{false};
   std::mutex uci_handler_started_mutex_;
   std::condition_variable uci_handler_started_cv_;
-} wrapper;
+};
     
 
 // Checks if UCIHandler properly handles unrecognized commands
 TEST_PROCEDURE(test1) {
   TEST_START
+  UCIHandlerWrapper wrapper;
   VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("invalid_command", "Unrecognized command: invalid_command", 100));
   TEST_END
 }
@@ -139,6 +144,7 @@ TEST_PROCEDURE(test1) {
 // Checks if UCIHandler properly handles command uci
 TEST_PROCEDURE(test2) {
   TEST_START
+  UCIHandlerWrapper wrapper;
   VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("uci", "id author ", 100));
   VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("uci", "id name ", 100));
   VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("uci", "uciok", 100));
@@ -148,6 +154,7 @@ TEST_PROCEDURE(test2) {
 // Checks if UCIHandler properly handles command isready
 TEST_PROCEDURE(test3) {
   TEST_START
+  UCIHandlerWrapper wrapper;
   VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("isready", "readyok", 100));
   TEST_END
 }
@@ -155,9 +162,19 @@ TEST_PROCEDURE(test3) {
 // Checks if UCIHandler properly handles command go
 TEST_PROCEDURE(test4) {
   TEST_START
+  UCIHandlerWrapper wrapper;
   VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("go movetime 100", "info ", 120));
   VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("go movetime 500", "bestmove ", 550));
   VERIFY_FALSE(wrapper.sendCommandAndWaitForResponse("go movetime 500", "bestmove ", 499));
+  TEST_END
+}
+
+// Checks if UCIHandler properly handles command stop
+TEST_PROCEDURE(test5) {
+  TEST_START
+  UCIHandlerWrapper wrapper;
+  wrapper.sendCommandToUCIHandler("go movetime 5000");
+  VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("stop", "bestmove ", 100));
   TEST_END
 }
 
@@ -170,6 +187,7 @@ int main() {
     TEST("UCIHandler properly handles command uci", test2);
     TEST("UCIHandler properly handles command isready", test3);
     TEST("UCIHandler properly handles command go", test4);
+    TEST("UCIHandler properly handles command stop", test5);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;
