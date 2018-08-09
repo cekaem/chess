@@ -112,6 +112,10 @@ class UCIHandlerWrapper {
   void sendCommandToUCIHandler(const std::string& command) {
     handler_.handleCommand(command);
   }
+
+  const Board& getBoard() const {
+    return handler_.getBoard();
+  }
   
  private:
   void uciThread() {
@@ -178,6 +182,20 @@ TEST_PROCEDURE(test5) {
   TEST_END
 }
 
+// Checks if UCIHandler properly handles command position
+TEST_PROCEDURE(test6) {
+  TEST_START
+  UCIHandlerWrapper wrapper;
+  const Board& board = wrapper.getBoard();
+  wrapper.sendCommandToUCIHandler("position fen 1nb1k1nr/pp1ppppp/1qp5/8/4P1Q1/1PN4N/P1PP1PPP/R1B1K2R b Kq - 7 15");
+  VERIFY_STRINGS_EQUAL(board.createFEN().c_str(), "1nb1k1nr/pp1ppppp/1qp5/8/4P1Q1/1PN4N/P1PP1PPP/R1B1K2R b Kq - 7 15");
+  wrapper.sendCommandToUCIHandler("position startpos");
+  VERIFY_STRINGS_EQUAL(board.createFEN().c_str(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+  wrapper.sendCommandToUCIHandler("position startpos moves d2d4 d7d5");
+  VERIFY_STRINGS_EQUAL(board.createFEN().c_str(), "rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2");
+  TEST_END
+}
+
 } // unnamed namespace
 
 
@@ -188,6 +206,7 @@ int main() {
     TEST("UCIHandler properly handles command isready", test3);
     TEST("UCIHandler properly handles command go", test4);
     TEST("UCIHandler properly handles command stop", test5);
+    TEST("UCIHandler properly handles command position", test6);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;
