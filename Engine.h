@@ -33,7 +33,7 @@ class Engine {
   void endCalculations() { end_calculations_ = true; }
 
  private:
-  static const int BorderValue = 1000;
+  static const int BorderValue = 100000;
   static const unsigned DefaultSearchDepth = 3;
   static const unsigned DefaultNumberOfThreads = 5;
   static const unsigned DefaultMaxMemoryConsumption = 2000000u;  // kB. ~2GB

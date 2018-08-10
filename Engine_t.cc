@@ -133,14 +133,28 @@ TEST_PROCEDURE(test5) {
   TEST_END
 }
 
+// Checks if Engine::BorderValue is not exceeded.
 TEST_PROCEDURE(test6) {
   TEST_START
   Board board;
   Engine engine(board, 4);
-  board.setBoardFromFEN("Nn2Qbnr/pq3k2/3p1pp1/1p1P4/7p/2N3P1/PP3PBP/R1B1R1K1 b - - 0 20");
-  engine.makeMove(15000, 4);
+  board.setBoardFromFEN("8/3k4/8/8/8/8/4K1QR/8 b - - 0 35");
+  // If Engine::BorderValue is exceeded makeMove will cause assert
+  engine.makeMove(100, 2);
   TEST_END
 }
+
+// Checks if Engine::makeMove finds proper move with search depth set to 1
+TEST_PROCEDURE(test7) {
+  TEST_START
+  Board board;
+  Engine engine(board, 4);
+  board.setBoardFromFEN("8/8/4k3/4Q3/8/8/5K2/8 b - - 0 37");
+  auto move = engine.makeMove(500, 1);
+  VERIFY_TRUE(MovesEqual(move, "e6-e5"));
+  TEST_END
+}
+
 
 } // unnamed namespace
 
@@ -152,7 +166,8 @@ int main() {
     TEST("Engine promotes pawns when it has chance", test3);
     TEST("Engine detects mate in two", test4);
     TEST("Engine detects proper move to avoid mate in two", test5);
-    TEST("Check if fix for detected error works", test6);
+    TEST("Engine::BorderValue is not exceeded", test6);
+    TEST("Engine::makeMove finds proper move with search depth set to 1", test7);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;
