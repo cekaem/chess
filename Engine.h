@@ -43,16 +43,16 @@ class Engine {
     Move(const Move& other) {
       // Created to avoid unnecessary coping of field moves
       move = other.move;
-      value = other.value;
+      value_cp = other.value_cp;
       moves_to_mate = other.moves_to_mate;
       is_draw = other.is_draw;
       parent = other.parent;
     }
     Move(Figure::Move fmove, Engine::Move* p) : move(fmove), parent(p) {}
-    Move(Figure::Move fmove, int v, int m, bool d) : move(fmove), value(v), moves_to_mate(m), is_draw(d) {}
+    Move(Figure::Move fmove, int v, int m, bool d) : move(fmove), value_cp(v), moves_to_mate(m), is_draw(d) {}
 
     Figure::Move move;
-    int value{0};
+    int value_cp{0};
     int moves_to_mate{0};
     bool is_draw{false};
     std::vector<Engine::Move> moves;

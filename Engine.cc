@@ -42,11 +42,11 @@ Engine::BorderValues Engine::findBorderValues(const std::vector<Engine::Move>& m
   BorderValues result;
 
   for (auto& move: moves) {
-    if (move.moves_to_mate == 0 && move.value > result.the_biggest_value) {
-      result.the_biggest_value = move.value;
+    if (move.moves_to_mate == 0 && move.value_cp > result.the_biggest_value) {
+      result.the_biggest_value = move.value_cp;
     }
-    if (move.moves_to_mate == 0 && move.value < result.the_smallest_value) {
-      result.the_smallest_value = move.value;
+    if (move.moves_to_mate == 0 && move.value_cp < result.the_smallest_value) {
+      result.the_smallest_value = move.value_cp;
     }
     if (move.moves_to_mate == 0) {
       result.zero_mate_value_exists = true;
@@ -132,7 +132,7 @@ Engine::SearchInfo Engine::startSearch(unsigned time_for_move, unsigned search_d
     Move* the_best_move = lookForTheBestMove(moves, color);
     info.best_line.push_back(the_best_move->move);
     if (info.depth == 1) {
-      info.score_cp = the_best_move->value * 100;
+      info.score_cp = the_best_move->value_cp;
       info.score_mate = the_best_move->moves_to_mate / 2;
     }
     if (the_best_move->moves.empty() == false) {
@@ -203,7 +203,7 @@ Engine::Move* Engine::lookForTheBestMove(std::vector<Engine::Move>& moves, Figur
       if (move.moves_to_mate == moves_to_mate) {
         the_best_moves.push_back(&move);
       }
-    } else if (move.moves_to_mate == 0 && move.value == the_best_value) {
+    } else if (move.moves_to_mate == 0 && move.value_cp == the_best_value) {
       the_best_moves.push_back(&move);
     }
   }
@@ -216,13 +216,13 @@ Engine::Move* Engine::lookForTheBestMove(std::vector<Engine::Move>& moves, Figur
       the_best_direct_moves.push_back(move);
     } else {
       evaluateBoardForLastNode(board_, *move);
-      if ((color == Figure::WHITE && move->value > the_best_direct_move_value) ||
-          (color == Figure::BLACK && move->value < the_best_direct_move_value)) {
+      if ((color == Figure::WHITE && move->value_cp > the_best_direct_move_value) ||
+          (color == Figure::BLACK && move->value_cp < the_best_direct_move_value)) {
         the_best_direct_moves.clear();
-        the_best_direct_move_value = move->value;
+        the_best_direct_move_value = move->value_cp;
       }
-      if ((color == Figure::WHITE && move->value >= the_best_direct_move_value) ||
-          (color == Figure::BLACK && move->value >= the_best_direct_move_value)) {
+      if ((color == Figure::WHITE && move->value_cp >= the_best_direct_move_value) ||
+          (color == Figure::BLACK && move->value_cp >= the_best_direct_move_value)) {
         the_best_direct_moves.push_back(move);
       }
     }
@@ -238,12 +238,12 @@ void Engine::evaluateBoardForLastNode(
   auto wrapper = board.makeReversibleMove(current_move.move);
   std::vector<const Figure*> white_figures = board.getFigures(Figure::WHITE);
   std::vector<const Figure*> black_figures = board.getFigures(Figure::BLACK);
-  current_move.value = 0;
+  current_move.value_cp = 0;
   for (const Figure* figure: white_figures) {
-    current_move.value += figure->getValue();
+    current_move.value_cp += figure->getValue();
   }
   for (const Figure* figure: black_figures) {
-    current_move.value -= figure->getValue();
+    current_move.value_cp -= figure->getValue();
   }
 
   current_move.moves_to_mate = 0;
@@ -253,7 +253,7 @@ void Engine::evaluateBoardForLastNode(
   if (board.isKingCheckmated(Figure::BLACK) == true) {
     current_move.moves_to_mate = 1;
   }
-  if (current_move.moves_to_mate != 0) {
+  if (current_move.moves_to_mate != 0 && Logger::shouldLog(Logger::LogSection::ENGINE_MATES)) {
     Log(Logger::LogSection::ENGINE_MATES, SocketLog::lock, "Found mate: ");
     std::function<void(const Engine::Move&)> lambda;
     lambda = [this, &lambda](const Engine::Move& move) -> void {
@@ -273,13 +273,13 @@ void Engine::evaluateBoard(Board& board, Engine::Move& current_move) const {
     return;
   }
 
-  current_move.value = 0;
+  current_move.value_cp = 0;
   auto border_values = findBorderValues(current_move.moves);
   Figure::Color color = board.getFigure(current_move.move.old_field)->getColor();
   if (color == Figure::WHITE) {
-    current_move.value = border_values.the_smallest_value;
+    current_move.value_cp = border_values.the_smallest_value;
   } else {
-    current_move.value = border_values.the_biggest_value;
+    current_move.value_cp = border_values.the_biggest_value;
   }
   current_move.moves_to_mate = BorderValue;
   if (color == Figure::BLACK) {
@@ -302,7 +302,7 @@ void Engine::evaluateBoard(Board& board, Engine::Move& current_move) const {
     }
   }
 
-  BoardAssert(board, (current_move.value != BorderValue && current_move.value != -BorderValue) ||
+  BoardAssert(board, (current_move.value_cp != BorderValue && current_move.value_cp != -BorderValue) ||
                      current_move.moves_to_mate != BorderValue);
 }
 

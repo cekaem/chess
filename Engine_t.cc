@@ -133,6 +133,15 @@ TEST_PROCEDURE(test5) {
   TEST_END
 }
 
+TEST_PROCEDURE(test6) {
+  TEST_START
+  Board board;
+  Engine engine(board, 4);
+  board.setBoardFromFEN("Nn2Qbnr/pq3k2/3p1pp1/1p1P4/7p/2N3P1/PP3PBP/R1B1R1K1 b - - 0 20");
+  engine.makeMove(15000, 4);
+  TEST_END
+}
+
 } // unnamed namespace
 
 
@@ -143,6 +152,7 @@ int main() {
     TEST("Engine promotes pawns when it has chance", test3);
     TEST("Engine detects mate in two", test4);
     TEST("Engine detects proper move to avoid mate in two", test5);
+    TEST("Check if fix for detected error works", test6);
   } catch (std::exception& except) {
     std::cerr << "Unexpected exception: " << except.what() << std::endl;
      return -1;

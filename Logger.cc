@@ -9,6 +9,8 @@
 #include "utils/Utils.h"
 
 
+Logger::LogSection Logger::log_sections_mask_ = Logger::LogSection::NONE;
+
 Logger& Logger::getLogger() {
   static Logger logger;
   return logger;
@@ -57,7 +59,7 @@ bool Logger::alertOnMemoryConsumption(
   return true;
 }
 
-bool Logger::shouldLog(Logger::LogSection section) const {
+bool Logger::shouldLog(Logger::LogSection section) {
   return (section & log_sections_mask_) != LogSection::NONE;
 }
 

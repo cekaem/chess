@@ -30,7 +30,7 @@ class Logger {
   ~Logger();
   static Logger& getLogger();
   void start(int port, LogSection log_sections_mask);
-  bool shouldLog(LogSection section) const;
+  static bool shouldLog(LogSection section);
   bool alertOnMemoryConsumption(unsigned threshold, std::function<void(int)> callback);
   utils::SocketLog& getStream() { return log_; }
 
@@ -44,7 +44,7 @@ class Logger {
 
   utils::SocketLog log_;
   bool is_started_{false};
-  LogSection log_sections_mask_{0};
+  static LogSection log_sections_mask_;
 
   bool do_memory_consumption_measures_{true};
   bool memory_consumption_measures_ended_{true};
