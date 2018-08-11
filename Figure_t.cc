@@ -29,8 +29,7 @@ Figure::Move createMove(
   return move;
 }
 
-// Checks if Pawn::calculatePossibleMoves returns proper moves
-TEST_PROCEDURE(test1) {
+TEST_PROCEDURE(PawnCalculatePossibleMovesReturnsProperMoves) {
   TEST_START
   {
     Board board;
@@ -124,8 +123,7 @@ TEST_PROCEDURE(test1) {
   TEST_END
 }
 
-// Checks if Knight::calculatePossibleMoves returns proper moves
-TEST_PROCEDURE(test2) {
+TEST_PROCEDURE(KnightCalculatePossibleMovesReturnsProperMoves) {
   TEST_START
   {
     Board board;
@@ -162,8 +160,7 @@ TEST_PROCEDURE(test2) {
   TEST_END
 }
 
-// Checks if Bishop::calculatePossibleMoves returns proper moves
-TEST_PROCEDURE(test3) {
+TEST_PROCEDURE(BishopCalculatePossibleMovesReturnsProperMoves) {
   TEST_START
   {
     Board board;
@@ -199,8 +196,7 @@ TEST_PROCEDURE(test3) {
   TEST_END
 }
 
-// Checks if Rook::calculatePossibleMoves returns proper moves
-TEST_PROCEDURE(test4) {
+TEST_PROCEDURE(RookCalculatePossibleMovesReturnsProperMoves) {
   TEST_START
   {
     Board board;
@@ -239,8 +235,7 @@ TEST_PROCEDURE(test4) {
   TEST_END
 }
 
-// Checks if Queen::calculatePossibleMoves returns proper moves
-TEST_PROCEDURE(test5) {
+TEST_PROCEDURE(QueenCalculatePossibleMovesReturnsProperMoves) {
   TEST_START
   {
     Board board;
@@ -294,8 +289,7 @@ TEST_PROCEDURE(test5) {
   TEST_END
 }
 
-// Checks if King::calculatePossibleMoves returns proper moves
-TEST_PROCEDURE(test6) {
+TEST_PROCEDURE(KingCalculatePossibleMovesReturnsProperMoves) {
   TEST_START
   {
     Board board;
@@ -407,8 +401,7 @@ TEST_PROCEDURE(test6) {
   TEST_END
 }
 
-// Checks if King::isChecked and King::isCheckmated work correctly
-TEST_PROCEDURE(test7) {
+TEST_PROCEDURE(KingIsCheckedAndIsCheckmatedWorkCorrectly) {
   TEST_START
   {
     Board board;
@@ -473,8 +466,7 @@ TEST_PROCEDURE(test7) {
   TEST_END
 }
 
-//Checks if figures does not unveil their king
-TEST_PROCEDURE(test8) {
+TEST_PROCEDURE(FiguresDoesNotUnveilTheirKing) {
   TEST_START
   Board board;
   board.addFigure(Figure::KING, Field(Field::D, Field::FOUR), Figure::WHITE);
@@ -507,8 +499,7 @@ TEST_PROCEDURE(test8) {
   TEST_END
 }
 
-// Checks if King::isStalemated works properly
-TEST_PROCEDURE(test9) {
+TEST_PROCEDURE(KingIsStalematedWorksCorrectly) {
   TEST_START
   Board board;
   board.addFigure(Figure::KING, Field(Field::B, Field::ONE), Figure::WHITE);
@@ -524,9 +515,7 @@ TEST_PROCEDURE(test9) {
   TEST_END
 }
 
-// Checks if Board::IllegalMoveException is thrown when pawn promoting move does not contain
-// information about figure pawn should be promoted to.
-TEST_PROCEDURE(test10) {
+TEST_PROCEDURE(InvalidPromotionMoveThrowsIllegalMoveException) {
   TEST_START
     Board board;
     board.addFigure(Figure::KING, Field(Field::B, Field::ONE), Figure::WHITE);
@@ -554,8 +543,7 @@ TEST_PROCEDURE(test10) {
   TEST_END
 }
 
-// Checks if Field::isFieldValid works correctly
-TEST_PROCEDURE(test11) {
+TEST_PROCEDURE(FieldIsFieldValidWorksCorrectly) {
   TEST_START
   VERIFY_TRUE(Field::isFieldValid("a1"));
   VERIFY_TRUE(Field::isFieldValid("d5"));
@@ -571,30 +559,3 @@ TEST_PROCEDURE(test11) {
 }
 
 } // unnamed namespace
-
-
-int main() {
-  try {
-    TEST("Pawn::calculatePossibleMoves returns proper moves", test1);
-    TEST("Knight::calculatePossibleMoves returns proper moves", test2);
-    TEST("Bishop::calculatePossibleMoves returns proper moves", test3);
-    TEST("Rook::calculatePossibleMoves returns proper moves", test4);
-    TEST("Queen::calculatePossibleMoves returns proper moves", test5);
-    TEST("King::calculatePossibleMoves returns proper moves", test6);
-    TEST("King::isChecked and King::isCheckmated works properly", test7);
-    TEST("Figures does not unveil their king", test8);
-    TEST("King::isStalemated works properly", test9);
-    TEST("Board::IllegalMoveException is thrown when pawn promoting move is bad", test10);
-    TEST("Field::isFieldValid works correctly", test11);
-  } catch (std::exception& except) {
-    std::cerr << "Unexpected exception: " << except.what() << std::endl;
-     return -1;
-  }
-  int failed_tests = Test::get_number_of_failed_tests();
-  if (failed_tests > 0) {
-    std::cout << failed_tests << " test(s) failed." << std::endl;
-    return -2;
-  }
-  std::cout << "All tests passed." << std::endl;
-  return 0;
-}

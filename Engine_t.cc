@@ -12,6 +12,7 @@
 #include "Field.h"
 #include "Figure.h"
 
+
 namespace {
 
 bool MovesEqual(Figure::Move move1,
@@ -25,8 +26,7 @@ bool MovesEqual(Figure::Move move1,
          move1.pawn_promotion == promotion;
 }
 
-// Checks if engine detects mate in one
-TEST_PROCEDURE(test1) {
+TEST_PROCEDURE(EngineDetectsMateInOne) {
   TEST_START
   {
     Board board;
@@ -75,8 +75,7 @@ TEST_PROCEDURE(test1) {
  TEST_END
 }
 
-// Checks if engine grabs free material
-TEST_PROCEDURE(test2) {
+TEST_PROCEDURE(EngineGrabsFreeMaterial) {
   TEST_START
   {
     Board board;
@@ -90,8 +89,7 @@ TEST_PROCEDURE(test2) {
   TEST_END
 }
 
-// Checks if engine promotes to Queen when it has chance
-TEST_PROCEDURE(test3) {
+TEST_PROCEDURE(EnginePromotesToQueen) {
   TEST_START
   Board board;
   Engine engine(board, 4);
@@ -103,8 +101,7 @@ TEST_PROCEDURE(test3) {
   TEST_END
 }
 
-// Checks if engine detects mate in two.
-TEST_PROCEDURE(test4) {
+TEST_PROCEDURE(EngineDetectsMateInTwo) {
   TEST_START
   {
     Board board;
@@ -120,21 +117,19 @@ TEST_PROCEDURE(test4) {
   TEST_END
 }
 
-// Checks if Engine detects proper move to avoid mate in two.
-TEST_PROCEDURE(test5) {
+TEST_PROCEDURE(EngineAvoidsMateInTwo) {
   TEST_START
   {
     Board board;
     Engine engine(board, 4);
     board.setBoardFromFEN("6k1/5ppp/6b1/3Q3n/1K6/8/8/8 b - - 0 1");
-    auto move = engine.makeMove(10000, 4);
+    auto move = engine.makeMove();
     VERIFY_TRUE(MovesEqual(move, "h7-h6"));
   }
   TEST_END
 }
 
-// Checks if Engine::BorderValue is not exceeded.
-TEST_PROCEDURE(test6) {
+TEST_PROCEDURE(EngineBorderValueIsBigEnough) {
   TEST_START
   Board board;
   Engine engine(board, 4);
@@ -144,8 +139,7 @@ TEST_PROCEDURE(test6) {
   TEST_END
 }
 
-// Checks if Engine::makeMove finds proper move with search depth set to 1
-TEST_PROCEDURE(test7) {
+TEST_PROCEDURE(EngineFindsProperMoveWithSearchDepthSetToOne) {
   TEST_START
   Board board;
   Engine engine(board, 4);
@@ -155,29 +149,4 @@ TEST_PROCEDURE(test7) {
   TEST_END
 }
 
-
 } // unnamed namespace
-
-
-int main() {
-  try {
-    TEST("Engine detects mate in one", test1);
-    TEST("Engine grabs free material", test2);
-    TEST("Engine promotes pawns when it has chance", test3);
-    TEST("Engine detects mate in two", test4);
-    TEST("Engine detects proper move to avoid mate in two", test5);
-    TEST("Engine::BorderValue is not exceeded", test6);
-    TEST("Engine::makeMove finds proper move with search depth set to 1", test7);
-  } catch (std::exception& except) {
-    std::cerr << "Unexpected exception: " << except.what() << std::endl;
-     return -1;
-  }
-  std::cout << "Number of copies: " << Board::number_of_copies_ << std::endl;
-  int failed_tests = Test::get_number_of_failed_tests();
-  if (failed_tests > 0) {
-    std::cout << failed_tests << " test(s) failed." << std::endl;
-    return -2;
-  }
-  std::cout << "All tests passed." << std::endl;
-  return 0;
-}

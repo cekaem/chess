@@ -137,16 +137,14 @@ class UCIHandlerWrapper {
 };
     
 
-// Checks if UCIHandler properly handles unrecognized commands
-TEST_PROCEDURE(test1) {
+TEST_PROCEDURE(UCIHandlerHandlesUnrecognizedCommand) {
   TEST_START
   UCIHandlerWrapper wrapper;
   VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("invalid_command", "Unrecognized command: invalid_command", 100));
   TEST_END
 }
 
-// Checks if UCIHandler properly handles command uci
-TEST_PROCEDURE(test2) {
+TEST_PROCEDURE(UCIHandlerHandlesCommandUCI) {
   TEST_START
   UCIHandlerWrapper wrapper;
   VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("uci", "id author ", 100));
@@ -155,16 +153,14 @@ TEST_PROCEDURE(test2) {
   TEST_END
 }
 
-// Checks if UCIHandler properly handles command isready
-TEST_PROCEDURE(test3) {
+TEST_PROCEDURE(UCIHandlerHandlesCommandISREADY) {
   TEST_START
   UCIHandlerWrapper wrapper;
   VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("isready", "readyok", 100));
   TEST_END
 }
 
-// Checks if UCIHandler properly handles command go
-TEST_PROCEDURE(test4) {
+TEST_PROCEDURE(UCIHandlerHandlesCommandGO) {
   TEST_START
   UCIHandlerWrapper wrapper;
   VERIFY_TRUE(wrapper.sendCommandAndWaitForResponse("go movetime 100", "info ", 120));
@@ -173,8 +169,7 @@ TEST_PROCEDURE(test4) {
   TEST_END
 }
 
-// Checks if UCIHandler properly handles command stop
-TEST_PROCEDURE(test5) {
+TEST_PROCEDURE(UCIHandlerHandlesCommandSTOP) {
   TEST_START
   UCIHandlerWrapper wrapper;
   wrapper.sendCommand("go movetime 5000");
@@ -182,8 +177,7 @@ TEST_PROCEDURE(test5) {
   TEST_END
 }
 
-// Checks if UCIHandler properly handles command position
-TEST_PROCEDURE(test6) {
+TEST_PROCEDURE(UCIHandlerHandlesCommandPOSITION) {
   TEST_START
   UCIHandlerWrapper wrapper;
   const Board& board = wrapper.getBoard();
@@ -198,24 +192,3 @@ TEST_PROCEDURE(test6) {
 
 } // unnamed namespace
 
-
-int main() {
-  try {
-    TEST("UCIHandler properly handles unrecognized commands", test1);
-    TEST("UCIHandler properly handles command uci", test2);
-    TEST("UCIHandler properly handles command isready", test3);
-    TEST("UCIHandler properly handles command go", test4);
-    TEST("UCIHandler properly handles command stop", test5);
-    TEST("UCIHandler properly handles command position", test6);
-  } catch (std::exception& except) {
-    std::cerr << "Unexpected exception: " << except.what() << std::endl;
-     return -1;
-  }
-  int failed_tests = Test::get_number_of_failed_tests();
-  if (failed_tests > 0) {
-    std::cout << failed_tests << " test(s) failed." << std::endl;
-    return -2;
-  }
-  std::cout << "All tests passed." << std::endl;
-  return 0;
-}

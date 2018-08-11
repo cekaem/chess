@@ -37,8 +37,7 @@ class BoardDrawerOnlyGameFinishedMock : public BoardDrawer {
   MOCK_METHOD1(onGameFinished, void(Board::GameStatus));
 };
 
-// Checks if Field::WrongFieldException is properly thrown from Field::Field
-TEST_PROCEDURE(test1) {
+TEST_PROCEDURE(FieldConstructorThrowsWrongFieldException) {
   TEST_START
   try {
     const Field field(Field::A, static_cast<Field::Number>(8));
@@ -57,8 +56,7 @@ TEST_PROCEDURE(test1) {
   TEST_END
 }
 
-// Checks if Board::makeMove throws Board::NoFigureException
-TEST_PROCEDURE(test2) {
+TEST_PROCEDURE(BoardMakeMoveThrowsNoFigureException) {
   TEST_START
   Field field(Field::C, Field::TWO);
   try {
@@ -72,8 +70,7 @@ TEST_PROCEDURE(test2) {
   TEST_END
 }
 
-// Checks if Board::makeMove throws Board::IllegalMoveException
-TEST_PROCEDURE(test3) {
+TEST_PROCEDURE(BoardMakeMoveThrowsIllegalMoveException) {
   TEST_START
   Field field1(Field::D, Field::TWO);
   Field field2(Field::C, Field::TWO);
@@ -93,8 +90,7 @@ TEST_PROCEDURE(test3) {
   TEST_END
 }
 
-// Checks if Board::FieldNotEmptyException is properly thrown from Board::addFigure
-TEST_PROCEDURE(test4) {
+TEST_PROCEDURE(BoardAddFigureThrowsFieldNotEmptyException) {
   TEST_START
   const Field field(Field::B, Field::FIVE);
   Board board;
@@ -110,8 +106,7 @@ TEST_PROCEDURE(test4) {
   TEST_END
 }
 
-// Checks if Board::NoFigureException is properly thrown from Board::removeFigure
-TEST_PROCEDURE(test5) {
+TEST_PROCEDURE(BoardRemoveFigureThrowsNoFigureException) {
   TEST_START
   const Field field(Field::H, Field::EIGHT);
   try {
@@ -125,8 +120,7 @@ TEST_PROCEDURE(test5) {
   TEST_END
 }
 
-// Checks if Board::add/move/remove/getFigure(s) works correctly
-TEST_PROCEDURE(test7) {
+TEST_PROCEDURE(AddMoveRemoveGetFigureWorksCorrectly) {
   TEST_START
   Board board;
   VERIFY_IS_EQUAL(board.getFigures().size(), 0ul);
@@ -159,8 +153,7 @@ TEST_PROCEDURE(test7) {
   TEST_END
 }
 
-// Checks if Board::operator==/!= works correctly
-TEST_PROCEDURE(test8) {
+TEST_PROCEDURE(BoardOperatorEqualsWorksCorrectly) {
   TEST_START
   Board board1;
   Board board2;
@@ -186,8 +179,7 @@ TEST_PROCEDURE(test8) {
   TEST_END
 }
 
-// Checks if Board's copy constructor work correctly
-TEST_PROCEDURE(test9) {
+TEST_PROCEDURE(BoardCopyConstructorWorksCorrectly) {
   TEST_START
   Board board1;
   VERIFY_TRUE(board1.setBoardFromFEN("r5n1/2k2p2/1p2p1p1/p2p4/P2N2p1/BP1bP3/3P1P2/R3K2r b KQ c3 0 32"));
@@ -196,8 +188,7 @@ TEST_PROCEDURE(test9) {
   TEST_END
 }
 
-// Checks if BoardDrawer::onFigureAdded/Moved/Removed are called correctly
-TEST_PROCEDURE(test10) {
+TEST_PROCEDURE(BoardDrawerOnFigureAddedMovedRemovedAreCalled) {
   TEST_START
   BoardDrawerMock drawer;
   Board board;
@@ -221,8 +212,7 @@ TEST_PROCEDURE(test10) {
   TEST_END
 }
 
-// Checks if BoardDrawer::onGameFinished is called correctly.
-TEST_PROCEDURE(test11) {
+TEST_PROCEDURE(BoardDrawerOnGameFinishedIsCalledCorrectly) {
   TEST_START
   BoardDrawerMock drawer;
   {
@@ -279,8 +269,7 @@ TEST_PROCEDURE(test11) {
   TEST_END
 }
 
-// Checks if Board::isMoveValid works correctly.
-TEST_PROCEDURE(test12) {
+TEST_PROCEDURE(BoardIsMoveValidWorksCorrectly) {
   TEST_START
   Board board;
   VERIFY_FALSE(board.isMoveValid(Field("d1"), Field("d2")));
@@ -299,8 +288,7 @@ TEST_PROCEDURE(test12) {
   TEST_END
 }
 
-// Checks if Board::undoLastReversibleMove works correctly.
-TEST_PROCEDURE(test13) {
+TEST_PROCEDURE(BoardUndoLastReverisbleMoveWorksCorrectly) {
   TEST_START
   Board board;
   board.addFigure(Figure::KING, Field("e1"), Figure::WHITE);
@@ -323,8 +311,7 @@ TEST_PROCEDURE(test13) {
   TEST_END
 }
 
-// Checks if Board::createFEN works correctly.
-TEST_PROCEDURE(test14) {
+TEST_PROCEDURE(BoardCreateFENWorksCorrectly) {
   TEST_START
   {
     Board board;
@@ -375,8 +362,7 @@ TEST_PROCEDURE(test14) {
   TEST_END
 }
 
-// Checks if Board::setBoardFromFEN works correctly
-TEST_PROCEDURE(test15) {
+TEST_PROCEDURE(BoardSetBoardFromFENWorksCorrectly) {
   TEST_START
   {
     Board board;
@@ -402,8 +388,7 @@ TEST_PROCEDURE(test15) {
   TEST_END
 }
 
-// Checks if "Board::setBoardFromFEN detects invalid fen string.
-TEST_PROCEDURE(test16) {
+TEST_PROCEDURE(BoardSetBoardFromFENDetectsInvalidFEN) {
   TEST_START
   {
     Board board;
@@ -422,8 +407,7 @@ TEST_PROCEDURE(test16) {
   TEST_END
 }
 
-// Checks if Board properly counts half moves.
-TEST_PROCEDURE(test17) {
+TEST_PROCEDURE(BoardCorrectlyCountsHalfMoves) {
   TEST_START
   Board board;
   VERIFY_EQUALS(board.getHalfMoveClock(), 0u);
@@ -450,8 +434,7 @@ TEST_PROCEDURE(test17) {
   TEST_END
 }
 
-// Checks if Board correctly draws game after 50 consecutive half moves.
-TEST_PROCEDURE(test18) {
+TEST_PROCEDURE(GameIsDrawnAfterFiftyConsecutiveHalfMoves) {
   TEST_START
   Board board;
   BoardDrawerOnlyGameFinishedMock drawer;
@@ -475,8 +458,7 @@ TEST_PROCEDURE(test18) {
   TEST_END
 }
 
-// Checks if Board correctly counts full moves.
-TEST_PROCEDURE(test19) {
+TEST_PROCEDURE(FullMovesAreCorrectlyCounted) {
   TEST_START
   Board board;
   VERIFY_TRUE(board.setBoardFromFEN("8/4k2p/4r3/6P1/8/4R1K1/8/8 w KQkq - 0 34"));
@@ -498,37 +480,3 @@ TEST_PROCEDURE(test19) {
 }
 
 } // unnamed namespace
-
-
-int main() {
-  try {
-    TEST("Field::Field throws Field::WrongFieldException", test1);
-    TEST("Board::makeMove throws Board::NoFigureException", test2);
-    TEST("Board::makeMove throws Board::IllegalMoveException", test3);
-    TEST("Board::addFigure throws FieldNotEmptyException", test4);
-    TEST("Board::removeFigure throws Board::NoFigureException", test5);
-    TEST("Board::add/remove/move/getFigure(s) works correctly", test7);
-    TEST("Board::operator== works correctly", test8);
-    TEST("Board::Board(const Board&) works correctly", test9);
-    TEST("BoardDrawer::onFigureAdded/Moved/Removed are called correctly", test10);
-    TEST("BoardDrawer::onGameFinished is called correctly", test11);
-    TEST("Board::isMoveValid works correctly", test12);
-    TEST("Board::undoLastReversibleMove works correctly", test13);
-    TEST("Board::createFEN works correctly", test14);
-    TEST("Board::setBoardFromFEN works correctly", test15);
-    TEST("Board::setBoardFromFEN detects invalid fen string", test16);
-    TEST("Board properly counts half moves", test17);
-    TEST("Board correctly draws game after 50 consecutive half moves", test18);
-    TEST("Board correctly counts full moves", test19);
-  } catch (std::exception& except) {
-    std::cerr << "Unexpected exception: " << except.what() << std::endl;
-     return -1;
-  }
-  int failed_tests = Test::get_number_of_failed_tests();
-  if (failed_tests > 0) {
-    std::cout << failed_tests << " test(s) failed." << std::endl;
-    return -2;
-  }
-  std::cout << "All tests passed." << std::endl;
-  return 0;
-}
