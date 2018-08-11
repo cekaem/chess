@@ -31,8 +31,8 @@ struct Field {
     }
   }
 
-  Field(const char* f) : Field(static_cast<Letter>(f[0] - 'a'),
-                               static_cast<Number>(f[1] - '1')) {
+  explicit Field(const char* f) : Field(static_cast<Letter>(f[0] - 'a'),
+                                        static_cast<Number>(f[1] - '1')) {
   }
 
   static bool isFieldValid(const std::string& f) {

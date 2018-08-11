@@ -154,6 +154,7 @@ class Board {
   bool isKingChecked(Figure::Color color);
   bool isKingCheckmated(Figure::Color color);
   bool isKingStalemated(Figure::Color color);
+  bool canKingCastle(Figure::Color color) const;
 
   std::string createFEN() const;
   bool setBoardFromFEN(const std::string& fen);

@@ -399,6 +399,15 @@ bool Board::isKingStalemated(Figure::Color color) {
   return is_stalemate;
 }
 
+bool Board::canKingCastle(Figure::Color color) const {
+  if (color == Figure::WHITE) {
+    return castlings_[static_cast<size_t>(Figure::Move::Castling::Q)] == true ||
+           castlings_[static_cast<size_t>(Figure::Move::Castling::K)] == true;
+  }
+  return castlings_[static_cast<size_t>(Figure::Move::Castling::q)] == true ||
+         castlings_[static_cast<size_t>(Figure::Move::Castling::k)] == true;
+}
+
 std::string Board::createFEN() const {
   std::stringstream fen;
 

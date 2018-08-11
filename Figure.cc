@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <exception>
 
 #include "Board.h"
 
@@ -147,6 +148,43 @@ void calculateMovesForRook(std::vector<Figure::Move>& moves, const Board& board,
 
 }  // unnamed namespace
 
+Figure::Type Figure::charToFigureType(char c) {
+  Figure::Type result = Figure::PAWN;
+  switch (c) {
+    case 'b':
+    case 'B':
+      result = Figure::BISHOP;
+      break;
+    case 'n':
+    case 'N':
+      result = Figure::KNIGHT;
+      break;
+    case 'r':
+    case 'R':
+      result = Figure::ROOK;
+      break;
+    case 'q':
+    case 'Q':
+      result = Figure::QUEEN;
+      break;
+  }
+  return result;
+}
+
+Figure::Move::Move(const std::string& move) {
+  if (move.size() != 4 && move.size() != 5) {
+    throw std::runtime_error("Move::Move: invalid move string");
+  }
+  old_field = Field(move.substr(0, 2).c_str());
+  new_field = Field(move.substr(2, 2).c_str());
+  if (move.size() == 5) {
+    pawn_promotion = Figure::charToFigureType(move[4]);
+    if (pawn_promotion == Figure::PAWN) {
+      throw std::runtime_error("Move::Move: invalid move string (promotion)");
+    }
+  }
+}
+
 Figure::Move::Castling Figure::Move::isCastling(const Board* board, Field old_field, Field new_field) {
   const Figure* figure = board->getFigure(old_field);
   if (figure == nullptr || figure->getType() != Figure::KING) {
@@ -187,11 +225,11 @@ bool Figure::Move::isTwoSquaresPawnMove(const Board* board, Field old_field, Fie
 bool Figure::Move::operator==(const Figure::Move& other) const {
   return old_field == other.old_field &&
          new_field == other.new_field &&
-         is_check == other.is_check &&
-         is_mate == other.is_mate &&
-         castling == other.castling &&
-         figure_beaten == other.figure_beaten &&
          pawn_promotion == other.pawn_promotion;
+}
+
+bool Figure::Move::operator!=(const Figure::Move& other) const {
+  return (*this == other) == false;
 }
 
 std::ostream& operator<<(std::ostream& ostr, const Figure::Move& move) {

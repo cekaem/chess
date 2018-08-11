@@ -4,6 +4,7 @@
 #include <memory>
 #include <ostream>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 #include "Field.h"
@@ -25,14 +26,14 @@ class Figure {
   struct Move {
     enum class Castling {K, Q, k, q, LAST};
 
+    static Castling isCastling(const Board* board, Field old_field, Field new_field);
+    static bool isPromotion(const Board* board, Field old_field, Field new_field);
+    static bool isTwoSquaresPawnMove(const Board* board, Field old_field, Field new_field);
+
     Move(Field ofield, Field nfield, bool check, bool mate,
          Castling cast, bool beaten, Type promo) :
       old_field(ofield), new_field(nfield), is_check(check), is_mate(mate),
       castling(cast), figure_beaten(beaten), pawn_promotion(promo) {}
-
-    static Castling isCastling(const Board* board, Field old_field, Field new_field);
-    static bool isPromotion(const Board* board, Field old_field, Field new_field);
-    static bool isTwoSquaresPawnMove(const Board* board, Field old_field, Field new_field);
 
     Move() {}
 
@@ -44,7 +45,10 @@ class Figure {
     Move(Field ofield, Field nfield, Castling cast)
         : old_field(ofield), new_field(nfield), castling(cast) {}
 
+    Move(const std::string& move);
+
     bool operator==(const Move& other) const;
+    bool operator!=(const Move& other) const;
     friend std::ostream& operator<<(std::ostream& ostr, const Move& move);
     
     Field old_field;
@@ -55,6 +59,8 @@ class Figure {
     bool figure_beaten{false};
     Type pawn_promotion{PAWN};
   };
+
+  static Type charToFigureType(char c);
 
   Color getColor() const { return color_; }
   Field getPosition() const { return field_; }

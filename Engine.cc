@@ -20,6 +20,15 @@
 using utils::SocketLog;
 
 
+namespace {
+
+constexpr int CastlingModificator = 50;
+constexpr int CheckModificator = 10;
+constexpr int MoveForeclosingCastlingModificator = -50;
+
+};
+
+
 Engine::Engine(
     Board& board,
     unsigned max_number_of_threads)
@@ -101,7 +110,7 @@ Engine::SearchInfo Engine::startSearch(unsigned time_for_move, unsigned search_d
 
   std::vector<Move> moves;
   auto figures_moves = board_.calculateMovesForFigures(color);
-  nodes_evaluated_ += figures_moves.size();
+  nodes_evaluated_ = figures_moves.size();
   for (auto& move: figures_moves) {
     moves.push_back(Move(move, nullptr));
   }
@@ -233,8 +242,37 @@ Engine::Move* Engine::lookForTheBestMove(std::vector<Engine::Move>& moves, Figur
   return my_move;
 }
 
+int Engine::calculateMoveModificator(Board& board, const Move& move) const {
+  int result = 0;
+  if (move.move.castling != Figure::Move::Castling::LAST) {
+    result += CastlingModificator;
+  }
+  if (move.move.is_check == true) {
+    result += CheckModificator;
+  }
+  const Figure* figure = board.getFigure(move.move.old_field);
+  Figure::Color color = figure->getColor();
+  if (move.move.castling == Figure::Move::Castling::LAST &&
+      board.canKingCastle(color) == true) {
+    auto wrapper = board.makeReversibleMove(move.move);
+    if (board.canKingCastle(color) == false) {
+      result += MoveForeclosingCastlingModificator;
+    }
+  }
+
+  return result;
+}
+
 void Engine::evaluateBoardForLastNode(
     Board& board, Engine::Move& current_move) const {
+  int move_modificator = calculateMoveModificator(board, current_move);
+  Figure::Color color = board.getFigure(current_move.move.old_field)->getColor();
+  if (color == Figure::WHITE) {
+    current_move.value_cp += move_modificator;
+  } else {
+    current_move.value_cp -= move_modificator;
+  }
+
   auto wrapper = board.makeReversibleMove(current_move.move);
   std::vector<const Figure*> white_figures = board.getFigures(Figure::WHITE);
   std::vector<const Figure*> black_figures = board.getFigures(Figure::BLACK);
@@ -274,12 +312,15 @@ void Engine::evaluateBoard(Board& board, Engine::Move& current_move) const {
   }
 
   current_move.value_cp = 0;
+  int move_modificator = calculateMoveModificator(board, current_move);
   auto border_values = findBorderValues(current_move.moves);
   Figure::Color color = board.getFigure(current_move.move.old_field)->getColor();
   if (color == Figure::WHITE) {
     current_move.value_cp = border_values.the_smallest_value;
+    current_move.value_cp += move_modificator;
   } else {
     current_move.value_cp = border_values.the_biggest_value;
+    current_move.value_cp -= move_modificator;
   }
   current_move.moves_to_mate = BorderValue;
   if (color == Figure::BLACK) {

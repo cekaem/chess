@@ -74,6 +74,7 @@ class Engine {
   void evaluateBoardForLastNode(Board& board, Move& move) const;
   void evaluateBoard(Board& board, Move& move) const;
   std::pair<int, int> evaluateBorderValues(BorderValues values, Figure::Color color) const;
+  int calculateMoveModificator(Board& board, const Move& move) const;
 
   void generateTreeMain(Engine::Move& move);
   void generateTree(Board& board, Figure::Color color, Engine::Move& move);

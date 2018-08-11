@@ -558,4 +558,21 @@ TEST_PROCEDURE(FieldIsFieldValidWorksCorrectly) {
   TEST_END
 }
 
+TEST_PROCEDURE(MoveIsConstructedCorrectlyFromString) {
+  TEST_START
+  {
+    Figure::Move move("d2d4");
+    VERIFY_EQUALS(move.old_field, Field("d2"));
+    VERIFY_EQUALS(move.new_field, Field("d4"));
+    VERIFY_EQUALS(move.pawn_promotion, Figure::PAWN);
+  }
+  {
+    Figure::Move move("e2e1r");
+    VERIFY_EQUALS(move.old_field, Field("e2"));
+    VERIFY_EQUALS(move.new_field, Field("e1"));
+    VERIFY_EQUALS(move.pawn_promotion, Figure::ROOK);
+  }
+  TEST_END
+}
+
 } // unnamed namespace

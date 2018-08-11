@@ -182,26 +182,10 @@ bool UCIHandler::handleCommandPosition(const std::vector<std::string>& params) {
     }
     Figure::Type promotion = Figure::PAWN;
     if (move.size() == 5) {
-      switch (move[4]) {
-        case 'b':
-        case 'B':
-          promotion = Figure::BISHOP;
-          break;
-        case 'n':
-        case 'N':
-          promotion = Figure::KNIGHT;
-          break;
-        case 'r':
-        case 'R':
-          promotion = Figure::ROOK;
-          break;
-        case 'q':
-        case 'Q':
-          promotion = Figure::QUEEN;
-          break;
-        default:
-          LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: bad move (promotion) ", move);
-          return false;
+      promotion = Figure::charToFigureType(move[4]);
+      if (promotion == Figure::PAWN) {
+        LogWithEndLine(Logger::LogSection::UCI_HANDLER, "position: bad move (promotion) ", move);
+        return false;
       }
     }
     try {
@@ -255,6 +239,7 @@ bool UCIHandler::handleCommandGo(const std::vector<std::string>& params) {
     unsigned time_for_move = 0;
     if (utils::str_2_uint(params[1], time_for_move) == false) {
       LogWithEndLine(Logger::LogSection::UCI_HANDLER, "go: got movetime with invalid value");
+      return false;
     }
     move_calculation_in_progress_ = true;
     std::thread make_move_thread(&UCIHandler::calculateMoveOnAnotherThread,

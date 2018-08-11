@@ -300,11 +300,11 @@ TEST_PROCEDURE(BoardUndoLastReverisbleMoveWorksCorrectly) {
   board.addFigure(Figure::PAWN, Field("c4"), Figure::BLACK);
 
   Board copy = board;
-  copy.makeMove("b2", "b4", Figure::PAWN, true);
-  copy.makeMove("c4", "b3", Figure::PAWN, true);
-  copy.makeMove("g7", "h8", Figure::BISHOP, true);
-  copy.makeMove("d8", "c8", Figure::PAWN, true);
-  copy.makeMove("e1", "g1", Figure::PAWN, true);
+  copy.makeMove(Field("b2"), Field("b4"), Figure::PAWN, true);
+  copy.makeMove(Field("c4"), Field("b3"), Figure::PAWN, true);
+  copy.makeMove(Field("g7"), Field("h8"), Figure::BISHOP, true);
+  copy.makeMove(Field("d8"), Field("c8"), Figure::PAWN, true);
+  copy.makeMove(Field("e1"), Field("g1"), Figure::PAWN, true);
   VERIFY_TRUE(board != copy);
   copy.undoAllReversibleMoves();
   VERIFY_TRUE(board == copy);
@@ -476,6 +476,21 @@ TEST_PROCEDURE(FullMovesAreCorrectlyCounted) {
   board.makeMove(Field("e6"), Field("f7"));
   VERIFY_EQUALS(board.getFullMoveNumber(), 37u);
   VERIFY_STRINGS_EQUAL(board.createFEN().c_str(), "8/5k2/7P/8/6K1/8/8/8 w KQkq - 0 37");
+  TEST_END
+}
+
+TEST_PROCEDURE(BoardCanKingCastleWorksCorrectly) {
+  TEST_START
+  Board board;
+  VERIFY_TRUE(board.setBoardFromFEN("4k2r/8/8/8/8/8/8/4K3 w KQkq - 0 1"));
+  VERIFY_TRUE(board.canKingCastle(Figure::WHITE));
+  VERIFY_TRUE(board.canKingCastle(Figure::BLACK));
+  board.makeMove(Field("e1"), Field("d1"));
+  VERIFY_FALSE(board.canKingCastle(Figure::WHITE));
+  VERIFY_TRUE(board.canKingCastle(Figure::BLACK));
+  board.makeMove(Field("e8"), Field("d8"));
+  VERIFY_FALSE(board.canKingCastle(Figure::WHITE));
+  VERIFY_FALSE(board.canKingCastle(Figure::BLACK));
   TEST_END
 }
 

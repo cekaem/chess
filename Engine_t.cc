@@ -1,5 +1,6 @@
 /* Component tests for class Engine */
 
+#include <cassert>
 #include <exception>
 #include <iostream>
 #include <stdexcept>
@@ -25,6 +26,7 @@ bool MovesEqual(Figure::Move move1,
          move1.new_field == Field(move2.substr(3, 2).c_str()) &&
          move1.pawn_promotion == promotion;
 }
+
 
 TEST_PROCEDURE(EngineDetectsMateInOne) {
   TEST_START
@@ -146,6 +148,19 @@ TEST_PROCEDURE(EngineFindsProperMoveWithSearchDepthSetToOne) {
   board.setBoardFromFEN("8/8/4k3/4Q3/8/8/5K2/8 b - - 0 37");
   auto move = engine.makeMove(500, 1);
   VERIFY_TRUE(MovesEqual(move, "e6-e5"));
+  TEST_END
+}
+
+TEST_PROCEDURE(EngineCastlesWhenItIsDesirable) {
+  TEST_START
+  Board board;
+  Engine engine(board, 4);
+  board.setBoardFromFEN("4k2r/8/8/8/8/8/8/3K4 b - - 0 1");
+  auto move = engine.makeMove(1000, 2);
+  VERIFY_FALSE(MovesEqual(move, "e8-g8"));
+  board.setBoardFromFEN("4k2r/8/8/8/8/8/8/3K4 b k - 0 1");
+  move = engine.makeMove(1000, 2);
+  VERIFY_EQUALS(move, Figure::Move("e8g8"));
   TEST_END
 }
 
