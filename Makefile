@@ -13,17 +13,17 @@ game: $(BIN_DIR)/game
 
 uci_engine: $(BIN_DIR)/uci_engine
 
-$(BIN_DIR)/board_tests: $(OBJ_DIR)/Board_t.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Test.o Board.h Figure.h Field.h
-	$(CXX) $(CFLAGS) -o $(BIN_DIR)/board_tests $(OBJ_DIR)/Board_t.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Test.o
+$(BIN_DIR)/board_tests: $(OBJ_DIR)/Board_t.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Test.o $(OBJ_DIR)/CommandLineParser.o Board.h Figure.h Field.h
+	$(CXX) $(CFLAGS) -o $(BIN_DIR)/board_tests $(OBJ_DIR)/Board_t.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Test.o $(OBJ_DIR)/CommandLineParser.o
 
-$(BIN_DIR)/figure_tests: $(OBJ_DIR)/Figure_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Test.o Board.h Figure.h Field.h
-	$(CXX) $(CFLAGS) -o $(BIN_DIR)/figure_tests $(OBJ_DIR)/Figure_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Test.o
+$(BIN_DIR)/figure_tests: $(OBJ_DIR)/Figure_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Test.o $(OBJ_DIR)/CommandLineParser.o Board.h Figure.h Field.h
+	$(CXX) $(CFLAGS) -o $(BIN_DIR)/figure_tests $(OBJ_DIR)/Figure_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Test.o $(OBJ_DIR)/CommandLineParser.o
 
-$(BIN_DIR)/engine_tests: $(OBJ_DIR)/Engine_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Logger.o $(OBJ_DIR)/Test.o Board.h Figure.h Field.h Engine.h
-	$(CXX) $(CFLAGS) -o $(BIN_DIR)/engine_tests $(OBJ_DIR)/Engine_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Logger.o $(OBJ_DIR)/Test.o
+$(BIN_DIR)/engine_tests: $(OBJ_DIR)/Engine_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Logger.o $(OBJ_DIR)/Test.o $(OBJ_DIR)/CommandLineParser.o Board.h Figure.h Field.h Engine.h
+	$(CXX) $(CFLAGS) -o $(BIN_DIR)/engine_tests $(OBJ_DIR)/Engine_t.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Logger.o $(OBJ_DIR)/Test.o $(OBJ_DIR)/CommandLineParser.o
 
-$(BIN_DIR)/uci_handler_tests: $(OBJ_DIR)/UCIHandler_t.o $(OBJ_DIR)/UCIHandler.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Logger.o $(OBJ_DIR)/Test.o Board.h Figure.h Field.h Engine.h UCIHandler.h
-	$(CXX) $(CFLAGS) -o $(BIN_DIR)/uci_handler_tests $(OBJ_DIR)/UCIHandler_t.o $(OBJ_DIR)/UCIHandler.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Logger.o $(OBJ_DIR)/Test.o
+$(BIN_DIR)/uci_handler_tests: $(OBJ_DIR)/UCIHandler_t.o $(OBJ_DIR)/UCIHandler.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Logger.o $(OBJ_DIR)/Test.o $(OBJ_DIR)/CommandLineParser.o Board.h Figure.h Field.h Engine.h UCIHandler.h
+	$(CXX) $(CFLAGS) -o $(BIN_DIR)/uci_handler_tests $(OBJ_DIR)/UCIHandler_t.o $(OBJ_DIR)/UCIHandler.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Logger.o $(OBJ_DIR)/Test.o $(OBJ_DIR)/CommandLineParser.o
 
 $(BIN_DIR)/game: $(OBJ_DIR)/Game.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/PgnCreator.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o $(OBJ_DIR)/Logger.o $(OBJ_DIR)/Utils.o Board.h Figure.h Field.h
 	$(CXX) $(CFLAGS) -o $(BIN_DIR)/game $(OBJ_DIR)/Game.o $(OBJ_DIR)/Engine.o $(OBJ_DIR)/Figure.o $(OBJ_DIR)/Board.o $(OBJ_DIR)/PgnCreator.o $(OBJ_DIR)/SocketLog.o $(OBJ_DIR)/Socket.o $(OBJ_DIR)/Utils.o $(OBJ_DIR)/Logger.o
@@ -76,8 +76,11 @@ $(OBJ_DIR)/SocketLog.o: utils/SocketLog.cc utils/SocketLog.h utils/Socket.h
 $(OBJ_DIR)/Utils.o: utils/Utils.cc utils/Utils.h
 	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/Utils.o utils/Utils.cc
 
-$(OBJ_DIR)/Test.o: utils/Test.cc utils/Test.h
+$(OBJ_DIR)/Test.o: utils/Test.cc utils/Test.h utils/CommandLineParser.h
 	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/Test.o utils/Test.cc
+
+$(OBJ_DIR)/CommandLineParser.o: utils/CommandLineParser.cc utils/CommandLineParser.h
+	$(CXX) $(CFLAGS) -c -o $(OBJ_DIR)/CommandLineParser.o utils/CommandLineParser.cc
 
 clean:
 	rm -f $(BIN_DIR)/*
