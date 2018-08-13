@@ -147,7 +147,7 @@ TEST_PROCEDURE(EngineFindsProperMoveWithSearchDepthSetToOne) {
   Engine engine(board, 4);
   board.setBoardFromFEN("8/8/4k3/4Q3/8/8/5K2/8 b - - 0 37");
   auto move = engine.makeMove(500, 1);
-  VERIFY_TRUE(MovesEqual(move, "e6-e5"));
+  VERIFY_EQUALS(move, Figure::Move("e6e5"));
   TEST_END
 }
 

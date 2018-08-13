@@ -263,25 +263,30 @@ int Engine::calculateMoveModificator(Board& board, const Move& move) const {
   return result;
 }
 
+int Engine::calculatePositionValue(const Board& board) const {
+  int result = 0;
+  std::vector<const Figure*> white_figures = board.getFigures(Figure::WHITE);
+  std::vector<const Figure*> black_figures = board.getFigures(Figure::WHITE);
+  for (const Figure* figure: white_figures) {
+    result += figure->getValue();
+  }
+  for (const Figure* figure: black_figures) {
+    result -= figure->getValue();
+  }
+
+  return result;
+}
+
 void Engine::evaluateBoardForLastNode(
     Board& board, Engine::Move& current_move) const {
-  int move_modificator = calculateMoveModificator(board, current_move);
   Figure::Color color = board.getFigure(current_move.move.old_field)->getColor();
+  int move_modificator = calculateMoveModificator(board, current_move);
+  auto wrapper = board.makeReversibleMove(current_move.move);
+  current_move.value_cp = calculatePositionValue(board);
   if (color == Figure::WHITE) {
     current_move.value_cp += move_modificator;
   } else {
     current_move.value_cp -= move_modificator;
-  }
-
-  auto wrapper = board.makeReversibleMove(current_move.move);
-  std::vector<const Figure*> white_figures = board.getFigures(Figure::WHITE);
-  std::vector<const Figure*> black_figures = board.getFigures(Figure::BLACK);
-  current_move.value_cp = 0;
-  for (const Figure* figure: white_figures) {
-    current_move.value_cp += figure->getValue();
-  }
-  for (const Figure* figure: black_figures) {
-    current_move.value_cp -= figure->getValue();
   }
 
   current_move.moves_to_mate = 0;
