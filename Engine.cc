@@ -37,7 +37,7 @@ Engine::Engine(
 }
 
 Engine::Engine(Board& board) : board_(board) {
-  srand(static_cast<unsigned int>(time(nullptr)));
+  srand(static_cast<unsigned int>(clock()));
   Logger::getLogger().alertOnMemoryConsumption(
       max_memory_consumption_,
       std::bind(&Engine::onMaxMemoryConsumptionExceeded, this, std::placeholders::_1));
@@ -266,7 +266,7 @@ int Engine::calculateMoveModificator(Board& board, const Move& move) const {
 int Engine::calculatePositionValue(const Board& board) const {
   int result = 0;
   std::vector<const Figure*> white_figures = board.getFigures(Figure::WHITE);
-  std::vector<const Figure*> black_figures = board.getFigures(Figure::WHITE);
+  std::vector<const Figure*> black_figures = board.getFigures(Figure::BLACK);
   for (const Figure* figure: white_figures) {
     result += figure->getValue();
   }
