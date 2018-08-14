@@ -22,9 +22,13 @@ using utils::SocketLog;
 
 namespace {
 
+// Move modificators
 constexpr int CastlingModificator = 50;
 constexpr int CheckModificator = 10;
 constexpr int MoveForeclosingCastlingModificator = -50;
+
+// Position modificators
+constexpr int KnightAtTheBorderModificator = -25;
 
 };
 
@@ -265,15 +269,17 @@ int Engine::calculateMoveModificator(Board& board, const Move& move) const {
 
 int Engine::calculatePositionValue(const Board& board) const {
   int result = 0;
-  std::vector<const Figure*> white_figures = board.getFigures(Figure::WHITE);
-  std::vector<const Figure*> black_figures = board.getFigures(Figure::BLACK);
-  for (const Figure* figure: white_figures) {
-    result += figure->getValue();
+  const auto& figures = board.getFigures();
+  for (const auto& figure: figures) {
+    Figure::Color color = figure->getColor();
+    Field position = figure->getPosition();
+    result += color == Figure::WHITE ? figure->getValue() : -figure->getValue();
+    if (figure->getType() == Figure::KNIGHT &&
+        (position.letter == Field::A || position.letter == Field::H)) {
+      result += color == Figure::WHITE ? KnightAtTheBorderModificator : -KnightAtTheBorderModificator;
+      std::cout << "result: " << result << std::endl;
+    }
   }
-  for (const Figure* figure: black_figures) {
-    result -= figure->getValue();
-  }
-
   return result;
 }
 

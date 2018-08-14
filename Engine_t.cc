@@ -164,4 +164,16 @@ TEST_PROCEDURE(EngineCastlesWhenItIsDesirable) {
   TEST_END
 }
 
+TEST_PROCEDURE(EngineMovesKnightFromTheBorder) {
+  TEST_START
+  Board board;
+  Engine engine(board, 4);
+  board.setBoardFromFEN("7n/5k2/8/8/8/1K6/8/N7 w - - 0 1");
+  auto move = engine.makeMove(200, 1);
+  VERIFY_EQUALS(move, Figure::Move("a1c2"));
+  move = engine.makeMove(200, 1);
+  VERIFY_EQUALS(move, Figure::Move("h8g6"));
+  TEST_END
+}
+
 } // unnamed namespace
