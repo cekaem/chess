@@ -12,6 +12,7 @@
 #include "Engine.h"
 #include "Field.h"
 #include "Figure.h"
+#include "Logger.h"
 
 
 namespace {
@@ -153,14 +154,25 @@ TEST_PROCEDURE(EngineFindsProperMoveWithSearchDepthSetToOne) {
 
 TEST_PROCEDURE(EngineCastlesWhenItIsDesirable) {
   TEST_START
-  Board board;
-  Engine engine(board, 4);
-  board.setBoardFromFEN("4k2r/8/8/8/8/8/8/3K4 b - - 0 1");
-  auto move = engine.makeMove(1000, 2);
-  VERIFY_FALSE(MovesEqual(move, "e8-g8"));
-  board.setBoardFromFEN("4k2r/8/8/8/8/8/8/3K4 b k - 0 1");
-  move = engine.makeMove(1000, 2);
-  VERIFY_EQUALS(move, Figure::Move("e8g8"));
+  {
+    Board board;
+    Engine engine(board, 4);
+    board.setBoardFromFEN("4k2r/8/8/8/8/8/8/3K4 b - - 0 1");
+    auto move = engine.makeMove(1000, 2);
+    VERIFY_FALSE(MovesEqual(move, "e8-g8"));
+    board.setBoardFromFEN("4k2r/8/8/8/8/8/8/3K4 b k - 0 1");
+    move = engine.makeMove(1000, 2);
+    VERIFY_EQUALS(move, Figure::Move("e8g8"));
+  }
+  {
+    //Logger::getLogger().start(9090, Logger::LogSection::UCI_HANDLER |
+    //                                Logger::LogSection::ENGINE_MOVE_SEARCHES);
+    Board board;
+    Engine engine(board, 4);
+    VERIFY_TRUE(board.setBoardFromFEN("rnbqk2r/2pp1p1p/1p2pnp1/8/p1PPP3/P2B1N1P/2P2PP1/R1BQ1RK1 b kq - 0 11"));
+    auto move = engine.makeMove(5000, 1);
+    VERIFY_EQUALS(move, Figure::Move("e8g8"));
+  }
   TEST_END
 }
 

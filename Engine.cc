@@ -235,7 +235,7 @@ Engine::Move* Engine::lookForTheBestMove(std::vector<Engine::Move>& moves, Figur
         the_best_direct_move_value = move->value_cp;
       }
       if ((color == Figure::WHITE && move->value_cp >= the_best_direct_move_value) ||
-          (color == Figure::BLACK && move->value_cp >= the_best_direct_move_value)) {
+          (color == Figure::BLACK && move->value_cp <= the_best_direct_move_value)) {
         the_best_direct_moves.push_back(move);
       }
     }
@@ -277,7 +277,6 @@ int Engine::calculatePositionValue(const Board& board) const {
     if (figure->getType() == Figure::KNIGHT &&
         (position.letter == Field::A || position.letter == Field::H)) {
       result += color == Figure::WHITE ? KnightAtTheBorderModificator : -KnightAtTheBorderModificator;
-      std::cout << "result: " << result << std::endl;
     }
   }
   return result;
@@ -327,10 +326,10 @@ void Engine::evaluateBoard(Board& board, Engine::Move& current_move) const {
   auto border_values = findBorderValues(current_move.moves);
   Figure::Color color = board.getFigure(current_move.move.old_field)->getColor();
   if (color == Figure::WHITE) {
-    current_move.value_cp = border_values.the_smallest_value;
+    current_move.value_cp = border_values.the_biggest_value;
     current_move.value_cp += move_modificator;
   } else {
-    current_move.value_cp = border_values.the_biggest_value;
+    current_move.value_cp = border_values.the_smallest_value;
     current_move.value_cp -= move_modificator;
   }
   current_move.moves_to_mate = BorderValue;
