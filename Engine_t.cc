@@ -170,7 +170,7 @@ TEST_PROCEDURE(EngineCastlesWhenItIsDesirable) {
     Board board;
     Engine engine(board, 4);
     VERIFY_TRUE(board.setBoardFromFEN("rnbqk2r/2pp1p1p/1p2pnp1/8/p1PPP3/P2B1N1P/2P2PP1/R1BQ1RK1 b kq - 0 11"));
-    auto move = engine.makeMove(5000, 1);
+    auto move = engine.makeMove(500, 2);
     VERIFY_EQUALS(move, Figure::Move("e8g8"));
   }
   TEST_END

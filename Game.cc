@@ -157,7 +157,7 @@ int main() {
   int engine_strength = 0;
   int number_of_threads = 0;
 
-  Logger::getLogger().start(9090, Logger::LogSection::MEMORY_CONSUMPTION |
+  Logger::getLogger().start(9091, Logger::LogSection::MEMORY_CONSUMPTION |
                                   Logger::LogSection::ENGINE_MOVE_SEARCHES);
 
   std::cout << "Human plays white?" << std::endl;
